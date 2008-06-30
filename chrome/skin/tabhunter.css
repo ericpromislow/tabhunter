@@ -1,0 +1,7 @@
+#view-url {
+    color:black;
+}
+
+#view-url.nohits {
+    color: #999999;
+}

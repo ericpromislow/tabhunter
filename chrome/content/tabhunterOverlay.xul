@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<!DOCTYPE dialog PUBLIC "-//MOZILLA//DTD XUL V1.0//EN" "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" [
+
+  <!ENTITY % tabhunterLocale SYSTEM "chrome://tabhunter/locale/tabhunter.dtd">
+  %tabhunterLocale;
+]>
+<?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
+
+<overlay id="tabhunterOverlay"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <script type="application/x-javascript" src="chrome://tabhunter/content/tabhunter.js"/>
+
+  <menupopup id="menu_ToolsPopup">
+    <menu id="menu_EPExt_Tabhunter" label="&thTabhunter.menuLabel;"
+          accessKey="T" insertafter="sanitizeSeparator">
+      <menupopup id="menupopup_EPExt_Tabhunter"
+                 onpopupshowing="ep_extensions.tabhunter.createMenu(this);  event.stopPropagation();" />
+    </menu>
+  </menupopup>
+  <statusbar id="status-bar">
+     <statusbarpanel id="th-status" insertafter="livemark-button">
+      <image id="th-status-image" width="16" height="16" style="margin:0 5px"
+             tooltiptext="&thTabhunter.tooltipText;"
+             src="chrome://tabhunter/skin/martini-16x16.png"
+              onclick="if (!event.button) ep_extensions.tabhunter.launchDialog()"
+              />
+     </statusbarpanel>
+ </statusbar>
+
+</overlay>

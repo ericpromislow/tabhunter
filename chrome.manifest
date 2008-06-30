@@ -1,0 +1,5 @@
+content tabhunter jar:chrome/tabhunter.jar!/content/ xpcnativewrappers=yes
+overlay chrome://browser/content/browser.xul chrome://tabhunter/content/tabhunterOverlay.xul
+
+locale tabhunter en-US jar:chrome/tabhunter.jar!/locale/en-US/
+skin tabhunter classic/1.0 jar:chrome/tabhunter.jar!/skin/
