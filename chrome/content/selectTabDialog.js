@@ -96,7 +96,8 @@ this.loadList = function() {
     for (var tab, i = 0; tab = this.allTabs[i]; i++) {
         var s = this.mainHunter.getTabTitleAndURL(tab);
         if (this.pattern_RE.test(s)) {
-            this.currentTabList.appendItem(s, i);
+            var listitem = this.currentTabList.appendItem(s, i);
+            listitem.setAttribute('context', 'listPopupMenu');
         }
     }
     if (this.currentTabList.getRowCount() > 0) {
@@ -176,7 +177,8 @@ this._updateList = function(newTabs) {
             i += 1;
             j += 1;
         } else if (newLabel < oldLabel) {
-            this.currentTabList.insertItemAt(j, s, i);
+            var listitem = this.currentTabList.insertItemAt(j, s, i);
+            listitem.setAttribute('context', 'listPopupMenu');
             i += 1;
             j += 1;
             oldLen += 1;
@@ -191,7 +193,8 @@ this._updateList = function(newTabs) {
             var newTab = newTabs[i];
             var s = this.mainHunter.getTabTitleAndURL(newTab);
             if (this.pattern_RE.test(s)) {
-                this.currentTabList.appendItem(s, i);
+                var listitem = this.currentTabList.appendItem(s, i);
+                listitem.setAttribute('context', 'listPopupMenu');
             }
         }
     } else if (j < oldLen) {
@@ -309,7 +312,10 @@ this.onUnload = function() {
 this.doAcceptTab = function() {
     var selectedItem = this.currentTabList.selectedItem;
     if (!selectedItem) return;
-    var tabIdx = selectedItem.getAttribute('value');
+    this.doAcceptTabByIdx(selectedItem.getAttribute('value'));
+}
+
+this.doAcceptTabByIdx = function(tabIdx) {
     var tabInfo = this.allTabs[tabIdx];
     var windowIdx = tabInfo.windowIdx;
     var windowInfo = this.windowInfo[windowIdx];
@@ -336,5 +342,30 @@ this._clearInfo = function() {
 this.rebuildView = function() {
     this.updateList();
 }
+
+this.contextClose = function() {
+    try {
+        var li = document.popupNode;
+        var idx = li.value;
+        var thTab = this.allTabs[idx];
+        var windowInfo = this.windowInfo[thTab.windowIdx];
+        var targetWindow = windowInfo.window;
+        var tabContainer = targetWindow.getBrowser().tabContainer;
+        if (tabContainer.childNodes.length == 1) {
+            targetWindow.close();
+        } else {
+            targetWindow.getBrowser().removeTab(windowInfo.tabs[thTab.tabIdx]);
+        }
+        // Should trigger a list update
+    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
+};
+
+this.contextGo = function(listitem) {
+    try {
+        var listItem = document.popupNode;
+        listItem.parentNode.selectedItem = listItem;
+        this.doAcceptTabByIdx(listItem.value);
+    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
+};
 
 }).apply(gTabhunter);

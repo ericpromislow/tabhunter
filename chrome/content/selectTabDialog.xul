@@ -52,6 +52,10 @@
       ondblclick="gTabhunter.acceptTab();"
       flex="1"
       hidecolumnpicker="true" />
+    <menupopup id='listPopupMenu'>
+      <menuitem label="Go" oncommand="gTabhunter.contextGo(this);"/>
+      <menuitem label="Close" oncommand="gTabhunter.contextClose(this);"/>
+    </menupopup>
     <label id="matchStatus" />
   </vbox>
   <stringbundleset>
