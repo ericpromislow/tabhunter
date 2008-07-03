@@ -53,8 +53,11 @@
       flex="1"
       hidecolumnpicker="true" />
     <menupopup id='listPopupMenu'>
-      <menuitem label="Go" oncommand="gTabhunter.contextGo(this);"/>
-      <menuitem label="Close" oncommand="gTabhunter.contextClose(this);"/>
+      <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo(this);"
+                id="th-lpm-go"/>
+      <menuseparator id="th-lpm-sep" />
+      <menuitem label="&thTabhunter.closeMenuItem;" oncommand="gTabhunter.contextClose(this);"
+                id="th-lpm-close"/>
     </menupopup>
     <label id="matchStatus" />
   </vbox>
