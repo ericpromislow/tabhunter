@@ -6,5 +6,5 @@
 <!ENTITY thTabhunter.patternAccessKey "P" >
 <!ENTITY thTabhunter.goButton "Go" >
 <!ENTITY thTabhunter.closeButton "Close" >
-<!ENTITY thTabhunter.goMenuItem "Go" >
-<!ENTITY thTabhunter.closeMenuItem "Close" >
+<!ENTITY thTabhunter.goMenuItem "Go to Tab" >
+<!ENTITY thTabhunter.closeMenuItem "Close Tab" >

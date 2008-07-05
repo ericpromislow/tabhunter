@@ -62,6 +62,15 @@ if (!("tabhunter" in ep_extensions)) {
     // OUT ARGS: tabs: unordered array of [TabInfo]
     //           windowInfo: array of [window: ChromeWindow, tabs: array of [DOM tabs]]
     this.getTabs = function(obj) {
+        try {
+            return this.getTabs_aux(obj);
+        } catch(ex) {
+            this.dump('tabhunter.js - getTabs - ' + ex);
+        }
+        return null;
+    };
+    
+    this.getTabs_aux = function(obj) {
         var openWindows = this.wmService.getEnumerator("navigator:browser");
         obj.tabs = [];
         obj.windowInfo = [];
