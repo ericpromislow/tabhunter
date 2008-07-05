@@ -28,7 +28,7 @@ this.onLoad = function() {
 
     this.init();
     this.loadList();
-    this._showNumMatches();
+    this._showNumMatches(this.allTabs);
     this.tabhunterSession = new TabhunterWatchSessionService(this, this.updateOnTabChange);
     this.tabhunterSession.init();
     // this.setupWatcher(); -- use the moz session tracker to do this. 
@@ -209,11 +209,11 @@ this._updateList = function(newTabs) {
         this.currentTabList.selectedIndex = finalCurrentIdx;
         this.currentTabList.ensureIndexIsVisible(finalCurrentIdx);
     }
-    this._showNumMatches();
+    this._showNumMatches(newTabs);
 };
 
-this._showNumMatches = function() {
-    var totalSize = this.allTabs.length;
+this._showNumMatches = function(newTabs) {
+    var totalSize = newTabs.length;
     var currSize = this.currentTabList.getRowCount();
     // matchedTabsTemplate
     this.statusField.value =
