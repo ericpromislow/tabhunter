@@ -18,6 +18,17 @@ this.onLoad = function() {
     this.currentURLContents = ''; //yagni?
     
     this.currentTabList = document.getElementById('currentTabList');
+    var self= this;
+    this.currentTabList.addEventListener('mousedown',
+        function(event) {
+            if (event.button == 2) {// context button
+                var listitem = event.originalTarget;
+                if (listitem && listitem.nodeName == "listitem") {
+                    listitem.parentNode.selectItem(listitem);
+                }
+            }
+            
+        }, true);
     this.lastGoodPattern = /./;
     
     this.observerService = Components.classes["@mozilla.org/observer-service;1"].
