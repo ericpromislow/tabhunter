@@ -101,6 +101,14 @@ this.testMatch = function(s) {
     return true;
 };
 
+this._finishListItem = function(listitem, tab) {
+    listitem.setAttribute('class', 'listitem-iconic');
+    if (tab.image) {
+        listitem.setAttribute('image', tab.image);
+    }
+    listitem.setAttribute('context', 'listPopupMenu');
+};
+
 this.loadList = function() {
     this.clearList();
     this.compilePattern();
@@ -108,7 +116,7 @@ this.loadList = function() {
         var s = this.mainHunter.getTabTitleAndURL(tab);
         if (this.pattern_RE.test(s)) {
             var listitem = this.currentTabList.appendItem(s, i);
-            listitem.setAttribute('context', 'listPopupMenu');
+            this._finishListItem(listitem, tab);
         }
     }
     if (this.currentTabList.getRowCount() > 0) {
@@ -189,7 +197,7 @@ this._updateList = function(newTabs) {
             j += 1;
         } else if (newLabel < oldLabel) {
             var listitem = this.currentTabList.insertItemAt(j, s, i);
-            listitem.setAttribute('context', 'listPopupMenu');
+            this._finishListItem(listitem, newTab);
             i += 1;
             j += 1;
             oldLen += 1;
@@ -205,7 +213,7 @@ this._updateList = function(newTabs) {
             var s = this.mainHunter.getTabTitleAndURL(newTab);
             if (this.pattern_RE.test(s)) {
                 var listitem = this.currentTabList.appendItem(s, i);
-                listitem.setAttribute('context', 'listPopupMenu');
+                this._finishListItem(listitem, newTab);
             }
         }
     } else if (j < oldLen) {
