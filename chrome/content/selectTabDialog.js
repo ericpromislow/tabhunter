@@ -29,6 +29,20 @@ this.onLoad = function() {
             }
             
         }, true);
+    var self = this;
+    this.currentTabList.addEventListener('keypress',
+        function(event) {
+            if (event.keyCode == 13) {
+                // treat return in listbox same as in pattern
+                event.stopPropagation();
+                event.preventDefault();
+                if (event.target.nodeName == "listbox") {
+                    self.doAcceptTab();
+                }
+                return false;
+             }
+             return true;
+        }, true);
     this.lastGoodPattern = /./;
     
     this.observerService = Components.classes["@mozilla.org/observer-service;1"].
