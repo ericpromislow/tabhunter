@@ -105,6 +105,9 @@ this._finishListItem = function(listitem, tab) {
     listitem.setAttribute('class', 'listitem-iconic');
     if (tab.image) {
         listitem.setAttribute('image', tab.image);
+    //} else {
+    //XXX - what's the URI for the default favicon?
+    //   listitem.setAttribute('image', 'chrome://browser/skin/places/defaultFavicon.png');
     }
     listitem.setAttribute('context', 'listPopupMenu');
 };
