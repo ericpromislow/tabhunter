@@ -33,17 +33,21 @@
       <rows>
         <row>
           <label id="label-pattern" value="&thTabhunter.patternLabel;"
-          accesskey="&thTabhunter.patternAccessKey;" />
+                 accesskey="&thTabhunter.patternAccessKey;" 
+                 control='pattern' />
           <textbox id="pattern"
                     oninput="return gTabhunter.onInput(this)"
                     onkeypress="return gTabhunter.onKeyPress(event)"/>
         </row>
         <row>
-          <label id="label-URL" value="&thTabhunter.uriLabel;" />
+          <label id="label-URL" value="&thTabhunter.uriLabel;"
+                 control='view-url' />
           <textbox id="view-url" readonly="true"/>
         </row>
       </rows>
     </grid>
+    <label id="label-tablist" value="&thTabs.label;:"
+           control="currentTabList"  collapsed='true' />
     <listbox
       rows="6"
       width='300'
