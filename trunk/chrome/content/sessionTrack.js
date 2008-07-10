@@ -66,7 +66,7 @@ TabhunterWatchSessionService.prototype = {
   /**
    * Initialize the component
    */
-  init: function sss_init() {
+  init: function thst_init() {
 
     var observerService = Cc["@mozilla.org/observer-service;1"].
                           getService(Ci.nsIObserverService);
@@ -88,7 +88,7 @@ TabhunterWatchSessionService.prototype = {
   /**
    * Handle notifications
    */
-  observe: function sss_observe(aSubject, aTopic, aData) {
+  observe: function thst_observe(aSubject, aTopic, aData) {
     // for event listeners
     var _this = this;
 
@@ -110,7 +110,7 @@ TabhunterWatchSessionService.prototype = {
   /**
    * Implement nsIDOMEventListener for handling various window and tab events
    */
-  handleEvent: function sss_handleEvent(aEvent) {
+  handleEvent: function thst_handleEvent(aEvent) {
     switch (aEvent.type) {
       case "load":
         this.onTabLoad(aEvent.currentTarget.ownerDocument.defaultView,
@@ -139,9 +139,9 @@ TabhunterWatchSessionService.prototype = {
    * @param aWindow
    *        Window reference
    */
-  onLoad: function sss_onLoad(aWindow, aNoNotification) {
+  onLoad: function thst_onLoad(aWindow, aNoNotification) {
     if (!aWindow) {
-        this.dump("!!! sss_onLoad: aWindow is null");
+        this.dump("!!! thst_onLoad: aWindow is null");
         return;
     }
 
@@ -169,7 +169,7 @@ TabhunterWatchSessionService.prototype = {
         this.reactorFunc.call(this.reactor);
   },
 
-  onClose: function sss_onClose(aWindow) {
+  onClose: function thst_onClose(aWindow) {
     
     this.reactorFunc.call(this.reactor);
     //XXX: Figure out why this doesn't work.
@@ -191,7 +191,7 @@ TabhunterWatchSessionService.prototype = {
     }
   },
 
-  onTabAdd: function sss_onTabAdd(aWindow, aPanel, aNoNotification) {
+  onTabAdd: function thst_onTabAdd(aWindow, aPanel, aNoNotification) {
     var self = this;
     var func = function(event) {
         self.handleEvent.call(self, event);
@@ -201,22 +201,26 @@ TabhunterWatchSessionService.prototype = {
         this.reactorFunc.call(this.reactor);
   },
 
-  onTabRemove: function sss_onTabRemove(aWindow, aPanel, aNoNotification) {
+  onTabRemove: function thst_onTabRemove(aWindow, aPanel, aNoNotification) {
     //TODO: cache the event-handler, refer to it here, and delete it.  Based on panel ID?
     // aPanel.removeEventListener("load", func, true);
     var self = this;
     if (!aNoNotification) {
         setTimeout(function(self) {
+            try {
             self.reactorFunc.call(self.reactor);
+            } catch(ex) {
+                this.dump(ex + "\n");
+            }
         }, 10, self);
     }
   },
 
-  onTabLoad: function sss_onTabLoad(aWindow, aPanel, aEvent) {
+  onTabLoad: function thst_onTabLoad(aWindow, aPanel, aEvent) {
     this.reactorFunc.call(this.reactor);
   },
 
-  onTabMove: function sss_onTabSelect(aWindow, aPanels) {
+  onTabMove: function thst_onTabSelect(aWindow, aPanels) {
     this.reactorFunc.call(this.reactor);
   },
 
