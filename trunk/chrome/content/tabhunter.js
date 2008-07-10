@@ -92,7 +92,10 @@ if (!("tabhunter" in ep_extensions)) {
                 var tab = tc[i];
                 currWindowInfo.tabs.push(tab);
                 var label = tab.label;
-                var image = tab.getAttribute('image');
+                var image = "";
+                if (tab.linkedBrowser.contentDocument.contentType.indexOf("image/") != 0) {
+                    var image = tab.getAttribute('image');
+                }
                 obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location));
             }
         } while (openWindows.hasMoreElements());
