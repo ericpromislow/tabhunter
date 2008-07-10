@@ -8,3 +8,5 @@
 <!ENTITY thTabhunter.closeButton "Close" >
 <!ENTITY thTabhunter.goMenuItem "Go to Tab" >
 <!ENTITY thTabhunter.closeMenuItem "Close Tab" >
+<!ENTITY thTabs.label "Tabs" >
+
