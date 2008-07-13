@@ -24,6 +24,18 @@
   <script type="application/x-javascript" src="chrome://tabhunter/content/sessionTrack.js" />
   <script type="application/x-javascript" src="chrome://tabhunter/content/tabhunter.js" />
 
+  <commandset id="tabhunterCommandSet">
+    <command id="cmd_close"     oncommand="window.close();"/>
+  </commandset>
+
+  <keyset>
+    <key key="&closeWindow.key;" modifiers="accel" command="cmd_close"/>
+    <key keycode="VK_ESCAPE"                       command="cmd_close"/>
+#ifdef XP_MACOSX
+    <key key="."                 modifiers="meta"  command="cmd_close"/>
+#endif
+  </keyset>
+  
   <vbox flex="1">
     <grid>
       <columns>
