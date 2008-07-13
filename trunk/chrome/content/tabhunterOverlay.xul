@@ -28,5 +28,15 @@
               />
      </statusbarpanel>
  </statusbar>
+  <commandset id="mainCommandSet">
+    <command id="cmd_launchTabhunter"
+             oncommand="ep_extensions.tabhunter.launchDialog()"
+             />
+  </commandset>
+  <keyset id="mainKeyset">
+    <key id="tabhunter_launchKey" modifiers="accel shift"   key="b"
+         command="cmd_launchTabhunter"
+         />
+  </keyset>
 
 </overlay>
