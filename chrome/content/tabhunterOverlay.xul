@@ -16,7 +16,7 @@
     <menuitem id="menuitem_EPExt_TabhunterLaunch"
               command="cmd_launchTabhunter"
               label="&thTabhunter.menuLabel;"
-              accessKey="T" insertafter="devToolsSeparator"
+              accessKey="&thTabhunter.accessKey;" insertafter="devToolsSeparator"
               key="tabhunter_launchKey"
               />
   </menupopup>
@@ -35,7 +35,7 @@
              />
   </commandset>
   <keyset id="mainKeyset">
-    <key id="tabhunter_launchKey" modifiers="accel shift"   key="b"
+    <key id="tabhunter_launchKey" modifiers="accel alt"   key="&thTabhunter.accessKey;"
          command="cmd_launchTabhunter"
          />
   </keyset>
