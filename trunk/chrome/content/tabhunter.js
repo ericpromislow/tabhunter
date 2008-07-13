@@ -51,14 +51,7 @@ if (!("tabhunter" in ep_extensions)) {
         this.image = image;
         this.location = location;
     };
-    this.createMenu = function createMenu(menupopup) {
-        try {
-            return this.createMenuAux(menupopup);
-        }  catch(ex) {
-            alert(ex);
-        }
-        return false;
-    };
+    
     // OUT ARGS: tabs: unordered array of [TabInfo]
     //           windowInfo: array of [window: ChromeWindow, tabs: array of [DOM tabs]]
     this.getTabs = function(obj) {
@@ -109,51 +102,10 @@ if (!("tabhunter" in ep_extensions)) {
         return s;
     }
     
-    this.createMenuAux = function createMenu(menupopup) {
-        var obj = {};
-        this.getTabs(obj);
-        var tabs = obj.tabs;
-        this.windowInfo = obj.windowInfo;
-        while (menupopup.hasChildNodes()) {
-            menupopup.removeChild(menupopup.lastChild);
-        }
-        // Now make a menu out of our tabs
-        tabs.sort(this.compareByName);
-        var menuitem = document.createElement('menuitem');
-        var handler = "ep_extensions.tabhunter.launchDialog()";
-        menuitem.setAttribute('oncommand', handler);
-        menuitem.setAttribute('label', "Launch Tabhunter Panel");
-        menupopup.appendChild(menuitem);
-        menuitem = document.createElement('menuseparator');
-        menupopup.appendChild(menuitem);
-        for (var tab, i = 0; tab = tabs[i]; i++) {
-            menuitem = document.createElement('menuitem');
-            handler = ("ep_extensions.tabhunter.doMenuItem(" +
-                       tab.windowIdx
-                       + ", "
-                       + tab.tabIdx
-                       + ")");
-            menuitem.setAttribute('oncommand', handler);
-            menuitem.setAttribute('label', tab.label);
-            // menuitem.setAttribute('image', tab.image);
-            menupopup.appendChild(menuitem);
-        }
-        return true;
-    };
-    
     this.compareByName = function(tab1, tab2) {
         return (tab1.label_lc < tab2.label_lc
                 ? -1 : (tab1.label_lc > tab2.label_lc ? 1 : 0));
     }
-    
-    this.doMenuItem = function doMenuItem(windowIdx, tabIdx) {
-        // alert("doMenuItem(" + windowIdx + ", " + tabIdx + ")");
-        var win = this.windowInfo[windowIdx].window;
-        win.focus();
-        var tabContainer = win.getBrowser().tabContainer;
-        tabContainer.selectedIndex = tabIdx;
-        //this.windowInfo = null; // no need to hold on to this info
-    };
     
     this.launchDialog = function() {
         // Look for the window first

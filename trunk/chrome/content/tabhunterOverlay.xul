@@ -13,11 +13,12 @@
   <script type="application/x-javascript" src="chrome://tabhunter/content/tabhunter.js"/>
 
   <menupopup id="menu_ToolsPopup">
-    <menu id="menu_EPExt_Tabhunter" label="&thTabhunter.menuLabel;"
-          accessKey="T" insertafter="sanitizeSeparator">
-      <menupopup id="menupopup_EPExt_Tabhunter"
-                 onpopupshowing="ep_extensions.tabhunter.createMenu(this);  event.stopPropagation();" />
-    </menu>
+    <menuitem id="menuitem_EPExt_TabhunterLaunch"
+              command="cmd_launchTabhunter"
+              label="&thTabhunter.menuLabel;"
+              accessKey="T" insertafter="devToolsSeparator"
+              key="tabhunter_launchKey"
+              />
   </menupopup>
   <statusbar id="status-bar">
      <statusbarpanel id="th-status" insertafter="livemark-button">
