@@ -63,9 +63,13 @@ this.onLoad = function() {
     var app = Components.classes["@mozilla.org/xre/app-info;1"].
                 getService(Components.interfaces.nsIXULAppInfo);
     var appName = app.name;
+    var appVendor = app.vendor;
     var title = window.document.title;
     if (title.indexOf(appName) == -1) {
-        title += " - " + appName;
+        var s = "";
+        if (appVendor) s = appVendor;
+        if (appName) s += " " + appName;
+        title += " - " + s;
         window.document.title = title;
     }
 };
