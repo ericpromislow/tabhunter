@@ -212,7 +212,7 @@ TabhunterWatchSessionService.prototype = {
             } catch(ex) {
                 this.dump(ex + "\n");
             }
-        }, 10, self);
+        }, 60, self);
     }
   },
 
