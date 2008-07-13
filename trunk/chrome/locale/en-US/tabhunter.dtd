@@ -10,5 +10,6 @@
 <!ENTITY thTabhunter.closeMenuItem "Close Tab" >
 <!ENTITY thTabs.label "Tabs" >
 <!ENTITY closeWindow.key "W" >
+<!ENTITY thTabhunter.accessKey "T" >
 
 
