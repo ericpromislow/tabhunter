@@ -11,7 +11,8 @@ this.onLoad = function() {
     }
     this.acceptedItem = "";
     this.patternField = document.getElementById('pattern');
-    this.patternContents = '';
+    this.patternField.value = this.mainHunter.searchPattern;
+    this.patternField.select();
     this.currentPatternText = null; // first time only, then always text.
     
     this.currentURLField = document.getElementById("view-url");
@@ -43,6 +44,7 @@ this.onLoad = function() {
              }
              return true;
         }, true);
+    // window.addEventListener('focus', this.windowFocusCheckSetup, false);
     this.lastGoodPattern = /./;
     
     this.observerService = Components.classes["@mozilla.org/observer-service;1"].
@@ -346,6 +348,7 @@ this.onDoubleClick = function() {
 };
 
 this.onUnload = function() {
+    this.mainHunter.searchPattern = this.patternField.value;
     this._clearInfo();
 }
 

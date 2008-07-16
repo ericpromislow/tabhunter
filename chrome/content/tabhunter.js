@@ -38,7 +38,7 @@ if (typeof(ep_extensions) == "undefined") {
     ep_extensions = {};
 }
 if (!("tabhunter" in ep_extensions)) {
-    ep_extensions.tabhunter = {};
+    ep_extensions.tabhunter = { searchPattern:"" };
 }
 (function() {
     this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
@@ -114,8 +114,10 @@ if (!("tabhunter" in ep_extensions)) {
         do {
             var win = openWindows.getNext();
             if (win.location == th_uri) {
-                win.document.getElementById('pattern').focus();
                 win.focus();
+                var pf = win.document.getElementById('pattern');
+                pf.focus();
+                pf.select();
                 return;
             }
         } while(openWindows.hasMoreElements());
