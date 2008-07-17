@@ -296,6 +296,10 @@ this.onKeyPress = function(event)  {
     case KeyEvent.DOM_VK_PAGE_UP:
     case KeyEvent.DOM_VK_PAGE_DOWN:
     case KeyEvent.DOM_VK_END:
+        if (event.shiftKey
+            || event.ctrlKey) {
+            break;
+        }
         // send the event to the list -- is there a better way to do this?
         var evt = document.createEvent("KeyboardEvent");
         evt.initKeyEvent('keypress', // typeArg
