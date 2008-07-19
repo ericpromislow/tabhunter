@@ -9,6 +9,9 @@ this.onLoad = function() {
     if (typeof(this.mainHunter) == 'undefined') {
         this.mainHunter = ep_extensions.tabhunter;
     }
+    this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
+                  .getService(Components.interfaces.nsIPrefService)
+                  .getBranch('extensions.tabhunter.'));
     this.acceptedItem = "";
     this.patternField = document.getElementById('pattern');
     this.patternField.value = this.mainHunter.searchPattern;
@@ -19,6 +22,15 @@ this.onLoad = function() {
     this.currentURLContents = ''; //yagni?
     
     this.currentTabList = document.getElementById('currentTabList');
+    this.closeOnReturnCB = document.getElementById('prefCloseOnReturn');
+    this.closeOnReturnPrefName = 'closeOnReturn';
+    if (this.prefs.prefHasUserValue(this.closeOnReturnPrefName)) {
+        this.closeOnReturnCB.checked = this.prefs.getBoolPref(this.closeOnReturnPrefName);
+    } else { 
+        this.prefs.setBoolPref(this.closeOnReturnPrefName,
+                               this.closeOnReturnCB.checked = true);
+        
+    }
     var self= this;
     this.currentTabList.addEventListener('mousedown',
         function(event) {
@@ -38,7 +50,7 @@ this.onLoad = function() {
                 event.stopPropagation();
                 event.preventDefault();
                 if (event.target.nodeName == "listbox") {
-                    self.doAcceptTab();
+                    self.doAcceptTab(true);
                 }
                 return false;
              }
@@ -74,6 +86,7 @@ this.onLoad = function() {
         title += " - " + s;
         window.document.title = title;
     }
+    this.registerPrefsObserver();
 };
 
 this.init = function() {
@@ -288,7 +301,7 @@ this.showCurrentURL = function() {
 this.onKeyPress = function(event)  {
     switch (event.keyCode) {
     case KeyEvent.DOM_VK_RETURN:
-        this.doAcceptTab();
+        this.doAcceptTab(true);
         return false;
     case KeyEvent.DOM_VK_UP:
     case KeyEvent.DOM_VK_DOWN:
@@ -352,14 +365,18 @@ this.onDoubleClick = function() {
 };
 
 this.onUnload = function() {
+    this.unregisterPrefsObserver();
     this.mainHunter.searchPattern = this.patternField.value;
     this._clearInfo();
 }
 
-this.doAcceptTab = function() {
+this.doAcceptTab = function(maybeCloseOnReturn) {
     var selectedItem = this.currentTabList.selectedItem;
     if (!selectedItem) return;
     this.doAcceptTabByIdx(selectedItem.getAttribute('value'));
+    if (maybeCloseOnReturn && this.closeOnReturnCB.checked) {
+        window.close();
+    }
 }
 
 this.doAcceptTabByIdx = function(tabIdx) {
@@ -373,13 +390,13 @@ this.doAcceptTabByIdx = function(tabIdx) {
 };
 
 this.onAccept = function() {
-    this.doAcceptTab();
+    this.doAcceptTab(false);
     this._clearInfo();
     return true;
 };
 
 this.acceptTab = function() {
-    this.doAcceptTab();
+    this.doAcceptTab(true);
 }
 
 this._clearInfo = function() {
@@ -413,6 +430,25 @@ this.contextGo = function(listitem) {
         listItem.parentNode.selectedItem = listItem;
         this.doAcceptTabByIdx(listItem.value);
     } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
+};
+
+
+this.togglePrefCloseOnReturn = function(event, cbox) {
+  this.prefs.setBoolPref(this.closeOnReturnPrefName, cbox.checked);
+};
+
+this.registerPrefsObserver = function() {
+    this.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2).addObserver("", this, false);
+};
+
+this.unregisterPrefsObserver = function() {
+    this.prefs.QueryInterface(Components.interfaces.nsIPrefBranch2).removeObserver("", this, false);
+};
+
+this.observe = function(subject, topic, prefName) {
+    if (topic == "nsPref:changed" && prefName == this.closeOnReturnPrefName) {
+        this.closeOnReturnCB.checked = this.prefs.getBoolPref(this.closeOnReturnPrefName);
+    }
 };
 
 }).apply(gTabhunter);

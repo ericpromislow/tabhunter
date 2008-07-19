@@ -36,7 +36,7 @@
 #endif
   </keyset>
   
-  <vbox flex="1">
+  <vbox flex="1" id="th.v1">
     <grid>
       <columns>
         <column />
@@ -68,6 +68,14 @@
       ondblclick="gTabhunter.acceptTab();"
       flex="1"
       hidecolumnpicker="true" />
+    <hbox  id="th.v1.h1">
+      <label id="matchStatus" flex="2" />
+      <checkbox id="prefCloseOnReturn"
+                accesskey="&thTabhunter.closeOnReturnAccessKey;"
+                oncommand="gTabhunter.togglePrefCloseOnReturn(event, this)"
+                label="&thTabhunter.closeOnReturnLabel;Close on Return Key"
+                />
+    </hbox>
     <menupopup id='listPopupMenu'>
       <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo(this);"
                 id="th-lpm-go"/>
@@ -75,7 +83,6 @@
       <menuitem label="&thTabhunter.closeMenuItem;" oncommand="gTabhunter.contextClose(this);"
                 id="th-lpm-close"/>
     </menupopup>
-    <label id="matchStatus" />
   </vbox>
   <stringbundleset>
     <stringbundle id="strings" src="chrome://tabhunter/locale/strings.properties"/>
