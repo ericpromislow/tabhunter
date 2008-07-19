@@ -4,6 +4,8 @@
 <!ENTITY thTabhunter.uriLabel     "URI:" >
 <!ENTITY thTabhunter.patternLabel "Pattern:" >
 <!ENTITY thTabhunter.patternAccessKey "P" >
+<!ENTITY thTabhunter.closeOnReturnLabel "Close on Return Key" >
+<!ENTITY thTabhunter.closeOnReturnAccessKey "R" >
 <!ENTITY thTabhunter.goButton "Go" >
 <!ENTITY thTabhunter.closeButton "Close" >
 <!ENTITY thTabhunter.goMenuItem "Go to Tab" >
