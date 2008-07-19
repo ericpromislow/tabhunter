@@ -301,7 +301,7 @@ this.showCurrentURL = function() {
 this.onKeyPress = function(event)  {
     switch (event.keyCode) {
     case KeyEvent.DOM_VK_RETURN:
-        this.doAcceptTab(true);
+        this.doAcceptTab(true, event.ctrlKey);
         return false;
     case KeyEvent.DOM_VK_UP:
     case KeyEvent.DOM_VK_DOWN:
