@@ -73,7 +73,7 @@
       <checkbox id="prefCloseOnReturn"
                 accesskey="&thTabhunter.closeOnReturnAccessKey;"
                 oncommand="gTabhunter.togglePrefCloseOnReturn(event, this)"
-                label="&thTabhunter.closeOnReturnLabel;Close on Return Key"
+                label="&thTabhunter.closeOnReturnLabel;"
                 />
     </hbox>
     <menupopup id='listPopupMenu'>
