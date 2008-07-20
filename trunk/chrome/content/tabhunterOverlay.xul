@@ -25,13 +25,13 @@
       <image id="th-status-image" width="16" height="16" style="margin:0 5px"
              tooltiptext="&thTabhunter.tooltipText;"
              src="chrome://tabhunter/skin/martini-16x16.png"
-              onclick="if (!event.button) ep_extensions.tabhunter.launchDialog()"
+              onclick="if (!event.button) ep_extensions.tabhunter.launchDialog(event)"
               />
      </statusbarpanel>
  </statusbar>
   <commandset id="mainCommandSet">
     <command id="cmd_launchTabhunter"
-             oncommand="ep_extensions.tabhunter.launchDialog()"
+             oncommand="ep_extensions.tabhunter.launchDialog(null)"
              />
   </commandset>
   <keyset id="mainKeyset">

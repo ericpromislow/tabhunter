@@ -107,7 +107,7 @@ if (!("tabhunter" in ep_extensions)) {
                 ? -1 : (tab1.label_lc > tab2.label_lc ? 1 : 0));
     }
     
-    this.launchDialog = function() {
+    this.launchDialog = function(event) {
         // Look for the window first
         const th_uri = 'chrome://tabhunter/content/selectTabDialog.xul';
         var openWindows = this.wmService.getEnumerator(null);
@@ -121,9 +121,40 @@ if (!("tabhunter" in ep_extensions)) {
                 return;
             }
         } while(openWindows.hasMoreElements());
+        var features = 'chrome,titlebar,resizable=yes,minimizable=yes,close=yes,dialog=no';
+        if (this.isLinux()) {
+            // workaround bug http://code.google.com/p/tabhunter/issues/detail?id=12
+            // which is based on https://bugzilla.mozilla.org/show_bug.cgi?id=445674
+            // other platforms, rely on the moz persist mechanism
+            var x, y, props = {};
+            if (event && event.type == 'click') {
+                props.screenX = event.screenX - 250;
+                props.screenY = event.screenY - 400;
+            } else {
+                props = { screenX:null, screenY:null}
+            }
+            var prefs = (Components.classes['@mozilla.org/preferences-service;1']
+                  .getService(Components.interfaces.nsIPrefService)
+                  .getBranch('extensions.tabhunter.'));
+            for (var p in props) {
+                try {
+                    var val = prefs.getIntPref(p);
+                    props[p] = val;
+                } catch(ex) {
+                    // Nothing interesting to report -- either
+                    // it's the first time in, and the pref doesn't exist
+                    // or someone's been messing with it
+                }
+            }
+            for (var p in props) {
+                if (props[p] != null) {
+                    features += "," + p + "=" + props[p];
+                }
+            }
+        }
         window.openDialog(th_uri,
                           'tabhunterEx',
-                          'chrome,titlebar,resizable=yes,minimizable=yes,close=yes,dialog=no',
+                          features,
                           this);
     }
     this.dump = function(aMessage) {
@@ -131,5 +162,10 @@ if (!("tabhunter" in ep_extensions)) {
                                        .getService(Components.interfaces.nsIConsoleService);
         consoleService.logStringMessage("My component: " + aMessage);
     };
+    
+    this.isLinux = function() {
+        return navigator.platform.search(/linux/i) > -1;
+    }
+
     
 }).apply(ep_extensions.tabhunter);

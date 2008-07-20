@@ -367,6 +367,10 @@ this.onDoubleClick = function() {
 this.onUnload = function() {
     this.unregisterPrefsObserver();
     this.mainHunter.searchPattern = this.patternField.value;
+    if (this.mainHunter.isLinux()) {
+        this.prefs.setIntPref('screenX', screenX);
+        this.prefs.setIntPref('screenY', screenY);
+    }
     this._clearInfo();
 }
 
@@ -495,6 +499,7 @@ this.observe = function(subject, topic, prefName) {
     if (topic == "nsPref:changed" && prefName == this.closeOnReturnPrefName) {
         this.closeOnReturnCB.checked = this.prefs.getBoolPref(this.closeOnReturnPrefName);
     }
+    // We don't care about screenX or screenY
 };
 
 }).apply(gTabhunter);
