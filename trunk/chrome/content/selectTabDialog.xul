@@ -26,6 +26,9 @@
 
   <commandset id="tabhunterCommandSet">
     <command id="cmd_close"     oncommand="window.close();"/>
+    <command id="cmd_copyURL"   oncommand="gTabhunter.copyURL(event);"/>
+    <command id="cmd_copyTabTitle"   oncommand="gTabhunter.copyTabTitle(event);"/>
+    <command id="cmd_copyTabTitle_URL"   oncommand="gTabhunter.copyTabTitle_URL(event);"/>
   </commandset>
 
   <keyset>
@@ -34,6 +37,7 @@
 #ifdef XP_MACOSX
     <key key="."                 modifiers="meta"  command="cmd_close"/>
 #endif
+    <key key="&tabhunter.copyURL.AccessKey;" modifiers="accel" command="cmd_copyURL"/>
   </keyset>
   
   <vbox flex="1" id="th.v1">
@@ -77,11 +81,20 @@
                 />
     </hbox>
     <menupopup id='listPopupMenu'>
-      <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo(this);"
+      <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo();"
                 id="th-lpm-go"/>
-      <menuseparator id="th-lpm-sep" />
-      <menuitem label="&thTabhunter.closeMenuItem;" oncommand="gTabhunter.contextClose(this);"
+      <menuitem label="&thTabhunter.closeMenuItem;" oncommand="gTabhunter.contextClose();"
                 id="th-lpm-close"/>
+      <menuseparator id="th-lpm-sep" />
+      <menuitem label="&tabhunter.copyURL.MenuItem;"
+                command="cmd_copyURL"
+                id="th-lpm-copyURL"/>
+      <menuitem label="&tabhunter.copyTabTitle.MenuItem;"
+                command="cmd_copyTabTitle"
+                id="th-lpm-copyTabTitle"/>
+      <menuitem label="&tabhunter.copyURLAndTitle.MenuItem;"
+                command="cmd_copyTabTitle_URL"
+                id="th-lpm-copyBoth"/>
     </menupopup>
   </vbox>
   <stringbundleset>
