@@ -424,7 +424,7 @@ this.contextClose = function() {
     } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
 };
 
-this.contextGo = function(listitem) {
+this.contextGo = function() {
     try {
         var listItem = document.popupNode;
         listItem.parentNode.selectedItem = listItem;
@@ -432,6 +432,52 @@ this.contextGo = function(listitem) {
     } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
 };
 
+var copyToClipboard = function(str) {
+    const gClipboardHelper = Components.classes["@mozilla.org/widget/clipboardhelper;1"].
+        getService(Components.interfaces.nsIClipboardHelper);
+    gClipboardHelper.copyString(str);
+};
+
+this._getListitemLabel = function(event) {
+    var listitem = (event.sourceEvent.originalTarget.nodeName == 'menuitem'
+                    ? document.popupNode : null);
+    if (!listitem) {
+        listitem = this.currentTabList.selectedItem;
+    }
+    return listitem ? listitem.label : null;
+}
+
+this.copyURL = function(event) {
+    try {
+        var label = this._getListitemLabel(event);
+        if (!label) return;
+        var idx = label.lastIndexOf(" - ");
+        copyToClipboard(label.substring(idx + 3));
+    } catch(ex) {
+        this.tabhunterSession.dump(ex);
+    }
+};
+
+this.copyTabTitle = function(event) {
+    try {
+        var label = this._getListitemLabel(event);
+        if (!label) return;
+        var idx = label.lastIndexOf(" - ");
+        copyToClipboard(label.substring(0, idx));
+    } catch(ex) {
+        this.tabhunterSession.dump(ex);
+    }
+};
+
+this.copyTabTitle_URL = function(event) {
+    try {
+        var label = this._getListitemLabel(event);
+        if (!label) return;
+        copyToClipboard(label);
+    } catch(ex) {
+        this.tabhunterSession.dump(ex);
+    }
+};
 
 this.togglePrefCloseOnReturn = function(event, cbox) {
   this.prefs.setBoolPref(this.closeOnReturnPrefName, cbox.checked);

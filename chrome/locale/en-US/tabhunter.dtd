@@ -13,5 +13,7 @@
 <!ENTITY thTabs.label "Tabs" >
 <!ENTITY closeWindow.key "W" >
 <!ENTITY thTabhunter.accessKey "T" >
-
-
+<!ENTITY tabhunter.copyURL.MenuItem "Copy URL to Clipboard" >
+<!ENTITY tabhunter.copyTabTitle.MenuItem "Copy Tab Title" >
+<!ENTITY tabhunter.copyURLAndTitle.MenuItem "Copy URL and Title" >
+<!ENTITY tabhunter.copyURL.AccessKey "C" >
