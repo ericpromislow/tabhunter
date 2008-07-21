@@ -217,14 +217,9 @@ this._updateList = function(newTabs) {
         var oldLabel = this.labelFromList(j, true);
         var newLabel = newTab.label.toLowerCase();
         // figure out which item we'll select next time
-        if (currentLabel && finalCurrentIdx == -1) {
-            if (newLabel < currentLabel) {
-                currentIdx = i;
-            } else if (newLabel == currentLabel) {
-                finalCurrentIdx = j;
-            } else {
-                finalCurrentIdx = currentIdx;
-            }
+        if (currentLabel && finalCurrentIdx == -1
+            && newLabel >= currentLabel) {
+            finalCurrentIdx = j;
         }
         if (newLabel == oldLabel) {
             // re-assign the internal value field to point to the new list
