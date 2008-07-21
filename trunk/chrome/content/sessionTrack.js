@@ -217,7 +217,14 @@ TabhunterWatchSessionService.prototype = {
   },
 
   onTabLoad: function thst_onTabLoad(aWindow, aPanel, aEvent) {
-    this.reactorFunc.call(this.reactor);
+    var self = this;
+    setTimeout(function(self) {
+        try {
+        self.reactorFunc.call(self.reactor);
+        } catch(ex) {
+            this.dump(ex + "\n");
+        }
+    }, 60, self);
   },
 
   onTabMove: function thst_onTabSelect(aWindow, aPanels) {
