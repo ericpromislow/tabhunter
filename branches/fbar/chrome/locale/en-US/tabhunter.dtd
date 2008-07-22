@@ -1,0 +1,19 @@
+<!ENTITY thTabhunter.caption      "Tabhunter" >
+<!ENTITY thTabhunter.menuLabel    "Tabhunter" >
+<!ENTITY thTabhunter.tooltipText  "Tabhunter" >
+<!ENTITY thTabhunter.uriLabel     "URI:" >
+<!ENTITY thTabhunter.patternLabel "Pattern:" >
+<!ENTITY thTabhunter.patternAccessKey "P" >
+<!ENTITY thTabhunter.closeOnReturnLabel "Close on Return Key" >
+<!ENTITY thTabhunter.closeOnReturnAccessKey "R" >
+<!ENTITY thTabhunter.goButton "Go" >
+<!ENTITY thTabhunter.closeButton "Close" >
+<!ENTITY thTabhunter.goMenuItem "Go to Tab" >
+<!ENTITY thTabhunter.closeMenuItem "Close Tab" >
+<!ENTITY thTabs.label "Tabs" >
+<!ENTITY closeWindow.key "W" >
+<!ENTITY thTabhunter.accessKey "T" >
+<!ENTITY tabhunter.copyURL.MenuItem "Copy URL to Clipboard" >
+<!ENTITY tabhunter.copyTabTitle.MenuItem "Copy Tab Title" >
+<!ENTITY tabhunter.copyURLAndTitle.MenuItem "Copy URL and Title" >
+<!ENTITY tabhunter.copyURL.AccessKey "C" >

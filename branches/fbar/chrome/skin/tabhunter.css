@@ -1,0 +1,15 @@
+#view-url {
+    color:black;
+}
+
+#view-url.nohits {
+    color: #999999;
+}
+
+menupopup#listPopupMenu > menuitem {
+  border: 1px solid transparent;
+  padding: 1px 30px 1px 5px;
+  max-width: none;
+  font: message-box;
+  color: -moz-FieldText;
+}
