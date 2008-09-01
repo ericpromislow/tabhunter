@@ -4,7 +4,7 @@
     <Description about="urn:mozilla:install-manifest">
         <em:id>tabhunter@ericpromislow.com</em:id>
         <em:name>Tabhunter</em:name>
-        <em:version>0.6.9</em:version>
+        <em:version>0.7.0</em:version>
         <em:description>Find tabs in multiple windows</em:description>
         <em:creator>Eric Promislow</em:creator>
         <em:homepageURL>http://code.google.com/p/tabhunter/</em:homepageURL>
