@@ -135,7 +135,7 @@ this.testMatch = function(s) {
 };
 
 this._finishListItem = function(listitem, tab) {
-    listitem.setAttribute('class', 'listitem-iconic');
+    listitem.setAttribute('class', 'listitem-iconic listitemTabhunter');
     if (tab.image) {
         listitem.setAttribute('image', tab.image);
     //} else {

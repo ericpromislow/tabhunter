@@ -13,3 +13,7 @@ menupopup#listPopupMenu > menuitem {
   font: message-box;
   color: -moz-FieldText;
 }
+
+listitem.listitemTabhunter {
+    max-height: 8px !important;
+}
