@@ -94,10 +94,12 @@ TabhunterWatchSessionService.prototype = {
 
     switch (aTopic) {
     case "domwindowopened": // catch new windows
-      aSubject.addEventListener("load", function(aEvent) {
-        aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
-        _this.onLoad(aEvent.currentTarget, false);
-        }, false);
+        setTimeout(function(aSubject_) { 
+            aSubject_.addEventListener("load", function(aEvent) {
+                aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
+                _this.onLoad(aEvent.currentTarget, false);
+            }, false);
+            }, 1, aSubject);
       break;
     case "domwindowclosed": // catch closed windows
       this.onClose(aSubject);
@@ -162,9 +164,11 @@ TabhunterWatchSessionService.prototype = {
     var func = function(event) {
         self.handleEvent.call(self, event);
     }
-    tabContainer.addEventListener("TabOpen", func, false);
-    tabContainer.addEventListener("TabClose", func, false);
-    tabContainer.addEventListener("TabMove", func, false);
+    setTimeout(function(tabContainer_, func_) {
+            tabContainer_.addEventListener("TabOpen", func_, false);
+            tabContainer_.addEventListener("TabClose", func_, false);
+            tabContainer_.addEventListener("TabMove", func_, false);
+        }, 1, tabContainer, func);
     if (!aNoNotification)
         this.reactorFunc.call(this.reactor);
   },
@@ -196,7 +200,9 @@ TabhunterWatchSessionService.prototype = {
     var func = function(event) {
         self.handleEvent.call(self, event);
     }
-    aPanel.addEventListener("load", func, true);
+    setTimeout(function(aPanel_, func_) {
+            aPanel_.addEventListener("load", func_, true);
+        }, 1, aPanel, func);
     if (!aNoNotification)
         this.reactorFunc.call(this.reactor);
   },
