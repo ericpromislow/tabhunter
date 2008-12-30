@@ -46,14 +46,26 @@ const OBSERVING = [
   "domwindowopened", "domwindowclosed",
 ];
 
-function TabhunterWatchSessionService(reactor, func) {
+function TabhunterWatchSessionService(reactor, func, level) {
+
+    // logging levels:
+    this.log_debug = 0;
+    this.log_info = 1;
+    this.log_warn = 2;
+    this.log_error = 3;
+    this.log_exception = 4;
+
     this.reactor = reactor;
     this.reactorFunc = func;
+    if (typeof(level) == "undefined") level = this.log_error;
+    this.level = level;
 }
 
 TabhunterWatchSessionService.prototype = {
     
-    dump: function(aMessage) {
+  dump: function(aMessage, level) {
+    if (typeof(level) == "undefined") level = this.log_error;
+    if (level < this.level) return;
         try {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);
@@ -143,7 +155,7 @@ TabhunterWatchSessionService.prototype = {
    */
   onLoad: function thst_onLoad(aWindow, aNoNotification) {
     if (!aWindow) {
-        this.dump("!!! thst_onLoad: aWindow is null");
+        this.dump("!!! thst_onLoad: aWindow is null", this.log_debug);
         return;
     }
 
@@ -212,25 +224,35 @@ TabhunterWatchSessionService.prototype = {
     // aPanel.removeEventListener("load", func, true);
     var self = this;
     if (!aNoNotification) {
+        this.dump("About to do tab-remove before setTimeout\n", this.log_debug);
+        try {
         setTimeout(function(self) {
+                this.dump("About to do tab-remove in setTimeout\n", this.log_debug);
             try {
             self.reactorFunc.call(self.reactor);
             } catch(ex) {
-                this.dump(ex + "\n");
+                this.dump("Error in onTabRemove handler:\n" + ex + "\n");
             }
         }, 60, self);
+        } catch(ex2) {
+            this.dump("onTabRemove: Caught exception outside setTimeout" + ex2);
+        }
     }
   },
 
   onTabLoad: function thst_onTabLoad(aWindow, aPanel, aEvent) {
     var self = this;
+        try {
     setTimeout(function(self) {
         try {
         self.reactorFunc.call(self.reactor);
         } catch(ex) {
-            this.dump(ex + "\n");
+            this.dump("onTabLoad: " + ex + "\n");
         }
     }, 60, self);
+        } catch(ex2) {
+            this.dump("onTabLoad: Caught exception outside setTimeout; " + ex2);
+        }
   },
 
   onTabMove: function thst_onTabSelect(aWindow, aPanels) {
