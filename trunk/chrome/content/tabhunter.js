@@ -165,7 +165,83 @@ if (!("tabhunter" in ep_extensions)) {
     
     this.isLinux = function() {
         return navigator.platform.search(/linux/i) > -1;
-    }
+    };
+    
+    var this_ = this;
+    this.keypressWrapper = function(event) {
+        return this_.keypressHandler(event);
+    };
 
+    this.keypressHandler = function(event) {
+        var ctrlKey = event.ctrlKey;
+        var metaKey = event.metaKey;
+        if (!ctrlKey && !metaKey) return;
+        var altKey = event.altKey;
+        var shiftKey = event.shiftKey;
+        var kbLaunchKey = this.prefs.getCharPref(this.kbLaunchNames.userKey);
+        var charCode = event.charCode;
+        if (!charCode) {
+            return;
+        }
+        charCode = String.fromCharCode(charCode).toUpperCase();
+        if (charCode != kbLaunchKey) {
+            return;
+        }
+        var kbLaunchModifiers = this.prefs.getCharPref(this.kbLaunchNames.userModifiers); 
+        if (!!ctrlKey == (kbLaunchModifiers.indexOf('control') == -1)) {
+            return;
+        }
+        if (!!metaKey == (kbLaunchModifiers.indexOf('meta') == -1)) {
+            return;
+        }
+        if (!!altKey == (kbLaunchModifiers.indexOf('alt') == -1)) {
+            return;
+        }
+        if (!!shiftKey == (kbLaunchModifiers.indexOf('shift') == -1)) {
+            return;
+        }
+        // If we're here launch the  dude.
+        this.launchDialog(null);
+        
+    };
+
+    this.onload = function() {
+	this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
+	  .getService(Components.interfaces.nsIPrefService)
+	  .getBranch('extensions.tabhunter.'));
+        this.kbLaunchNames = {
+            factoryKey: 'kb-launch-factory-key',
+            factoryModifiers: 'kb-launch-factory-modifiers',
+            userKey: 'kb-launch-user-key',
+            userModifiers: 'kb-launch-user-modifiers'
+        }
+        var kbLaunchModifiers = (window.navigator.platform.search("Mac") == 0
+                                 ? "meta control"
+                                 : "control alt");
+        var kbLaunchKey = "T";
+        if (!this.prefs.prefHasUserValue(this.kbLaunchNames.factoryKey)) {
+            this.prefs.setCharPref(this.kbLaunchNames.factoryKey, kbLaunchKey);
+            this.prefs.setCharPref(this.kbLaunchNames.factoryModifiers, kbLaunchModifiers);
+        }
+        if (!this.prefs.prefHasUserValue(this.kbLaunchNames.userKey)) {
+            this.prefs.setCharPref(this.kbLaunchNames.userKey, kbLaunchKey);
+            this.prefs.setCharPref(this.kbLaunchNames.userModifiers, kbLaunchModifiers);
+        }
+	
+        document.addEventListener('keypress', this.keypressWrapper, false);
+    };
+
+    this.onunload = function() {
+        document.removeEventListener('keypress', this.keypressWrapper, false);
+    };
     
 }).apply(ep_extensions.tabhunter);
+
+window.addEventListener("load", 
+	function(e) { 
+		ep_extensions.tabhunter.onload(e); },
+	false);
+window.addEventListener("unload",
+        function(e) { 
+                ep_extensions.tabhunter.onunload(e); },
+        false);

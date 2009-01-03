@@ -34,10 +34,5 @@
              oncommand="ep_extensions.tabhunter.launchDialog(null)"
              />
   </commandset>
-  <keyset id="mainKeyset">
-    <key id="tabhunter_launchKey" modifiers="accel alt"   key="&thTabhunter.accessKey;"
-         command="cmd_launchTabhunter"
-         />
-  </keyset>
 
 </overlay>
