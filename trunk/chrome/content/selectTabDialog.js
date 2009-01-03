@@ -560,7 +560,6 @@ this.getPrintableKeyName = function(modifiers,key,keycode) {
 //XXX Handle keycodes as well.
 this.displayKeyConfigPopup = function(launchKey, launchModifiers) {
     try {
-    this.tabhunterSession.dump(">> displayKeyConfigPopup");
     var val = this.getPrintableKeyName(launchModifiers, launchKey, "");
     if (val) {
       document.getElementById("th-keyConfigPopup").value = val;
@@ -584,7 +583,6 @@ this.revertConfigKeyPress = function(event) {
 };
 
 this.handleConfigKeyPress = function(event) {
-    this.tabhunterSession.dump("stub: handleConfigKeyPress");
     // code taken from twitterfox (not under any license)
     event.preventDefault();
     event.stopPropagation();
