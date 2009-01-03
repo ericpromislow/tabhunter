@@ -87,6 +87,8 @@ this.onLoad = function() {
         window.document.title = title;
     }
     this.registerPrefsObserver();
+    
+    this.initKeyConfigPopup();
 };
 
 this.init = function() {
@@ -477,6 +479,142 @@ this.copyTabTitle_URL = function(event) {
         this.tabhunterSession.dump(ex);
     }
 };
+
+// Methods for managing the launch key
+
+this.initKeyConfigPopup = function() {
+    this.kbLaunchNames = {
+        factoryKey: 'kb-launch-factory-key',
+        factoryModifiers: 'kb-launch-factory-modifiers',
+        userKey: 'kb-launch-user-key',
+        userModifiers: 'kb-launch-user-modifiers'
+    }
+    var launchKey, launchModifiers;
+    if (this.prefs.prefHasUserValue(this.kbLaunchNames.userKey)) {
+        launchKey = this.prefs.getCharPref(this.kbLaunchNames.userKey);
+        launchModifiers = this.prefs.getCharPref(this.kbLaunchNames.userModifiers);
+    } else if (this.prefs.prefHasUserValue(this.kbLaunchNames.factoryKey)) {
+        launchKey = this.prefs.getCharPref(this.kbLaunchNames.factoryKey);
+        launchModifiers = this.prefs.getCharPref(this.kbLaunchNames.factoryModifiers);
+    } else {
+        launchKey = "T";
+        launchModifiers = (window.navigator.platform.search("Mac") == 0
+                                 ? "meta control"
+                                 : "control alt");
+    }
+    // Init the platform keys (code from twitterfox)
+    
+    this.localeKeys = document.getElementById("localeKeys");
+
+    var platformKeys = document.getElementById("platformKeys");
+    this.platformKeys = {};
+    this.platformKeys.shift   = platformKeys.getString("VK_SHIFT");
+    this.platformKeys.meta    = platformKeys.getString("VK_META");
+    this.platformKeys.alt     = platformKeys.getString("VK_ALT");
+    this.platformKeys.control = platformKeys.getString("VK_CONTROL");
+    this.platformKeys.sep     = platformKeys.getString("MODIFIER_SEPARATOR");
+
+    this.vkNames = {};
+    for (var property in KeyEvent) {
+      this.vkNames[KeyEvent[property]] = property.replace("DOM_","");
+    }
+    this.vkNames[8] = "VK_BACK";
+    this.displayKeyConfigPopup(launchKey, launchModifiers);
+};
+
+this.getPrintableKeyName = function(modifiers,key,keycode) {
+    if (modifiers == "shift,alt,control,accel" && keycode == "VK_SCROLL_LOCK") return "";
+    
+    if (!modifiers && !keycode) {
+      return "";
+    }
+    
+    var val = "";
+    if (modifiers) {
+        val = modifiers.replace(/^[\s,]+|[\s,]+$/g,"").split(/[\s,]+/g).join(this.platformKeys.sep);
+    }
+    
+    var  mod = ["alt", "shift", "control", "meta"];
+    for (var i in mod) {
+        val = val.replace(mod[i], this.platformKeys[mod[i]]);
+    }
+    
+    if (val) {
+        val += this.platformKeys.sep;
+    }
+    
+    if (key) {
+        val += key;
+    }
+    if (keycode) {
+      try {
+        val += this.localeKeys.getString(keycode);
+      }
+      catch(e) {
+        val += keycode;
+      }
+    }
+    return val;
+};
+
+//XXX Handle keycodes as well.
+this.displayKeyConfigPopup = function(launchKey, launchModifiers) {
+    try {
+    this.tabhunterSession.dump(">> displayKeyConfigPopup");
+    var val = this.getPrintableKeyName(launchModifiers, launchKey, "");
+    if (val) {
+      document.getElementById("th-keyConfigPopup").value = val;
+    } else {
+        this.tabhunterSession.dump("displayKeyConfigPopup: no val for key="
+                                   + launchKey
+                                   + ", mods:"
+                                   + launchModifiers);
+    }
+    } catch(ex) {
+        this.tabhunterSession.dump(ex);
+    }
+};
+
+this.revertConfigKeyPress = function(event) {
+    var launchKey = this.prefs.getCharPref(this.kbLaunchNames.factoryKey);
+    var launchModifiers = this.prefs.getCharPref(this.kbLaunchNames.factoryModifiers);
+    this.prefs.setCharPref(this.kbLaunchNames.userKey, launchKey);
+    this.prefs.setCharPref(this.kbLaunchNames.userModifiers, launchModifiers);
+    this.displayKeyConfigPopup(launchKey, launchModifiers);
+};
+
+this.handleConfigKeyPress = function(event) {
+    this.tabhunterSession.dump("stub: handleConfigKeyPress");
+    // code taken from twitterfox (not under any license)
+    event.preventDefault();
+    event.stopPropagation();
+
+    var modifiers = [];
+    if(event.altKey)   modifiers.push("alt");
+    if(event.ctrlKey)  modifiers.push("control");
+    if(event.metaKey)  modifiers.push("meta");
+    if(event.shiftKey) modifiers.push("shift");
+
+    modifiers = modifiers.join(" ");
+
+    var key = "";
+    var keycode = "";
+    if(event.charCode) {
+        key = String.fromCharCode(event.charCode).toUpperCase();
+        this.prefs.setCharPref(this.kbLaunchNames.userKey, key);
+        this.prefs.setCharPref(this.kbLaunchNames.userModifiers, modifiers);
+    } else {
+        //XXX Do something about keycodes
+        keycode = this.vkNames[event.keyCode];
+        if (!keycode) {
+            this.tabhunterSession.dump("handleConfigKeyPress: no vk-name for keyCode: " + event.keyCode);
+            return;
+        }
+    }
+    this.displayKeyConfigPopup(key || keycode, modifiers);
+    
+};
+
 
 this.togglePrefCloseOnReturn = function(event, cbox) {
   this.prefs.setBoolPref(this.closeOnReturnPrefName, cbox.checked);

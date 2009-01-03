@@ -80,6 +80,16 @@
                 label="&thTabhunter.closeOnReturnLabel;"
                 />
     </hbox>
+
+    <vbox  id="th.v1.v2">
+            <label control="th-keyConfigPopup" value="&th.togglePopup;"/>
+             <hbox align="center">
+	    <textbox id="th-keyConfigPopup"  flex="1"
+		     onclick="this.select()" onkeypress="gTabhunter.handleConfigKeyPress(event);"/>
+	    <button label="&th.revertKeyConfigPopup;" oncommand="gTabhunter.revertConfigKeyPress(event)"/>
+            </hbox>
+
+    </vbox>
     <menupopup id='listPopupMenu'>
       <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo();"
                 id="th-lpm-go"/>
@@ -99,5 +109,7 @@
   </vbox>
   <stringbundleset>
     <stringbundle id="strings" src="chrome://tabhunter/locale/strings.properties"/>
+    <stringbundle id="platformKeys" src="chrome://global-platform/locale/platformKeys.properties"/>
+    <stringbundle id="localeKeys" src="chrome://global/locale/keys.properties"/>
   </stringbundleset>
 </dialog>

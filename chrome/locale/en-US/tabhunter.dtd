@@ -17,3 +17,5 @@
 <!ENTITY tabhunter.copyTabTitle.MenuItem "Copy Tab Title" >
 <!ENTITY tabhunter.copyURLAndTitle.MenuItem "Copy URL and Title" >
 <!ENTITY tabhunter.copyURL.AccessKey "C" >
+<!ENTITY th.revertKeyConfigPopup "Revert" >
+<!ENTITY th.togglePopup "Show Tabhunter Key Binding:" >

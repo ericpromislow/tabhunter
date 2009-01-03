@@ -106,12 +106,16 @@ TabhunterWatchSessionService.prototype = {
 
     switch (aTopic) {
     case "domwindowopened": // catch new windows
-        setTimeout(function(aSubject_) { 
-            aSubject_.addEventListener("load", function(aEvent) {
-                aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
-                _this.onLoad(aEvent.currentTarget, false);
-            }, false);
+        try {
+            setTimeout(function(aSubject_) {
+                aSubject_.addEventListener("load", function(aEvent) {
+                    aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
+                    _this.onLoad(aEvent.currentTarget, false);
+                }, false);
             }, 1, aSubject);
+        } catch(ex) {
+            this.dump("observe:domwindowopened: " + ex)
+        }
       break;
     case "domwindowclosed": // catch closed windows
       this.onClose(aSubject);
