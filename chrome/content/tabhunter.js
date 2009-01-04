@@ -160,7 +160,7 @@ if (!("tabhunter" in ep_extensions)) {
     this.dump = function(aMessage) {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);
-        consoleService.logStringMessage("My component: " + aMessage);
+        consoleService.logStringMessage("tabhunter: " + aMessage);
     };
     
     this.isLinux = function() {
@@ -175,16 +175,24 @@ if (!("tabhunter" in ep_extensions)) {
     this.keypressHandler = function(event) {
         var ctrlKey = event.ctrlKey;
         var metaKey = event.metaKey;
-        if (!ctrlKey && !metaKey) return;
+        var keyCode = event.keyCode;
+        if (!ctrlKey && !metaKey && !keyCode) {
+            return;
+        }
         var altKey = event.altKey;
         var shiftKey = event.shiftKey;
         var kbLaunchKey = this.prefs.getCharPref(this.kbLaunchNames.userKey);
+        var launchIsKeyCode = this.prefs.getBoolPref(this.kbLaunchNames.userIsKeyCode);
         var charCode = event.charCode;
-        if (!charCode) {
+        if ((!!charCode) == launchIsKeyCode) {
             return;
         }
-        charCode = String.fromCharCode(charCode).toUpperCase();
-        if (charCode != kbLaunchKey) {
+        if (charCode) {
+            charCode = String.fromCharCode(charCode).toUpperCase();
+            if (charCode != kbLaunchKey) {
+                return;
+            }
+        } else if (event.keyCode != kbLaunchKey) {
             return;
         }
         var kbLaunchModifiers = this.prefs.getCharPref(this.kbLaunchNames.userModifiers); 
@@ -212,8 +220,10 @@ if (!("tabhunter" in ep_extensions)) {
         this.kbLaunchNames = {
             factoryKey: 'kb-launch-factory-key',
             factoryModifiers: 'kb-launch-factory-modifiers',
+            factoryIsKeyCode: 'kb-launch-factory-isKeyCode',
             userKey: 'kb-launch-user-key',
-            userModifiers: 'kb-launch-user-modifiers'
+            userModifiers: 'kb-launch-user-modifiers',
+            userIsKeyCode: 'kb-launch-user-isKeyCode'
         }
         var kbLaunchModifiers = (window.navigator.platform.search("Mac") == 0
                                  ? "meta control"
@@ -226,6 +236,13 @@ if (!("tabhunter" in ep_extensions)) {
         if (!this.prefs.prefHasUserValue(this.kbLaunchNames.userKey)) {
             this.prefs.setCharPref(this.kbLaunchNames.userKey, kbLaunchKey);
             this.prefs.setCharPref(this.kbLaunchNames.userModifiers, kbLaunchModifiers);
+        }
+        // patch - yikes
+        if (!this.prefs.prefHasUserValue(this.kbLaunchNames.factoryIsKeyCode)) {
+            this.prefs.setBoolPref(this.kbLaunchNames.factoryIsKeyCode, false);
+        }
+        if (!this.prefs.prefHasUserValue(this.kbLaunchNames.userIsKeyCode)) {
+            this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, false);
         }
 	
         document.addEventListener('keypress', this.keypressWrapper, false);
