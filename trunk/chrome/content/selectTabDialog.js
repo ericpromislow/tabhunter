@@ -486,21 +486,26 @@ this.initKeyConfigPopup = function() {
     this.kbLaunchNames = {
         factoryKey: 'kb-launch-factory-key',
         factoryModifiers: 'kb-launch-factory-modifiers',
+        factoryIsKeyCode: 'kb-launch-factory-isKeyCode',
         userKey: 'kb-launch-user-key',
-        userModifiers: 'kb-launch-user-modifiers'
-    }
-    var launchKey, launchModifiers;
+        userModifiers: 'kb-launch-user-modifiers',
+        userIsKeyCode: 'kb-launch-user-isKeyCode'
+    };
+    var launchKey, launchModifiers, launchIsKeyCode;
     if (this.prefs.prefHasUserValue(this.kbLaunchNames.userKey)) {
         launchKey = this.prefs.getCharPref(this.kbLaunchNames.userKey);
+        launchIsKeyCode = this.prefs.getBoolPref(this.kbLaunchNames.userIsKeyCode);
         launchModifiers = this.prefs.getCharPref(this.kbLaunchNames.userModifiers);
     } else if (this.prefs.prefHasUserValue(this.kbLaunchNames.factoryKey)) {
         launchKey = this.prefs.getCharPref(this.kbLaunchNames.factoryKey);
         launchModifiers = this.prefs.getCharPref(this.kbLaunchNames.factoryModifiers);
+        launchIsKeyCode = this.prefs.getBoolPref(this.kbLaunchNames.factoryIsKeyCode);
     } else {
         launchKey = "T";
         launchModifiers = (window.navigator.platform.search("Mac") == 0
                                  ? "meta control"
                                  : "control alt");
+        launchIsKeyCode = false;
     }
     // Init the platform keys (code from twitterfox)
     
@@ -519,7 +524,11 @@ this.initKeyConfigPopup = function() {
       this.vkNames[KeyEvent[property]] = property.replace("DOM_","");
     }
     this.vkNames[8] = "VK_BACK";
-    this.displayKeyConfigPopup(launchKey, launchModifiers);
+    if (!launchIsKeyCode) {
+        this.displayKeyConfigPopup(launchKey, "", launchModifiers);
+    } else {
+        this.displayKeyConfigPopup("", this.vkNames[launchKey], launchModifiers);
+    }
 };
 
 this.getPrintableKeyName = function(modifiers,key,keycode) {
@@ -558,9 +567,9 @@ this.getPrintableKeyName = function(modifiers,key,keycode) {
 };
 
 //XXX Handle keycodes as well.
-this.displayKeyConfigPopup = function(launchKey, launchModifiers) {
+this.displayKeyConfigPopup = function(launchKey, launchKeyCode, launchModifiers) {
     try {
-    var val = this.getPrintableKeyName(launchModifiers, launchKey, "");
+    var val = this.getPrintableKeyName(launchModifiers, launchKey, launchKeyCode);
     if (val) {
       document.getElementById("th-keyConfigPopup").value = val;
     } else {
@@ -577,9 +586,15 @@ this.displayKeyConfigPopup = function(launchKey, launchModifiers) {
 this.revertConfigKeyPress = function(event) {
     var launchKey = this.prefs.getCharPref(this.kbLaunchNames.factoryKey);
     var launchModifiers = this.prefs.getCharPref(this.kbLaunchNames.factoryModifiers);
+    var launchIsKeyCode = this.prefs.getBoolPref(this.kbLaunchNames.factoryIsKeyCode);
     this.prefs.setCharPref(this.kbLaunchNames.userKey, launchKey);
     this.prefs.setCharPref(this.kbLaunchNames.userModifiers, launchModifiers);
-    this.displayKeyConfigPopup(launchKey, launchModifiers);
+    this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, launchIsKeyCode);
+    if (launchIsKeyCode) {
+        this.displayKeyConfigPopup("", launchKey, launchModifiers);
+    } else {
+        this.displayKeyConfigPopup(launchKey, "", launchModifiers);
+    }
 };
 
 this.handleConfigKeyPress = function(event) {
@@ -597,19 +612,20 @@ this.handleConfigKeyPress = function(event) {
 
     var key = "";
     var keycode = "";
-    if(event.charCode) {
-        key = String.fromCharCode(event.charCode).toUpperCase();
-        this.prefs.setCharPref(this.kbLaunchNames.userKey, key);
-        this.prefs.setCharPref(this.kbLaunchNames.userModifiers, modifiers);
+    var prefKey = "";
+    if (event.charCode) {
+        prefKey = key = String.fromCharCode(event.charCode).toUpperCase();
     } else {
-        //XXX Do something about keycodes
-        keycode = this.vkNames[event.keyCode];
+        keycode = this.vkNames[prefKey = event.keyCode];
         if (!keycode) {
             this.tabhunterSession.dump("handleConfigKeyPress: no vk-name for keyCode: " + event.keyCode);
             return;
         }
     }
-    this.displayKeyConfigPopup(key || keycode, modifiers);
+    this.prefs.setCharPref(this.kbLaunchNames.userKey, prefKey);
+    this.prefs.setCharPref(this.kbLaunchNames.userModifiers, modifiers);
+    this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, !event.charCode);
+    this.displayKeyConfigPopup(key, keycode, modifiers);
     
 };
 
