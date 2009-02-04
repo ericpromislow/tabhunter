@@ -71,6 +71,7 @@
       onselect="gTabhunter.selectTab()"
       ondblclick="gTabhunter.acceptTab();"
       flex="1"
+      seltype="multiple"
       hidecolumnpicker="true" />
     <hbox  id="th.v1.h1">
       <label id="matchStatus" flex="2" />
@@ -90,7 +91,7 @@
             </hbox>
 
     </vbox>
-    <menupopup id='listPopupMenu'>
+    <menupopup id='listPopupMenu' onpopupshowing="gTabhunter.showListPopupMenu(this);">
       <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo();"
                 id="th-lpm-go"/>
       <menuitem label="&thTabhunter.closeMenuItem;" oncommand="gTabhunter.contextClose();"

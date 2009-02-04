@@ -34,22 +34,21 @@ this.onLoad = function() {
     var self= this;
     this.currentTabList.addEventListener('mousedown',
         function(event) {
-            if (event.button == 2) {// context button
+            if (event.button == 2 && self.currentTabList.selectedCount == 0) {// context button
                 var listitem = event.originalTarget;
                 if (listitem && listitem.nodeName == "listitem") {
                     listitem.parentNode.selectItem(listitem);
                 }
             }
-            
         }, true);
-    var self = this;
+    
     this.currentTabList.addEventListener('keypress',
         function(event) {
             if (event.keyCode == 13) {
                 // treat return in listbox same as in pattern
                 event.stopPropagation();
                 event.preventDefault();
-                if (event.target.nodeName == "listbox") {
+                if (event.target.nodeName == "listbox" && this.numSelectedItems == 1) {
                     self.doAcceptTab(true);
                 }
                 return false;
@@ -86,6 +85,7 @@ this.onLoad = function() {
         title += " - " + s;
         window.document.title = title;
     }
+    this.eol = navigator.platform.toLowerCase().indexOf("win32") >= 0 ?  "\r\n" : "\n";
     this.registerPrefsObserver();
     
     this.initKeyConfigPopup();
@@ -408,9 +408,33 @@ this.rebuildView = function() {
     this.updateList();
 }
 
+this.showListPopupMenu = function(listPopupMenu) {
+    try {
+        var numSelectedItems = this.currentTabList.selectedCount;
+        var goMenuItem = document.getElementById("th-lpm-go");
+        if (numSelectedItems == 1) {
+            goMenuItem.removeAttribute('disabled');
+        } else {
+            goMenuItem.setAttribute('disabled', 'true');
+        }
+    } catch(ex) {
+        alert(ex);
+    }
+};
+
 this.contextClose = function() {
     try {
-        var li = document.popupNode;
+        var items = document.popupNode.parentNode.selectedItems;
+        for (var li, i=0; li = items[i]; ++i) {
+            this.closeListItem(li);
+        }
+    } catch(ex) {
+        this.tabhunterSession.dump("contextClose: " + ex);
+    }
+};
+
+this.closeListItem = function(li) {
+    try {
         var idx = li.value;
         var thTab = this.allTabs[idx];
         var windowInfo = this.windowInfo[thTab.windowIdx];
@@ -439,45 +463,50 @@ var copyToClipboard = function(str) {
     gClipboardHelper.copyString(str);
 };
 
-this._getListitemLabel = function(event) {
-    var listitem = (event.sourceEvent.originalTarget.nodeName == 'menuitem'
-                    ? document.popupNode : null);
-    if (!listitem) {
-        listitem = this.currentTabList.selectedItem;
+this._getListitemLabels = function() {
+    var listitems = this.currentTabList.selectedItems;
+    var labels = [];
+    for (var li, i = 0; li = listitems[i]; i++) {
+        var label = li.label;
+        if (label) labels.push(label);
     }
-    return listitem ? listitem.label : null;
+    return labels;
 }
 
-this.copyURL = function(event) {
+this.doCopyURLParts = function(func) {
     try {
-        var label = this._getListitemLabel(event);
-        if (!label) return;
-        var idx = label.lastIndexOf(" - ");
-        copyToClipboard(label.substring(idx + 3));
+        var labels = this._getListitemLabels();
+        var urls = [];
+        for (var label, i = 0; label = labels[i]; i++) {
+            urls.push(func(label));
+        }
+        if (urls.length > 0) {
+            copyToClipboard(urls.join(this.eol));
+        }
     } catch(ex) {
         this.tabhunterSession.dump(ex);
     }
 };
 
+this.copyURL = function(event) {
+    this.doCopyURLParts(function(s) {
+        var idx = s.lastIndexOf(" - ");
+        return s.substring(idx + 3)
+    });
+};
+
+
 this.copyTabTitle = function(event) {
-    try {
-        var label = this._getListitemLabel(event);
-        if (!label) return;
-        var idx = label.lastIndexOf(" - ");
-        copyToClipboard(label.substring(0, idx));
-    } catch(ex) {
-        this.tabhunterSession.dump(ex);
-    }
+    this.doCopyURLParts(function(s) {
+        var idx = s.lastIndexOf(" - ");
+        return s.substring(0, idx);
+    });
 };
 
 this.copyTabTitle_URL = function(event) {
-    try {
-        var label = this._getListitemLabel(event);
-        if (!label) return;
-        copyToClipboard(label);
-    } catch(ex) {
-        this.tabhunterSession.dump(ex);
-    }
+    this.doCopyURLParts(function(s) {
+        return s;
+    });
 };
 
 // Methods for managing the launch key
