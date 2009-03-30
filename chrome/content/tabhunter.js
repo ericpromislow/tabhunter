@@ -244,12 +244,24 @@ if (!("tabhunter" in ep_extensions)) {
         if (!this.prefs.prefHasUserValue(this.kbLaunchNames.userIsKeyCode)) {
             this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, false);
         }
-	
-        document.addEventListener('keypress', this.keypressWrapper, false);
+	setTimeout(function(prefs, self, document) {
+            var showStatusBarIcon = prefs.getBoolPref('showStatusBarIcon');
+            var showMenuItem = prefs.getBoolPref('showMenuItem');
+            document.getElementById("th-status-image").collapsed = !showStatusBarIcon;
+            document.getElementById("menuitem_EPExt_TabhunterLaunch").hidden = !showMenuItem;
+            document.addEventListener('keypress', self.keypressWrapper, false);
+        }, 100, this.prefs, this, window.document);
     };
 
     this.onunload = function() {
         document.removeEventListener('keypress', this.keypressWrapper, false);
+    };
+    
+    this.showPreferences = function(event) {
+        var features = 'chrome,titlebar,resizable=yes,close=yes,dialog=no';
+        window.openDialog('chrome://tabhunter/content/prefs.xul',
+                          'TabhunterPrefs',
+                          features);
     };
     
 }).apply(ep_extensions.tabhunter);

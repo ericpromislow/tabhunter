@@ -19,3 +19,9 @@
 <!ENTITY tabhunter.copyURL.AccessKey "C" >
 <!ENTITY th.revertKeyConfigPopup "Revert" >
 <!ENTITY th.togglePopup "Show Tabhunter Key Binding:" >
+
+<!ENTITY th.prefs.tabhunterPrefs.label "Tabhunter Prefs">
+<!ENTITY th.prefs.tabhunterPrefs.groupBox.label "Tabhunter Prefs">
+
+<!ENTITY th.prefs.showStatusBarIcon.label "Show Status Bar Icon">
+<!ENTITY th.prefs.showMenuItem.label "Show Menu Item">
