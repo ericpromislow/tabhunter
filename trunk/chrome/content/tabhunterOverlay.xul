@@ -25,8 +25,19 @@
       <image id="th-status-image" width="16" height="16" style="margin:0 5px"
              tooltiptext="&thTabhunter.tooltipText;"
              src="chrome://tabhunter/skin/martini-16x16.png"
-              onclick="if (!event.button) ep_extensions.tabhunter.launchDialog(event)"
-              />
+             onpopupshowing='ep_extensions.tabhunter.showPreferences(event); event.stopPropagation();'
+              onclick="if (!event.button) ep_extensions.tabhunter.launchDialog(event);"
+              context="th-status-image-popup"
+              >
+       <popup id="th-status-image-popup"
+                    >
+
+          <menuitem id="th-status-image-popup-prefs"
+                    label="Preferences"
+                    oncommand="ep_extensions.tabhunter.showPreferences();"
+                    />
+        </popup>
+      </image>
      </statusbarpanel>
  </statusbar>
   <commandset id="mainCommandSet">
