@@ -244,15 +244,6 @@ if (!("tabhunter" in ep_extensions)) {
         if (!this.prefs.prefHasUserValue(this.kbLaunchNames.userIsKeyCode)) {
             this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, false);
         }
-        if (!this.prefs.prefHasUserValue('closeOnReturn')) {
-            this.prefs.setBoolPref('closeOnReturn', true);
-        }
-        if (!this.prefs.prefHasUserValue('showStatusBarIcon')) {
-            this.prefs.setBoolPref('showStatusBarIcon', true);
-        }
-        if (!this.prefs.prefHasUserValue('showMenuItem')) {
-            this.prefs.setBoolPref('showMenuItem', true);
-        }
 	 setTimeout(function(prefs, self, document) {
             var showStatusBarIcon = prefs.getBoolPref('showStatusBarIcon');
             var showMenuItem = prefs.getBoolPref('showMenuItem');

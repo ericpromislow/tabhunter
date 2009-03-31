@@ -36,15 +36,6 @@ this.onLoad = function() {
             }, 0);
     }
     this.initKeyConfigPopup();
-    if (!this.prefs.prefHasUserValue('closeOnReturn')) {
-        this.prefs.setBoolPref('closeOnReturn', true);
-    }
-    if (!this.prefs.prefHasUserValue('showStatusBarIcon')) {
-        this.prefs.setBoolPref('showStatusBarIcon', true);
-    }
-    if (!this.prefs.prefHasUserValue('showMenuItem')) {
-        this.prefs.setBoolPref('showMenuItem', true);
-    }
     this.dialog = {};
     this.dialog.showStatusBarIcon = document.getElementById("th-showStatusBarIcon");
     this.dialog.showMenuItem = document.getElementById("th-showMenuItem");
