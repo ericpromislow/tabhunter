@@ -12,9 +12,6 @@ this.onLoad = function() {
     this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
                   .getService(Components.interfaces.nsIPrefService)
                   .getBranch('extensions.tabhunter.'));
-    if (!this.prefs.prefHasUserValue('closeOnReturn')) {
-        this.prefs.setBoolPref('closeOnReturn', true);
-    }
     this.acceptedItem = "";
     this.patternField = document.getElementById('pattern');
     this.patternField.value = this.mainHunter.searchPattern;
@@ -42,7 +39,7 @@ this.onLoad = function() {
                 // treat return in listbox same as in pattern
                 event.stopPropagation();
                 event.preventDefault();
-                if (event.target.nodeName == "listbox" && this.numSelectedItems == 1) {
+                if (event.target.nodeName == "listbox" && self.currentTabList.selectedCount == 1) {
                     self.doAcceptTab(true);
                 }
                 return false;

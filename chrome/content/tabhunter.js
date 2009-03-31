@@ -244,13 +244,22 @@ if (!("tabhunter" in ep_extensions)) {
         if (!this.prefs.prefHasUserValue(this.kbLaunchNames.userIsKeyCode)) {
             this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, false);
         }
-	setTimeout(function(prefs, self, document) {
+        if (!this.prefs.prefHasUserValue('closeOnReturn')) {
+            this.prefs.setBoolPref('closeOnReturn', true);
+        }
+        if (!this.prefs.prefHasUserValue('showStatusBarIcon')) {
+            this.prefs.setBoolPref('showStatusBarIcon', true);
+        }
+        if (!this.prefs.prefHasUserValue('showMenuItem')) {
+            this.prefs.setBoolPref('showMenuItem', true);
+        }
+	 setTimeout(function(prefs, self, document) {
             var showStatusBarIcon = prefs.getBoolPref('showStatusBarIcon');
             var showMenuItem = prefs.getBoolPref('showMenuItem');
             document.getElementById("th-status-image").collapsed = !showStatusBarIcon;
             document.getElementById("menuitem_EPExt_TabhunterLaunch").hidden = !showMenuItem;
             document.addEventListener('keypress', self.keypressWrapper, false);
-        }, 100, this.prefs, this, window.document);
+     }, 100, this.prefs, this, window.document);
     };
 
     this.onunload = function() {

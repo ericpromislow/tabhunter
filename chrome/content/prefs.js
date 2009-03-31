@@ -13,9 +13,28 @@ const prefNames = ['closeOnReturn','showStatusBarIcon', 'showMenuItem'];
 
 this.onLoad = function() {
     try {
+        var parentWindow = opener;
+        if (parentWindow.document.documentElement.getAttribute('windowtype')
+            == "Extension:Manager") {
+            parentWindow = parentWindow.opener;
+        }
+    this.mainHunter = parentWindow.ep_extensions.tabhunter;
     this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
                   .getService(Components.interfaces.nsIPrefService)
                   .getBranch('extensions.tabhunter.'));
+    if (this.mainHunter.isLinux()) {
+        var x = screenX;
+        var y = screenY;
+        if (this.prefs.prefHasUserValue('screenX')) {
+            x = this.prefs.getIntPref('screenX');
+        }
+        if (this.prefs.prefHasUserValue('screenY')) {
+            y = this.prefs.getIntPref('screenY');
+        }
+        setTimeout(function() {
+                window.moveTo(x, y);
+            }, 0);
+    }
     this.initKeyConfigPopup();
     if (!this.prefs.prefHasUserValue('closeOnReturn')) {
         this.prefs.setBoolPref('closeOnReturn', true);
@@ -35,6 +54,10 @@ this.onLoad = function() {
 };
 
 this.onUnload = function() {
+    if (this.mainHunter.isLinux()) {
+        this.prefs.setIntPref('screenX', screenX);
+        this.prefs.setIntPref('screenY', screenY);
+    }
 };
 
 this.onSubmit = function() {
