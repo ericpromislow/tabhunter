@@ -258,7 +258,7 @@ if (!("tabhunter" in ep_extensions)) {
     };
     
     this.showPreferences = function(event) {
-        var features = 'chrome,titlebar,resizable=yes,close=yes,dialog=no';
+        var features = 'chrome,titlebar,toolbar=no,close=yes,dialog=no';
         window.openDialog('chrome://tabhunter/content/prefs.xul',
                           'TabhunterPrefs',
                           features);
