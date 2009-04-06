@@ -156,7 +156,8 @@ if (!("tabhunter" in ep_extensions)) {
                           'tabhunterEx',
                           features,
                           this);
-    }
+    };
+        
     this.dump = function(aMessage) {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);
@@ -214,6 +215,9 @@ if (!("tabhunter" in ep_extensions)) {
     };
 
     this.onload = function() {
+        if (document.documentElement.getAttribute('windowtype') != 'navigator:browser') {
+            return;
+        }
 	this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
 	  .getService(Components.interfaces.nsIPrefService)
 	  .getBranch('extensions.tabhunter.'));
@@ -244,17 +248,30 @@ if (!("tabhunter" in ep_extensions)) {
         if (!this.prefs.prefHasUserValue(this.kbLaunchNames.userIsKeyCode)) {
             this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, false);
         }
+        // wait 5 seconds -- on the mac the status bar icon isn't always present yet.
 	 setTimeout(function(prefs, self, document) {
             var showStatusBarIcon = prefs.getBoolPref('showStatusBarIcon');
             var showMenuItem = prefs.getBoolPref('showMenuItem');
             document.getElementById("th-status-image").collapsed = !showStatusBarIcon;
             document.getElementById("menuitem_EPExt_TabhunterLaunch").hidden = !showMenuItem;
             document.addEventListener('keypress', self.keypressWrapper, false);
-     }, 100, this.prefs, this, window.document);
+     }, 500, this.prefs, this, window.document);
     };
 
     this.onunload = function() {
         document.removeEventListener('keypress', this.keypressWrapper, false);
+    };
+
+    this.doCommand = function(event) {
+        switch(event.button) {
+        case 0: 
+            this.launchDialog(event);
+            break;
+        case 2:
+            event.preventDefault();
+            this.showPreferences();
+            break;
+        }
     };
     
     this.showPreferences = function(event) {

@@ -1,3 +1,11 @@
+toolbar[iconsize="small"] #tabhunterToolbarIcon {
+  list-style-image: url("chrome://tabhunter/skin/martini-16x16.png");
+}
+
+#tabhunterToolbarIcon {
+  list-style-image: url("chrome://tabhunter/skin/martini-24x24.png");
+}
+
 #view-url {
     color:black;
 }
