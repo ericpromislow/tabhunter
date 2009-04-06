@@ -2,25 +2,25 @@
 <RDF:RDF xmlns:em="http://www.mozilla.org/2004/em-rdf#"
          xmlns:NC="http://home.netscape.com/NC-rdf#"
          xmlns:RDF="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-  <RDF:Description RDF:about="rdf:#$J9T9z1"
+  <RDF:Description RDF:about="rdf:#Firefox"
                    em:id="{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
                    em:minVersion="2.0"
                    em:maxVersion="3.1b3" />
+  <RDF:Description RDF:about="rdf:#Flock"
+                   em:id="{a463f10c-3994-11da-9945-000d60ca027b}"
+                   em:minVersion="1.1.4"
+                   em:maxVersion="3.*" />
   <RDF:Description RDF:about="urn:mozilla:install-manifest"
                    em:id="tabhunter@ericpromislow.com"
                    em:name="Tabhunter"
-                   em:version="0.8.1"
+                   em:version="0.8.2"
                    em:description="Find tabs in multiple windows"
                    em:creator="Eric Promislow"
                    em:homepageURL="http://code.google.com/p/tabhunter/"
                    em:type="2"
                    em:iconURL="chrome://tabhunter/skin/tabhunter-install.png"
                    em:optionsURL="chrome://tabhunter/content/prefs.xul">
-    <em:targetApplication RDF:resource="rdf:#$J9T9z1"/>
-    <em:targetApplication RDF:resource="rdf:#$O9T9z1"/>
+    <em:targetApplication RDF:resource="rdf:#Firefox"/>
+    <em:targetApplication RDF:resource="rdf:#Flock"/>
   </RDF:Description>
-  <RDF:Description RDF:about="rdf:#$O9T9z1"
-                   em:id="{a463f10c-3994-11da-9945-000d60ca027b}"
-                   em:minVersion="1.1.4"
-                   em:maxVersion="3.*" />
 </RDF:RDF>

@@ -3,3 +3,4 @@ overlay chrome://browser/content/browser.xul chrome://tabhunter/content/tabhunte
 
 locale tabhunter en-US jar:chrome/tabhunter.jar!/locale/en-US/
 skin tabhunter classic/1.0 jar:chrome/tabhunter.jar!/skin/
+style	chrome://global/content/customizeToolbar.xul chrome://tabhunter/skin/tabhunter.css

@@ -11,11 +11,12 @@ cat << ZAK | zip tabhunter.jar -@
 ./locale/en-US/tabhunter.dtd
 ./locale/en-US/strings.properties
 ./skin/martini-16x16.png
+./skin/martini-24x24.png
 ./skin/tabhunter-install.png
 ./skin/tabhunter.css
 ZAK
 # zip -r tabhunter.jar content locale skin
 cd ..
-T=tabhunter-0.8.1.xpi
+T=tabhunter-0.8.2.xpi
 rm -f $T
 zip $T  chrome.manifest install.rdf chrome/tabhunter.jar defaults/preferences/prefs.js
