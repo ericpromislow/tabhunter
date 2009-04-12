@@ -372,9 +372,11 @@ this.doAcceptTabByIdx = function(tabIdx) {
     var windowIdx = tabInfo.windowIdx;
     var windowInfo = this.windowInfo[windowIdx];
     var targetWindow = windowInfo.window;
-    var tabContainer = targetWindow.getBrowser().tabContainer;
+    var targetBrowser = targetWindow.getBrowser();
+    var tabContainer = targetBrowser.tabContainer;
     tabContainer.selectedIndex = tabInfo.tabIdx;
     targetWindow.focus();
+    targetBrowser.contentWindow.focus();
 };
 
 this.onAccept = function() {
