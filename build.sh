@@ -21,4 +21,5 @@ T=tabhunter-0.8.6.xpi
 rm -f $T
 zip $T  chrome.manifest install.rdf chrome/tabhunter.jar defaults/preferences/prefs.js
 
-# bogus comment testing bug29688
+# bogus comment testing bug29688.
+# Small change
