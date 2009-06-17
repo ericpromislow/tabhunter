@@ -23,3 +23,4 @@ zip $T  chrome.manifest install.rdf chrome/tabhunter.jar defaults/preferences/pr
 
 # bogus comment testing bug29688.
 # Small change
+# Small change #3
