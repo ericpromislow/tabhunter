@@ -215,7 +215,7 @@ this.handleConfigKeyPress = function(event) {
     if(event.shiftKey) modifiers.push("shift");
 
     modifiers = modifiers.join(" ");
-
+// force change
     var key = "";
     var keycode = "";
     var prefKey = "";
