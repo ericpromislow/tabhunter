@@ -33,3 +33,9 @@
 <!ENTITY thTSRegularExpression.checkbox "Regular expression">
 <!ENTITY thTSXPath.checkbox "XPath">
 <!ENTITY thTSSearchCurrentSubsetOnly.checkbox "Search current matched set only">
+<!ENTITY thTS.hideButton "Hide" >
+<!ENTITY thTS.searchButton "Search" >
+<!ENTITY thTS.cancelButton "Cancel" >
+<!ENTITY thTS.URL.treecol "URL" >
+<!ENTITY thTS.title.treecol "Title" >
+<!ENTITY thTS.match.treecol "Match" >
