@@ -76,6 +76,11 @@
     
     <hbox  id="th.v1.h1">
       <label id="matchStatus" flex="2" />
+      <spacer flex="1" />
+      <button id="searchText.button"
+              oncommand="gTabhunter.onLaunchTextSearch();"
+              label="Search Text...14"
+              />
     </hbox>
 
     <menupopup id='listPopupMenu' onpopupshowing="gTabhunter.showListPopupMenu(this);">

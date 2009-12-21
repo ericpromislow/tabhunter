@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<!DOCTYPE dialog PUBLIC "-//MOZILLA//DTD XUL V1.0//EN" "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" [
+
+  <!ENTITY % tabhunterLocale SYSTEM "chrome://tabhunter/locale/tabhunter.dtd">
+  %tabhunterLocale;
+]>
+
+<?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
+<?xml-stylesheet href="chrome://tabhunter/skin/tabhunter.css" type="text/css"?>
+
+<dialog id="tabhunter-textSearch-dialog"
+        xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+        persist="screenX screenY width height"
+        title="&thTextSearchDialog.caption;"
+        buttons="extra1,extra2"
+        buttonlabelextra1="&thTabhunter.goButton;"
+        buttonlabelextra2="&thTabhunter.closeButton;"
+        ondialogextra1="return onGoCurrentLine();"
+        ondialogextra2="onClose();"
+        onload="return onLoad();"
+        onunload="onUnload();"
+        >
+
+  <script type="application/x-javascript" src="chrome://tabhunter/content/tabhunter.js" />
+  <script type="application/x-javascript" src="chrome://tabhunter/content/textSearchDialog.js" />
+
+  <vbox flex="1" id="ts.v1">
+    <hbox id="ts.v1-h1">
+        <label id="label-pattern0" value="&thTabhunter.patternLabel;"
+               accesskey="&thTextSearchPattern.accessKey;" 
+               control='pattern' />
+        <textbox id="pattern"
+                 flex="1"
+                  oninput="return onInput(this)"
+                  onkeypress="return onKeyPress(event)"/>
+    </hbox>
+    <hbox id="ts.v1-h2">
+        <checkbox id="ts-ignore-case"
+                  label="&thTSIgnoreCase.checkbox;"
+                  flex="1"
+                  />
+        <checkbox id="ts-regex"
+                  label="&thTSRegularExpression.checkbox;"
+                  flex="1"
+                  />
+        <checkbox id="ts-xpath"
+                  label="&thTSXPath.checkbox;"
+                  flex="1"
+                  />
+    </hbox>
+    <hbox id="ts.v1-h3">
+        <checkbox id="ts-currentURIs"
+                  label="&thTSSearchCurrentSubsetOnly.checkbox;"
+                  flex="1" />
+        <button id="pauseGoButton" label="XXX Search" oncommand="startSearch();" />
+        <button id="stopButton" label="XXX Cancel" />
+    </hbox>
+    <tree id="resultsTree"
+          flex="1"
+          class="zero-space no-border"
+          orient="vertical"
+          enableColumnDrag="true"
+          seltype="single">  <!-- todo: make this multiple when ready -->
+                  <!--context="results-treecols-popup"-->
+        <treecols id="resultsTreeCols"
+                  onclick="onTreecolClick(event);"
+                  >
+            <treecol id="treecol-url"
+                     label="&amp;XXX url.label"
+                     persist="width ordinal hidden"
+                     flex="1" />
+            <splitter />
+            <treecol id="treecol-title"
+                     label="&amp;XXX title.label"
+                     persist="width ordinal hidden"
+                     flex="1" />
+            <splitter />
+            <treecol id="treecol-text"
+                     label="&amp;XXX text.label"
+                     persist="width ordinal hidden"
+                     flex="1" />
+        </treecols>
+                      <!--context="results-treechildren-popup"-->
+        <treechildren id="resultsTreechildren"
+                      flex="1"
+                      />
+    </tree>
+  </vbox>
+</dialog>

@@ -25,3 +25,11 @@
 
 <!ENTITY th.prefs.showStatusBarIcon.label "Show Status Bar Icon">
 <!ENTITY th.prefs.showMenuItem.label "Show Menu Item">
+
+<!-- text search -->
+<!ENTITY thTextSearchPattern.accessKey "P" >
+<!ENTITY thTextSearchDialog.caption "Search Tabs in More Detail">
+<!ENTITY thTSIgnoreCase.checkbox "Ignore case">
+<!ENTITY thTSRegularExpression.checkbox "Regular expression">
+<!ENTITY thTSXPath.checkbox "XPath">
+<!ENTITY thTSSearchCurrentSubsetOnly.checkbox "Search current matched set only">
