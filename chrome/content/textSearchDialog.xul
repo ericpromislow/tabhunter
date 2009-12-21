@@ -37,7 +37,7 @@
     <hbox id="ts-badXPath" collapsed="true"  style="border: 1px solid red;" >
         <description id="badXPath.description"/>
         <button id="badXPath.button"
-                label="XXX Hide"
+                label="&thTS.hideButton;"
                 oncommand="this.parentNode.collapsed = true;" />
         <spacer flex="1" />
     </hbox>
@@ -59,8 +59,8 @@
         <checkbox id="ts-currentURIs"
                   label="&thTSSearchCurrentSubsetOnly.checkbox;"
                   flex="1" />
-        <button id="pauseGoButton" label="XXX Search" oncommand="startSearch();" />
-        <button id="stopButton" label="XXX Cancel" />
+        <button id="pauseGoButton" label="&thTS.searchButton;" oncommand="startSearch();" />
+        <button id="stopButton" label="&thTS.cancelButton;" />
     </hbox>
     <tree id="resultsTree"
           flex="1"
@@ -73,17 +73,17 @@
                   onclick="onTreecolClick(event);"
                   >
             <treecol id="treecol-url"
-                     label="&amp;XXX url.label"
+                     label="&thTS.URL.treecol;"
                      persist="width ordinal hidden"
                      flex="1" />
             <splitter />
             <treecol id="treecol-title"
-                     label="&amp;XXX title.label"
+                     label="&thTS.title.treecol;"
                      persist="width ordinal hidden"
                      flex="1" />
             <splitter />
             <treecol id="treecol-text"
-                     label="&amp;XXX text.label"
+                     label="&thTS.match.treecol;"
                      persist="width ordinal hidden"
                      flex="1" />
         </treecols>
