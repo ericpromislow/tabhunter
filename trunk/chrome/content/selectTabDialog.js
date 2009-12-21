@@ -498,5 +498,27 @@ this.copyTabTitle_URL = function(event) {
     });
 };
 
+this.onLaunchTextSearch = function(event) {
+    debugger;
+    var uri = 'chrome://tabhunter/content/textSearchDialog.xul';
+    var windowType = ("tabhunter:text-search");
+    var features = [
+        "menubar=no",
+        "toolbar=no",
+        "location=no",
+        "status=no",
+        "scrollbars=yes",
+        "resizable=yes",
+        "minimizable=yes",
+        "chrome=yes",
+        "modal=no"
+    ].join(",");
+    //alert("in text search...");
+    var win = window.openDialog(uri, windowType, features,
+                        {mainHunter:this.mainHunter, selectTabDialog:this});
+    window.openDialog()
+};
+
+
 
 }).apply(gTabhunter);

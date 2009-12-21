@@ -272,6 +272,8 @@ if(data.valid) {
 </macro>
 <folder id="382f0674-ff34-489b-b71c-bc859d3af9a0" idref="75abdd97-f26f-42b9-a3b8-6db0ca10ab93" name="Project">
 </folder>
+<preference-set idref="43c8f4af-2d69-c64c-80c4-fa4879e6d3fa">
+</preference-set>
 <preference-set idref="75abdd97-f26f-42b9-a3b8-6db0ca10ab93">
   <boolean id="configured">1</boolean>
   <string id="import_exclude_matches">*.*~;*.bak;*.tmp;CVS;.#*;*.pyo;*.pyc;.svn;*%*;tmp*.html;.DS_Store;_prj_internal_</string>
