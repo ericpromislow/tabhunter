@@ -245,6 +245,17 @@ function onUnload() {
     gTreeView = null;
 }
 
+function onKeyPress(event)  {
+    switch (event.keyCode) {
+    case KeyEvent.DOM_VK_RETURN:
+        if (true || !g_inSearch) { // XXX state
+            startSearch();
+        }
+        return false;
+    }
+    return true;
+}
+
 function onGoCurrentLine() {
     try {
         var currentLine = dialog.tree.currentIndex;
