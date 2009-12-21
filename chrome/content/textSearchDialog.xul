@@ -34,6 +34,13 @@
                   oninput="return onInput(this)"
                   onkeypress="return onKeyPress(event)"/>
     </hbox>
+    <hbox id="ts-badXPath" collapsed="true"  style="border: 1px solid red;" >
+        <description id="badXPath.description"/>
+        <button id="badXPath.button"
+                label="XXX Hide"
+                oncommand="this.parentNode.collapsed = true;" />
+        <spacer flex="1" />
+    </hbox>
     <hbox id="ts.v1-h2">
         <checkbox id="ts-ignore-case"
                   label="&thTSIgnoreCase.checkbox;"
