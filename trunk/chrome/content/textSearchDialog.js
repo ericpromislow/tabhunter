@@ -97,6 +97,10 @@ function onLoad() {
     dialog.useRegex = document.getElementById("ts-regex");
     dialog.useXPath = document.getElementById("ts-xpath");
     dialog.useCurrentTabs = document.getElementById("ts-currentURIs");
+    
+    dialog.badXPathBox = document.getElementById("ts-badXPath");
+    dialog.badXPathDescription = document.getElementById("badXPath.description");
+    
     initialize();
 }
 
@@ -181,12 +185,15 @@ function startSearch() {
                     try {
                         nodeSet = doc.evaluate(pattern, contextNode, namespaceResolver, resultType, null);
                     } catch(ex) {
-                        //TODO: put the error message in a box
-                        gEx = ex;
                         var msg = ex.message;
                         if (ex.inner) msg += "; " + ex.inner;
                         if (ex.data) msg += "; " + ex.data;
-                        alert("xpath evaluation: " + msg);
+                        var dnode = dialog.badXPathDescription;
+                        while (dnode.hasChildNodes()) {
+                            dnode.removeChild(dnode.firstChild);
+                        }
+                        dnode.appendChild(document.createTextNode(msg));
+                        dialog.badXPathBox.collapsed = false;
                         break;
                     }
                     var snv = nodeSet.singleNodeValue;
