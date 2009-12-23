@@ -101,6 +101,10 @@ function onLoad() {
     dialog.badXPathBox = document.getElementById("ts-badXPath");
     dialog.badXPathDescription = document.getElementById("badXPath.description");
     
+    dialog.progressMeterWrapper = document.getElementById("progressMeterWrapper");
+    dialog.tsSearchProgress = document.getElementById("tsSearchProgress");
+    dialog.tsSearchProgressCount = document.getElementById("tsSearchProgressCount");
+    
     initialize();
 }
 
@@ -126,119 +130,214 @@ function initialize() {
     boxObject.view = gTreeView;
 }
 
-function adjustRowCount(oldCount, newCount) {
+function resetRowCount(oldCount) {
     var boxObject =
         dialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
-    // boxObject.rowCountChanged(0, newCount - oldCount);
-    boxObject.beginUpdateBatch();
-    boxObject.invalidate();
-    boxObject.endUpdateBatch();
+    boxObject.rowCountChanged(0, -oldCount);
 }
 
-function startSearch() {
-    gTreeView.dump(">> startSearch");
-    debugger;
+function onAddingRecord(oldCount) {
+    var boxObject =
+        dialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
+    boxObject.rowCountChanged(oldCount, 1);
+}
+
+function countTabs(windows) {
+    var sum = 0;
+    for (var win, windowIdx = 0; win = windows[windowIdx]; windowIdx++) {
+        sum += win.window.getBrowser().tabContainer.childNodes.length;
+    }
+    return sum;
+}
+
+function Searcher(mainHunter, dialog) {
+    this.ready = false;
     try {
-        var pattern = dialog.pattern.value;
-        if (pattern.length == 0) {
+        // set up parameters here.
+        this.pattern = dialog.pattern.value;
+        if (this.pattern.length == 0) {
             gTreeView.dump("pattern is empty");
             return;
         }
-        g_tabInfo = {};
-        mainHunter.getTabs(g_tabInfo);
-        var ignoreCase = dialog.ignoreCase.checked;
-        var useRegex = dialog.useRegex.checked;
-        var useXPath = dialog.useXPath.checked;
+        g_tabInfo = this.tabInfo = {};
+        mainHunter.getTabs(this.tabInfo);
+        this.ignoreCase = dialog.ignoreCase.checked;
+        this.useRegex = dialog.useRegex.checked;
+        this.useXPath = dialog.useXPath.checked;
         
-        var useCurrentTabs = dialog.ignoreCase.useCurrentTabs; //XXX Support this.
-        var windows = g_tabInfo.windowInfo;
-        var oldCount = gTreeView._rows.length;
-        if (useRegex) {
-            var regex = new RegExp(pattern, ignoreCase ? "i" : undefined);
+        this.useCurrentTabs = dialog.ignoreCase.useCurrentTabs; //XXX Support this.
+        this.windows = this.tabInfo.windowInfo;
+        if (this.useRegex) {
+            this.regex = new RegExp(this.pattern,
+                                    this.ignoreCase ? "i" : undefined);
         } else {
-            var patternFinal;
-            if (ignoreCase) {
-                patternFinal = pattern.toLowerCase();
+            this.patternFinal;
+            if (this.ignoreCase) {
+                this.patternFinal = this.pattern.toLowerCase();
             } else {
-                patternFinal = pattern;
+                this.patternFinal = this.pattern;
             }
         }
+        var oldCount = gTreeView._rows.length;
         gTreeView._rows = [];
-        for (var win, windowIdx = 0; win = windows[windowIdx]; windowIdx++) {
-            var tc = win.window.getBrowser().tabContainer;
-            var tcNodes = tc.childNodes;
-            for (var tab, tabIdx = 0; tab = tcNodes[tabIdx]; tabIdx++) {
-                var view = tab.linkedBrowser.contentWindow;
-                var doc = view.document;
-                var title = doc.title;
-                var url = doc.location;
-                var res, posn, matchedText = null;
-                this._rows = [];
-                var searchText = doc.documentElement.innerHTML;
-                if (useXPath) {
-                    var contextNode = doc.documentElement;
-                    var namespaceResolver = document.createNSResolver(contextNode.ownerDocument == null
-                                                                      ? contextNode.documentElement
-                                                                      : contextNode.ownerDocument.documentElement);
-                    var resultType = XPathResult.ANY_UNORDERED_NODE_TYPE;
-                    var nodeSet = null;
-                    try {
-                        nodeSet = doc.evaluate(pattern, contextNode, namespaceResolver, resultType, null);
-                    } catch(ex) {
-                        var msg = ex.message;
-                        if (ex.inner) msg += "; " + ex.inner;
-                        if (ex.data) msg += "; " + ex.data;
-                        var dnode = dialog.badXPathDescription;
-                        while (dnode.hasChildNodes()) {
-                            dnode.removeChild(dnode.firstChild);
-                        }
-                        dnode.appendChild(document.createTextNode(msg));
-                        dialog.badXPathBox.collapsed = false;
-                        break;
-                    }
-                    var snv = nodeSet.singleNodeValue;
-                    if (snv) {
-                        matchedText = snv.innerHTML;
-                        if (matchedText) {
-                            matchedText = matchedText.replace(/^[\s\r\n]+/, '');
-                            if (matchedText.length > 40) {
-                                matchedText = matchedText.substring(0, 40) + "...";
-                            } else if (matchedText.length == 0) {
-                                matchedText = "<white space only>";
-                            }
-                        }
-                    }
-                } else if (useRegex) {
-                    res = regex.exec(searchText);
-                    if (res) {
-                        matchedText = RegExp.lastMatch;
-                    }
-                } else {
-                    var searchTextFinal = ignoreCase ? searchText.toLowerCase() : searchText;
-                    posn = searchTextFinal.indexOf(patternFinal);
-                    if (posn >= 0) {
-                        matchedText = searchText.substring(posn, pattern.length);
-                    }
-                }
-                if (matchedText) {
-                    gTreeView._rows.push(buildRow(url, title, matchedText + ":" + posn,
-                                                  windowIdx, tabIdx, posn, matchedText));
+        resetRowCount(oldCount);
+        this.tabCount = countTabs(this.windows);
+        this.windowCount = this.windows.length;
+        dialog.progressMeterWrapper.setAttribute('class', 'show');
+        this.progressBar = dialog.tsSearchProgress;
+        this.progressBar.max = this.tabCount;
+        this.progressBar.value = this.numHits = 0;
+        this.progressBarLabel = dialog.tsSearchProgressCount;
+        gTreeView.dump("startSearch: go through "
+                       + this.progressBar.max
+                       + " tabs");
+    } catch(ex) {
+        showMessage("Searcher", ex);
+        //for (var p in ex) {
+        //    var o = ex[p];
+        //    if (typeof(o) != "function") {
+        //        gTreeView.dump(p + ":" + o)
+        //    }
+        //}
+        //gTreeView.dump("Searcher:" + ex);
+        return;
+    }
+    this.ready = true;
+    return;
+}
+
+function showMessage(label, ex) {
+    var msg = "";
+    if (ex.fileName) {
+        msg += ex.fileName;
+    }
+    if (ex.lineNumber) {
+        msg += "#" + ex.lineNumber;
+    }
+    msg += ": " + ex.message;
+    gTreeView.dump(label +": " + msg);
+}
+
+Searcher.prototype.setupWindow = function(windowIdx) {
+    var tc = this.windows[windowIdx].window.getBrowser().tabContainer;
+    this.tabIdx = -1;
+    this.tcNodes = tc.childNodes;
+    this.currentTabCount = this.tcNodes.length;
+}
+
+Searcher.prototype.searchNextTab = function() {
+    this.tabIdx += 1;
+    while (this.tabIdx >= this.currentTabCount) {
+        this.windowIdx += 1;
+        if (this.windowIdx >= this.windowCount) {
+            this.finishSearch();
+            return;
+        }
+        this.setupWindow(this.windowIdx);
+        this.tabIdx = 0;
+        // Do this in a loop to handle windows with no tabs.
+    }
+    this.progressBar.setAttribute("value", parseInt(this.progressBar.value) + 1);
+    this.progressBarLabel.value = ("Checking "
+                              + this.progressBar.value
+                              + "/"
+                              + this.progressBar.max);
+    var tab = this.tcNodes[this.tabIdx];
+    var view = tab.linkedBrowser.contentWindow;
+    var doc = view.document;
+    var title = doc.title;
+    var url = doc.location;
+    var res, posn, matchedText = null;
+    var searchText = doc.documentElement.innerHTML;
+    if (this.useXPath) {
+        var contextNode = doc.documentElement;
+        var namespaceResolver = document.createNSResolver(contextNode.ownerDocument == null
+                                                          ? contextNode.documentElement
+                                                          : contextNode.ownerDocument.documentElement);
+        var resultType = XPathResult.ANY_UNORDERED_NODE_TYPE;
+        var nodeSet = null;
+        try {
+            nodeSet = doc.evaluate(this.pattern, contextNode, namespaceResolver, resultType, null);
+        } catch(ex) {
+            var msg = ex.message;
+            if (ex.inner) msg += "; " + ex.inner;
+            if (ex.data) msg += "; " + ex.data;
+            var dnode = dialog.badXPathDescription;
+            while (dnode.hasChildNodes()) {
+                dnode.removeChild(dnode.firstChild);
+            }
+            dnode.appendChild(document.createTextNode(msg));
+            dialog.badXPathBox.collapsed = false;
+            return;
+        }
+        var snv = nodeSet.singleNodeValue;
+        if (snv) {
+            matchedText = snv.innerHTML;
+            if (matchedText) {
+                matchedText = matchedText.replace(/^[\s\r\n]+/, '');
+                if (matchedText.length > 40) {
+                    matchedText = matchedText.substring(0, 40) + "...";
+                } else if (matchedText.length == 0) {
+                    matchedText = "<white space only>";
                 }
             }
         }
-        var newCount = gTreeView._rows.length;
-        adjustRowCount(oldCount, newCount);
-        gTreeView.dump("We should be stopped");
-        debugger;
-    } catch(ex) {
-        gTreeView.dump("startSearch: " + ex)
-        for (var p in ex) {
-            var o = ex[p];
-            if (typeof(o) != "function")
-                gTreeView.dump(p + ":" + ex[p]);
+    } else if (this.useRegex) {
+        res = regex.exec(searchText);
+        if (res) {
+            matchedText = RegExp.lastMatch;
+        }
+    } else {
+        var searchTextFinal = this.ignoreCase ? searchText.toLowerCase() : searchText;
+        posn = searchTextFinal.indexOf(this.patternFinal);
+        if (posn >= 0) {
+            matchedText = searchText.substring(posn, this.pattern.length);
         }
     }
+    if (matchedText) {
+        onAddingRecord(this.numHits);
+        this.numHits += 1;
+        gTreeView._rows.push(buildRow(url, title, matchedText + ":" + posn,
+                                      this.windowIdx, this.tabIdx, posn, matchedText));
+    }
+    setTimeout(function(this_) {
+        try {
+            this_.searchNextTab();
+        } catch(ex) {
+            showMessage("Searcher.searchNextTab("
+                        + this_.windowIdx
+                        + ", "
+                        + this_.tabIdx
+                        + ")", ex);
+        }
+    }, 1, this);
+}
+
+Searcher.prototype.launch = function() {
+    this.setupWindow(this.windowIdx = 0);
+    try {
+        this.searchNextTab();
+    } catch(ex) {
+        showMessage("Searcher.searchNextTab(0, 0)", ex);
+    }
+}
+
+Searcher.prototype.finishSearch = function() {
+    var newCount = gTreeView._rows.length;
+    this.progressBar.setAttribute("value", parseInt(this.progressBar.max));
+    this.progressBarLabel.value = "Found " + this.numHits + " in " + this.progressBar.max;
     gTreeView.dump("<< startSearch");
+    setTimeout(function() {
+        dialog.progressMeterWrapper.setAttribute('class', 'hide');
+        gTreeView.dump("Did we hide the progress meter?");
+    }, 3 * 1000);
+}
+
+function startSearch() {
+    var searcher = new Searcher(mainHunter, dialog);
+    if (searcher.ready) {
+        searcher.launch();
+    }
 }
 
 function onUnload() {

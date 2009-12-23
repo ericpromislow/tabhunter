@@ -514,9 +514,12 @@ this.onLaunchTextSearch = function(event) {
         "modal=no"
     ].join(",");
     //alert("in text search...");
+    try {
     var win = window.openDialog(uri, windowType, features,
                         {mainHunter:this.mainHunter, selectTabDialog:this});
-    window.openDialog()
+    } catch(ex) {
+        this.tabhunterSession.dump("onLaunchTextSearch failed: " + ex);
+    }
 };
 
 
