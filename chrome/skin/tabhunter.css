@@ -25,3 +25,10 @@ menupopup#listPopupMenu > menuitem {
 listitem.listitemTabhunter {
     max-height: 8px !important;
 }
+
+#progressMeterWrapper.hide {
+  display: none;
+}
+#progressMeterWrapper.show {
+  display: inline;
+}

@@ -44,16 +44,20 @@
     <hbox id="ts.v1-h2">
         <checkbox id="ts-ignore-case"
                   label="&thTSIgnoreCase.checkbox;"
-                  flex="1"
                   />
         <checkbox id="ts-regex"
                   label="&thTSRegularExpression.checkbox;"
-                  flex="1"
                   />
         <checkbox id="ts-xpath"
                   label="&thTSXPath.checkbox;"
-                  flex="1"
                   />
+        <hbox id="progressMeterWrapper" class="hide"  >
+            <progressmeter mode="determined"
+                           id="tsSearchProgress"
+                           />
+            <label id="tsSearchProgressCount" />
+        </hbox>
+
     </hbox>
     <hbox id="ts.v1-h3">
         <checkbox id="ts-currentURIs"
