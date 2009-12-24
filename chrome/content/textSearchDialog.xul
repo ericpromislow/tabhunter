@@ -71,6 +71,7 @@
           class="zero-space no-border"
           orient="vertical"
           enableColumnDrag="true"
+          ondblclick="onTreeDblClick(event)"
           seltype="single">  <!-- todo: make this multiple when ready -->
                   <!--context="results-treecols-popup"-->
         <treecols id="resultsTreeCols"

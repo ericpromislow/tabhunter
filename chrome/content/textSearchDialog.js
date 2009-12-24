@@ -307,7 +307,7 @@ Searcher.prototype.searchNextTab = function() {
             }
         }
     } else if (this.useRegex) {
-        res = regex.exec(searchText);
+        res = this.regex.exec(searchText);
         if (res) {
             matchedText = RegExp.lastMatch;
         }
@@ -419,6 +419,13 @@ function onKeyPress(event)  {
 function onInput() {
     dialog.pauseGoButton.disabled = (g_SearchingState == SEARCH_STATE_DEFAULT
                                      && dialog.pattern.value.length == 0);
+}
+
+function onTreeDblClick(event) {
+    if (event.target.nodeName != "treechildren") {
+        return;
+    }
+    onGoCurrentLine();
 }
 
 function onGoCurrentLine() {
