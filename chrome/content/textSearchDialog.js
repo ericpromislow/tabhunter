@@ -105,8 +105,7 @@ function onLoad() {
     dialog.tree = document.getElementById("resultsTree");
     dialog.pattern = document.getElementById("pattern");
     dialog.ignoreCase = document.getElementById("ts-ignore-case");
-    dialog.useRegex = document.getElementById("ts-regex");
-    dialog.useXPath = document.getElementById("ts-xpath");
+    dialog.searchTypeMenu = document.getElementById("searchTypeMenu");
     dialog.useCurrentTabs = document.getElementById("ts-currentURIs");
     dialog.pauseGoButton = document.getElementById("pauseGoButton");
     g_SearchingState = SEARCH_STATE_DEFAULT;
@@ -177,15 +176,29 @@ function Searcher(mainHunter, dialog) {
         g_tabInfo = this.tabInfo = {};
         mainHunter.getTabs(this.tabInfo);
         this.ignoreCase = dialog.ignoreCase.checked;
-        this.useRegex = dialog.useRegex.checked;
-        this.useXPath = dialog.useXPath.checked;
+        gMenu = dialog.searchTypeMenu;
+        this.searchType = dialog.searchTypeMenu.selectedItem.value;
         
         this.useCurrentTabs = dialog.ignoreCase.useCurrentTabs; //XXX Support this.
         this.windows = this.tabInfo.windowInfo;
-        if (this.useRegex) {
-            this.regex = new RegExp(this.pattern,
-                                    this.ignoreCase ? "i" : undefined);
-        } else {
+        if (this.searchType == "searchRegEx") {
+            try {
+                this.regex = new RegExp(this.pattern,
+                                        this.ignoreCase ? "i" : undefined);
+            } catch(ex) {
+                var msg = ex.message;
+                if (ex.inner) msg += "; " + ex.inner;
+                if (ex.data) msg += "; " + ex.data;
+                var dnode = dialog.badXPathDescription;
+                while (dnode.hasChildNodes()) {
+                    dnode.removeChild(dnode.firstChild);
+                }
+                dnode.appendChild(document.createTextNode(msg));
+                dialog.badXPathBox.collapsed = false;
+                enterDefaultSearchingState();
+                return;
+            }
+        } else if (this.searchType == "searchPlainText") {
             this.patternFinal;
             if (this.ignoreCase) {
                 this.patternFinal = this.pattern.toLowerCase();
@@ -272,7 +285,7 @@ Searcher.prototype.searchNextTab = function() {
     var url = doc.location;
     var res, posn, matchedText = null;
     var searchText = doc.documentElement.innerHTML;
-    if (this.useXPath) {
+    if (this.searchType == "searchXPath") {
         var contextNode = doc.documentElement;
         var namespaceResolver = document.createNSResolver(contextNode.ownerDocument == null
                                                           ? contextNode.documentElement
@@ -306,7 +319,7 @@ Searcher.prototype.searchNextTab = function() {
                 }
             }
         }
-    } else if (this.useRegex) {
+    } else if (this.searchType == "searchRegEx") {
         res = this.regex.exec(searchText);
         if (res) {
             matchedText = RegExp.lastMatch;
