@@ -64,7 +64,7 @@
                   label="&thTSSearchCurrentSubsetOnly.checkbox;"
                   flex="1" />
         <button id="pauseGoButton" label="&thTS.searchButton;" oncommand="startSearch();" />
-        <button id="stopButton" label="&thTS.cancelButton;" />
+        <button id="stopButton" label="&thTS.cancelButton;"  oncommand="cancelSearch();" />
     </hbox>
     <tree id="resultsTree"
           flex="1"
