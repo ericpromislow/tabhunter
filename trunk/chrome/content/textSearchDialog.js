@@ -37,6 +37,7 @@
 var gTreeView = null;
 var mainHunter;
 var dialog = {};
+var g_SearchingState;
 
 var g_tabInfo = null;
 var g_searcher = null;
@@ -108,6 +109,8 @@ function onLoad() {
     dialog.useXPath = document.getElementById("ts-xpath");
     dialog.useCurrentTabs = document.getElementById("ts-currentURIs");
     dialog.pauseGoButton = document.getElementById("pauseGoButton");
+    g_SearchingState = SEARCH_STATE_DEFAULT;
+    onInput();
     dialog.cancelButton = document.getElementById("stopButton");
     
     dialog.badXPathBox = document.getElementById("ts-badXPath");
@@ -411,6 +414,11 @@ function onKeyPress(event)  {
         return false;
     }
     return true;
+}
+
+function onInput() {
+    dialog.pauseGoButton.disabled = (g_SearchingState == SEARCH_STATE_DEFAULT
+                                     && dialog.pattern.value.length == 0);
 }
 
 function onGoCurrentLine() {
