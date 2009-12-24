@@ -42,14 +42,21 @@
         <spacer flex="1" />
     </hbox>
     <hbox id="ts.v1-h2">
+        <label id="searchType" value="&thSearchType.label;"
+               control="searchTypeMenu" />
+        <menulist id="searchTypeMenu" oncommand="onSelectSearchType(this);">
+            <menupopup>
+                <menuitem id="searchPlainText" value="searchPlainText"
+                          label="&thTSPlainText.menuitem;" />
+                <menuitem id="searchRegEx" value="searchRegEx"
+                          label="&thTSRegex.menuitem;" />
+                <menuitem id="searchXPath" value="searchXPath"
+                          label="&thTSXPath.menuitem;" />
+            </menupopup>
+        </menulist>
+
         <checkbox id="ts-ignore-case"
                   label="&thTSIgnoreCase.checkbox;"
-                  />
-        <checkbox id="ts-regex"
-                  label="&thTSRegularExpression.checkbox;"
-                  />
-        <checkbox id="ts-xpath"
-                  label="&thTSXPath.checkbox;"
                   />
         <hbox id="progressMeterWrapper" class="hide"  >
             <progressmeter mode="determined"
