@@ -39,10 +39,20 @@ var mainHunter;
 var dialog = {};
 
 var g_tabInfo = null;
+var g_searcher = null;
 
 const URI_ID = "treecol-url";
 const TITLE_ID = "treecol-title";
 const TEXT_ID = "treecol-text";
+
+const SEARCH_STATE_DEFAULT = 0;
+const SEARCH_STATE_PAUSED = 1;
+const SEARCH_STATE_CONTINUED = 2;
+const SEARCH_STATE_CANCELLED = 3
+
+var _bundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
+                .getService(Components.interfaces.nsIStringBundleService)
+                .createBundle("chrome://tabhunter/locale/tabhunter.properties");
 
 function TextSearchTreeView() {
     this._rows = [];
@@ -97,6 +107,8 @@ function onLoad() {
     dialog.useRegex = document.getElementById("ts-regex");
     dialog.useXPath = document.getElementById("ts-xpath");
     dialog.useCurrentTabs = document.getElementById("ts-currentURIs");
+    dialog.pauseGoButton = document.getElementById("pauseGoButton");
+    dialog.cancelButton = document.getElementById("stopButton");
     
     dialog.badXPathBox = document.getElementById("ts-badXPath");
     dialog.badXPathDescription = document.getElementById("badXPath.description");
@@ -226,6 +238,14 @@ Searcher.prototype.setupWindow = function(windowIdx) {
 }
 
 Searcher.prototype.searchNextTab = function() {
+    switch (g_SearchingState) {
+        case SEARCH_STATE_PAUSED:
+            enterPausedSearchingState();
+            return;
+        case SEARCH_STATE_CANCELLED:
+            this.finishSearch();
+            return;
+    }
     this.tabIdx += 1;
     while (this.tabIdx >= this.currentTabCount) {
         this.windowIdx += 1;
@@ -268,6 +288,7 @@ Searcher.prototype.searchNextTab = function() {
             }
             dnode.appendChild(document.createTextNode(msg));
             dialog.badXPathBox.collapsed = false;
+            enterDefaultSearchingState();
             return;
         }
         var snv = nodeSet.singleNodeValue;
@@ -323,6 +344,7 @@ Searcher.prototype.launch = function() {
 }
 
 Searcher.prototype.finishSearch = function() {
+    enterDefaultSearchingState();
     var newCount = gTreeView._rows.length;
     this.progressBar.setAttribute("value", parseInt(this.progressBar.max));
     this.progressBarLabel.value = "Found " + this.numHits + " in " + this.progressBar.max;
@@ -330,14 +352,50 @@ Searcher.prototype.finishSearch = function() {
     setTimeout(function() {
         dialog.progressMeterWrapper.setAttribute('class', 'hide');
         gTreeView.dump("Did we hide the progress meter?");
+        g_searcher = null;
+        g_SearchingState = SEARCH_STATE_DEFAULT;
     }, 3 * 1000);
 }
 
 function startSearch() {
-    var searcher = new Searcher(mainHunter, dialog);
-    if (searcher.ready) {
-        searcher.launch();
+    g_searcher = new Searcher(mainHunter, dialog);
+    if (g_searcher.ready) {
+        g_SearchingState = SEARCH_STATE_CONTINUED;
+        enterActiveSearchingState();
+        g_searcher.launch();
     }
+}
+
+function pauseSearch() {
+    g_SearchingState = SEARCH_STATE_PAUSED;
+}
+
+function cancelSearch() {
+    g_SearchingState = SEARCH_STATE_CANCELLED;
+    enterDefaultSearchingState();
+}
+
+function continueSearch() {
+    g_SearchingState = SEARCH_STATE_CONTINUED;
+    g_searcher.searchNextTab();
+}
+
+function enterActiveSearchingState() {
+    dialog.pauseGoButton.label = _bundle.GetStringFromName('pause.label');
+    dialog.pauseGoButton.oncommand = pauseSearch;
+    dialog.cancelButton.disabled = false;
+}
+
+function enterPausedSearchingState() {
+    dialog.pauseGoButton.label = _bundle.GetStringFromName('continue.label');
+    dialog.pauseGoButton.oncommand = continueSearch;
+    dialog.cancelButton.disabled = false;
+}
+
+function enterDefaultSearchingState() {
+    dialog.pauseGoButton.label = _bundle.GetStringFromName('search.label');
+    dialog.pauseGoButton.oncommand = startSearch;
+    dialog.cancelButton.disabled = true;
 }
 
 function onUnload() {
