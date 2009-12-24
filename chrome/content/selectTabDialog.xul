@@ -79,7 +79,7 @@
       <spacer flex="1" />
       <button id="searchText.button"
               oncommand="gTabhunter.onLaunchTextSearch();"
-              label="Search Text...16"
+              label="Search Text...22"
               />
     </hbox>
 
