@@ -434,6 +434,10 @@ function onInput() {
                                      && dialog.pattern.value.length == 0);
 }
 
+function onSelectSearchType(menulist) {
+    dialog.ignoreCase.disabled = (menulist.selectedItem.value == 'searchXPath');
+}
+
 function onTreeDblClick(event) {
     if (event.target.nodeName != "treechildren") {
         return;
