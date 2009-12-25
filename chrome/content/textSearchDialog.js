@@ -142,6 +142,7 @@ function initialize() {
     var boxObject =
         dialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
     boxObject.view = gTreeView;
+    enterDefaultSearchingState();
 }
 
 function resetRowCount(oldCount) {
