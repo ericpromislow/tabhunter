@@ -419,6 +419,10 @@ function onUnload() {
     gTreeView = null;
 }
 
+function onClose() {
+    window.close();
+}
+
 function onKeyPress(event)  {
     switch (event.keyCode) {
     case KeyEvent.DOM_VK_RETURN:
