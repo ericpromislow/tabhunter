@@ -180,7 +180,18 @@ function Searcher(mainHunter, dialog) {
         gMenu = dialog.searchTypeMenu;
         this.searchType = dialog.searchTypeMenu.selectedItem.value;
         
-        this.useCurrentTabs = dialog.ignoreCase.useCurrentTabs; //XXX Support this.
+        if (!!(this.useCurrentTabs = dialog.useCurrentTabs.checked)) {
+            var p = null;
+            var text = g_selectTabDialog.patternField.value;
+            if (text) {
+                try {
+                    p = new RegExp(text, 'i');
+                } catch(ex) {}
+            }
+            this.currentTabRE = p;
+        } else {
+            this.currentTabRE = null;
+        }
         this.windows = this.tabInfo.windowInfo;
         if (this.searchType == "searchRegEx") {
             try {
@@ -284,59 +295,71 @@ Searcher.prototype.searchNextTab = function() {
     var doc = view.document;
     var title = doc.title;
     var url = doc.location;
-    var res, posn, matchedText = null;
-    var searchText = doc.documentElement.innerHTML;
-    if (this.searchType == "searchXPath") {
-        var contextNode = doc.documentElement;
-        var namespaceResolver = document.createNSResolver(contextNode.ownerDocument == null
-                                                          ? contextNode.documentElement
-                                                          : contextNode.ownerDocument.documentElement);
-        var resultType = XPathResult.ANY_UNORDERED_NODE_TYPE;
-        var nodeSet = null;
-        try {
-            nodeSet = doc.evaluate(this.pattern, contextNode, namespaceResolver, resultType, null);
-        } catch(ex) {
-            var msg = ex.message;
-            if (ex.inner) msg += "; " + ex.inner;
-            if (ex.data) msg += "; " + ex.data;
-            var dnode = dialog.badXPathDescription;
-            while (dnode.hasChildNodes()) {
-                dnode.removeChild(dnode.firstChild);
-            }
-            dnode.appendChild(document.createTextNode(msg));
-            dialog.badXPathBox.collapsed = false;
-            enterDefaultSearchingState();
-            return;
-        }
-        var snv = nodeSet.singleNodeValue;
-        if (snv) {
-            matchedText = snv.innerHTML;
-            if (matchedText) {
-                matchedText = matchedText.replace(/^[\s\r\n]+/, '');
-                if (matchedText.length > 40) {
-                    matchedText = matchedText.substring(0, 40) + "...";
-                } else if (matchedText.length == 0) {
-                    matchedText = "<white space only>";
-                }
-            }
-        }
-    } else if (this.searchType == "searchRegEx") {
-        res = this.regex.exec(searchText);
-        if (res) {
-            matchedText = RegExp.lastMatch;
-        }
-    } else {
-        var searchTextFinal = this.ignoreCase ? searchText.toLowerCase() : searchText;
-        posn = searchTextFinal.indexOf(this.patternFinal);
-        if (posn >= 0) {
-            matchedText = searchText.substring(posn, this.pattern.length);
+    var failedTest = false;
+    if  (this.currentTabRE) {
+        if (!this.currentTabRE.test(title) && !this.currentTabRE.test(url)) {
+            failedTest = true;
+            gTreeView.dump("No match on title:"
+                           + title
+                           + ", url:"
+                           + url);
         }
     }
-    if (matchedText) {
-        onAddingRecord(this.numHits);
-        this.numHits += 1;
-        gTreeView._rows.push(buildRow(url, title, matchedText + ":" + posn,
-                                      this.windowIdx, this.tabIdx, posn, matchedText));
+    if  (!failedTest) {
+        var res, posn, matchedText = null;
+        var searchText = doc.documentElement.innerHTML;
+        if (this.searchType == "searchXPath") {
+            var contextNode = doc.documentElement;
+            var namespaceResolver = document.createNSResolver(contextNode.ownerDocument == null
+                                                              ? contextNode.documentElement
+                                                              : contextNode.ownerDocument.documentElement);
+            var resultType = XPathResult.ANY_UNORDERED_NODE_TYPE;
+            var nodeSet = null;
+            try {
+                nodeSet = doc.evaluate(this.pattern, contextNode, namespaceResolver, resultType, null);
+            } catch(ex) {
+                var msg = ex.message;
+                if (ex.inner) msg += "; " + ex.inner;
+                if (ex.data) msg += "; " + ex.data;
+                var dnode = dialog.badXPathDescription;
+                while (dnode.hasChildNodes()) {
+                    dnode.removeChild(dnode.firstChild);
+                }
+                dnode.appendChild(document.createTextNode(msg));
+                dialog.badXPathBox.collapsed = false;
+                enterDefaultSearchingState();
+                return;
+            }
+            var snv = nodeSet.singleNodeValue;
+            if (snv) {
+                matchedText = snv.innerHTML;
+                if (matchedText) {
+                    matchedText = matchedText.replace(/^[\s\r\n]+/, '');
+                    if (matchedText.length > 40) {
+                        matchedText = matchedText.substring(0, 40) + "...";
+                    } else if (matchedText.length == 0) {
+                        matchedText = "<white space only>";
+                    }
+                }
+            }
+        } else if (this.searchType == "searchRegEx") {
+            res = this.regex.exec(searchText);
+            if (res) {
+                matchedText = RegExp.lastMatch;
+            }
+        } else {
+            var searchTextFinal = this.ignoreCase ? searchText.toLowerCase() : searchText;
+            posn = searchTextFinal.indexOf(this.patternFinal);
+            if (posn >= 0) {
+                matchedText = searchText.substring(posn, this.pattern.length);
+            }
+        }
+        if (matchedText) {
+            onAddingRecord(this.numHits);
+            this.numHits += 1;
+            gTreeView._rows.push(buildRow(url, title, matchedText + ":" + posn,
+                                          this.windowIdx, this.tabIdx, posn, matchedText));
+        }
     }
     setTimeout(function(this_) {
         try {
