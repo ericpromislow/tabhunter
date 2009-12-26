@@ -27,8 +27,16 @@ listitem.listitemTabhunter {
 }
 
 #progressMeterWrapper.hide {
-  display: none;
+  visibility: hidden;
 }
 #progressMeterWrapper.show {
-  display: inline;
+  visibility: visible;
 }
+/*
+.progressShow {
+  display: inline;  
+}
+.progressHide {
+  display: none;  
+}
+*/
