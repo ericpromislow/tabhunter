@@ -114,7 +114,8 @@ function onLoad() {
     
     dialog.badXPathBox = document.getElementById("ts-badXPath");
     dialog.badXPathDescription = document.getElementById("badXPath.description");
-    
+    dialog.progressMeter = document.getElementById("tsSearchProgress");
+    dialog.progressMeterLabel = document.getElementById("tsSearchProgressCount");
     dialog.progressMeterWrapper = document.getElementById("progressMeterWrapper");
     dialog.tsSearchProgress = document.getElementById("tsSearchProgress");
     dialog.tsSearchProgressCount = document.getElementById("tsSearchProgressCount");
@@ -224,6 +225,8 @@ function Searcher(mainHunter, dialog) {
         this.tabCount = countTabs(this.windows);
         this.windowCount = this.windows.length;
         dialog.progressMeterWrapper.setAttribute('class', 'show');
+        dialog.progressMeter.setAttribute('class', 'progressShow');
+        dialog.progressMeterLabel.setAttribute('class', 'progressShow');
         this.progressBar = dialog.tsSearchProgress;
         this.progressBar.max = this.tabCount;
         this.progressBar.value = this.numHits = 0;
@@ -391,6 +394,8 @@ Searcher.prototype.finishSearch = function() {
     gTreeView.dump("<< startSearch");
     setTimeout(function() {
         dialog.progressMeterWrapper.setAttribute('class', 'hide');
+        dialog.progressMeter.setAttribute('class', 'progressHide');
+        dialog.progressMeterLabel.setAttribute('class', 'progressHide');
         gTreeView.dump("Did we hide the progress meter?");
         g_searcher = null;
         g_SearchingState = SEARCH_STATE_DEFAULT;
