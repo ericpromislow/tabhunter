@@ -19,7 +19,6 @@ this.onLoad = function() {
     this.currentPatternText = null; // first time only, then always text.
     
     this.currentURLField = document.getElementById("view-url");
-    this.currentURLContents = ''; //yagni?
     
     this.currentTabList = document.getElementById('currentTabList');
     var self= this;
@@ -77,6 +76,8 @@ this.onLoad = function() {
         window.document.title = title;
     }
     this.eol = navigator.platform.toLowerCase().indexOf("win32") >= 0 ?  "\r\n" : "\n";
+
+    this.tsOnLoad();
 };
 
 this.init = function() {
@@ -355,6 +356,7 @@ this.onUnload = function() {
         this.prefs.setIntPref('screenX', screenX);
         this.prefs.setIntPref('screenY', screenY);
     }
+    this.gTSTreeView = null;
     this._clearInfo();
 }
 
@@ -498,30 +500,478 @@ this.copyTabTitle_URL = function(event) {
     });
 };
 
-this.onLaunchTextSearch = function(event) {
-    debugger;
-    var uri = 'chrome://tabhunter/content/textSearchDialog.xul';
-    var windowType = ("tabhunter:text-search");
-    var features = [
-        "menubar=no",
-        "toolbar=no",
-        "location=no",
-        "status=no",
-        "scrollbars=yes",
-        "resizable=yes",
-        "minimizable=yes",
-        "chrome=yes",
-        "modal=no"
-    ].join(",");
-    //alert("in text search...");
-    try {
-    var win = window.openDialog(uri, windowType, features,
-                        {mainHunter:this.mainHunter, selectTabDialog:this});
-    } catch(ex) {
-        this.tabhunterSession.dump("onLaunchTextSearch failed: " + ex);
-    }
+// TextSearch methods
+
+this.tsOnLoad = function() {
+try {
+    this.tsDialog = {};
+  this.tsDialog.tree = document.getElementById("ts-resultsTree");
+  this.tsDialog.pattern = document.getElementById("ts-pattern");
+  this.tsDialog.ignoreCase = document.getElementById("ts-ignore-case");
+  this.tsDialog.searchTypeMenu = document.getElementById("ts-searchTypeMenu");
+  this.tsDialog.useCurrentTabs = document.getElementById("ts-currentURIs");
+  this.tsDialog.pauseGoButton = document.getElementById("ts-pauseGoButton");
+  this.g_SearchingState = this.TS_SEARCH_STATE_DEFAULT;
+  this.ts_onInput();
+  this.tsDialog.cancelButton = document.getElementById("ts-stopButton");
+    
+  this.tsDialog.badXPathBox = document.getElementById("ts-badXPath");
+  this.tsDialog.badXPathDescription = document.getElementById("ts-badXPath.description");
+  this.tsDialog.progressMeter = document.getElementById("tsSearchProgress");
+  this.tsDialog.progressMeterLabel = document.getElementById("tsSearchProgressCount");
+  this.tsDialog.progressMeterWrapper = document.getElementById("progressMeterWrapper");
+  this.tsDialog.tsSearchProgress = document.getElementById("tsSearchProgress");
+  this.tsDialog.tsSearchProgressCount = document.getElementById("tsSearchProgressCount");
+    
+  this.ts_initialize();
+}catch(ex) {
+    alert("tsOnLoad: " + ex);
+}
 };
 
+this.TextSearchTreeView = function() {
+    this._rows = [];
+}
 
+this.TextSearchTreeView.prototype = {
+    get rowCount() {
+        return this._rows.length;
+    },
+    
+    getCellText : function(row, column) {
+        //this.dump("rows...");
+        try {
+        //this.dump("getCellText("
+        //                 + row
+        //                 + ", "
+        //                 + column.id
+        //                 + ") => ["
+        //                 + this._rows[row][column.id]
+        //                 + "]\n");
+        return this._rows[row][column.id];
+        } catch(ex) {
+            this.dump("getCellText: " + ex);
+            return "";
+        }
+    },  
+    setTree: function(treebox){ this.treebox = treebox; },  
+    isContainer: function(row){ return false; },  
+    isSeparator: function(row){ return false; },  
+    isSorted: function(){ return false; },  
+    getLevel: function(row){ return 0; },  
+    getImageSrc: function(row,col){ return null; },  
+    getRowProperties: function(row,props){},  
+    getCellProperties: function(row,col,props){},  
+    getColumnProperties: function(colid,col,props){},
+    
+    dump: function(aMessage) {
+        var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+                                       .getService(Components.interfaces.nsIConsoleService);
+        consoleService.logStringMessage("th/textView/tree: " + aMessage);
+    },
+    
+    _EOL_ : function() {}
+};
+
+this.ts_initialize = function() {
+    this.gTSTreeView = new this.TextSearchTreeView();
+    // this.gTSTreeView.dump("we have rows.");
+    this.tsDialog.tree.view = this.gTSTreeView;
+    this.ts_tabInfo = null;
+    var boxObject =
+        this.tsDialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
+    boxObject.view = this.gTSTreeView;
+    this.TS_URI_ID = "treecol-url";
+    this.TS_TITLE_ID = "treecol-title";
+    this.TS_TEXT_ID = "treecol-text";
+
+    this.TS_SEARCH_STATE_DEFAULT = 0;
+    this.TS_SEARCH_STATE_PAUSED = 1;
+    this.TS_SEARCH_STATE_CONTINUED = 2;
+    this.TS_SEARCH_STATE_CANCELLED = 3
+
+    this.ts_bundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
+                .getService(Components.interfaces.nsIStringBundleService)
+                .createBundle("chrome://tabhunter/locale/tabhunter.properties");
+    this.ts_enterDefaultSearchingState();
+
+}
+
+this.ts_buildRow = function(uri, title, displayText, windowIdx, tabIdx, posn, matchedText) {
+    var r = {};
+    r[this.TS_URI_ID] = uri;
+    r[this.TS_TITLE_ID] = title;
+    r[this.TS_TEXT_ID] = displayText;
+    r.windowIdx = windowIdx;
+    r.tabIdx = tabIdx;
+    r.posn = posn;
+    r.matchedText = windowIdx;
+    return r;
+}
+
+this.ts_resetRowCount = function(oldCount) {
+    var boxObject =
+        this.tsDialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
+    boxObject.rowCountChanged(0, -oldCount);
+}
+
+this.ts_onAddingRecord = function(oldCount) {
+    var boxObject =
+        this.tsDialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
+    boxObject.rowCountChanged(oldCount, 1);
+}
+
+this.ts_countTabs = function(windows) {
+    var sum = 0;
+    for (var win, windowIdx = 0; win = windows[windowIdx]; windowIdx++) {
+        sum += win.window.getBrowser().tabContainer.childNodes.length;
+    }
+    return sum;
+}
+
+this.Searcher = function(mainObj, dialog) {
+    this.ready = false;
+    try {
+        // set up parameters here.
+        this.pattern = dialog.pattern.value;
+        if (this.pattern.length == 0) {
+            mainObj.gTSTreeView.dump("pattern is empty");
+            return;
+        }
+        this.tabInfo = {};
+	this.mainObj = mainObj;
+        mainObj.mainHunter.getTabs(this.tabInfo);
+        this.ignoreCase = dialog.ignoreCase.checked;
+        this.searchType = dialog.searchTypeMenu.selectedItem.value;
+        
+        if (!!(this.useCurrentTabs = dialog.useCurrentTabs.checked)) {
+            var p = null;
+            var text = mainObj.patternField.value;
+            if (text) {
+                try {
+                    p = new RegExp(text, 'i');
+                } catch(ex) {}
+            }
+            this.currentTabRE = p;
+        } else {
+            this.currentTabRE = null;
+        }
+        this.windows = this.tabInfo.windowInfo;
+        if (this.searchType == "searchRegEx") {
+            try {
+                this.regex = new RegExp(this.pattern,
+                                        this.ignoreCase ? "i" : undefined);
+            } catch(ex) {
+                var msg = ex.message;
+                if (ex.inner) msg += "; " + ex.inner;
+                if (ex.data) msg += "; " + ex.data;
+                var dnode = dialog.badXPathDescription;
+                while (dnode.hasChildNodes()) {
+                    dnode.removeChild(dnode.firstChild);
+                }
+                dnode.appendChild(document.createTextNode(msg));
+                dialog.badXPathBox.collapsed = false;
+                mainObj.ts_enterDefaultSearchingState();
+                return;
+            }
+        } else if (this.searchType == "searchPlainText") {
+            if (this.ignoreCase) {
+                this.patternFinal = this.pattern.toLowerCase();
+            } else {
+                this.patternFinal = this.pattern;
+            }
+        }
+        var oldCount = mainObj.gTSTreeView._rows.length;
+        mainObj.gTSTreeView._rows = [];
+        mainObj.ts_resetRowCount(oldCount);
+        this.tabCount = mainObj.ts_countTabs(this.windows);
+        this.windowCount = this.windows.length;
+        dialog.progressMeterWrapper.setAttribute('class', 'show');
+        dialog.progressMeter.setAttribute('class', 'progressShow');
+        dialog.progressMeterLabel.setAttribute('class', 'progressShow');
+        this.progressBar = dialog.tsSearchProgress;
+        this.progressBar.max = this.tabCount;
+        this.progressBar.value = this.numHits = 0;
+        this.progressBarLabel = dialog.tsSearchProgressCount;
+        mainObj.gTSTreeView.dump("startSearch: go through "
+                       + this.progressBar.max
+                       + " tabs");
+    } catch(ex) {
+        mainObj.showMessage("Searcher", ex);
+        //for (var p in ex) {
+        //    var o = ex[p];
+        //    if (typeof(o) != "function") {
+        //        mainObj.gTSTreeView.dump(p + ":" + o)
+        //    }
+        //}
+        //mainObj.gTSTreeView.dump("Searcher:" + ex);
+        return;
+    }
+    this.ready = true;
+    return;
+}
+
+this.showMessage = function(label, ex) {
+    var msg = "";
+    if (ex.fileName) {
+        msg += ex.fileName;
+    }
+    if (ex.lineNumber) {
+        msg += "#" + ex.lineNumber;
+    }
+    msg += ": " + ex.message;
+    alert(label +": " + msg);
+    this.gTSTreeView.dump(label +": " + msg);
+}
+
+this.Searcher.prototype.setupWindow = function(windowIdx) {
+    var tc = this.windows[windowIdx].window.getBrowser().tabContainer;
+    this.tabIdx = -1;
+    this.tcNodes = tc.childNodes;
+    this.currentTabCount = this.tcNodes.length;
+};
+
+this.Searcher.prototype.searchNextTab = function() {
+    switch (this.mainObj.g_SearchingState) {
+        case this.mainObj.TS_SEARCH_STATE_PAUSED:
+            this.mainObj.ts_enterPausedSearchingState();
+            return;
+        case this.mainObj.TS_SEARCH_STATE_CANCELLED:
+            this.finishSearch();
+            return;
+    }
+    this.tabIdx += 1;
+    while (this.tabIdx >= this.currentTabCount) {
+        this.windowIdx += 1;
+        if (this.windowIdx >= this.windowCount) {
+            this.finishSearch();
+            return;
+        }
+        this.setupWindow(this.windowIdx);
+        this.tabIdx = 0;
+        // Do this in a loop to handle windows with no tabs.
+    }
+    this.progressBar.setAttribute("value", parseInt(this.progressBar.value) + 1);
+    this.progressBarLabel.value = ("Checking "
+                              + this.progressBar.value
+                              + "/"
+                              + this.progressBar.max);
+    var tab = this.tcNodes[this.tabIdx];
+    var view = tab.linkedBrowser.contentWindow;
+    var doc = view.document;
+    var title = doc.title;
+    var url = doc.location;
+    var failedTest = false;
+    if  (this.currentTabRE) {
+        if (!this.currentTabRE.test(title) && !this.currentTabRE.test(url)) {
+            failedTest = true;
+            this.mainObj.gTSTreeView.dump("No match on title:"
+                           + title
+                           + ", url:"
+                           + url);
+        }
+    }
+    if  (!failedTest) {
+        var res, posn, matchedText = null;
+        var searchText = doc.documentElement.innerHTML;
+        if (this.searchType == "searchXPath") {
+            var contextNode = doc.documentElement;
+            var namespaceResolver = document.createNSResolver(contextNode.ownerDocument == null
+                                                              ? contextNode.documentElement
+                                                              : contextNode.ownerDocument.documentElement);
+            var resultType = XPathResult.ANY_UNORDERED_NODE_TYPE;
+            var nodeSet = null;
+            try {
+                nodeSet = doc.evaluate(this.pattern, contextNode, namespaceResolver, resultType, null);
+            } catch(ex) {
+                var msg = ex.message;
+                if (ex.inner) msg += "; " + ex.inner;
+                if (ex.data) msg += "; " + ex.data;
+                var dnode = this.mainObj.tsDialog.badXPathDescription;
+                while (dnode.hasChildNodes()) {
+                    dnode.removeChild(dnode.firstChild);
+                }
+                dnode.appendChild(document.createTextNode(msg));
+                this.mainObj.tsDialog.badXPathBox.collapsed = false;
+                this.mainObj.ts_enterDefaultSearchingState();
+                return;
+            }
+            var snv = nodeSet.singleNodeValue;
+            if (snv) {
+                matchedText = snv.innerHTML;
+                if (matchedText) {
+                    matchedText = matchedText.replace(/^[\s\r\n]+/, '');
+                    if (matchedText.length > 40) {
+                        matchedText = matchedText.substring(0, 40) + "...";
+                    } else if (matchedText.length == 0) {
+                        matchedText = "<white space only>";
+                    }
+                }
+            }
+        } else if (this.searchType == "searchRegEx") {
+            res = this.regex.exec(searchText);
+            if (res) {
+                matchedText = RegExp.lastMatch;
+            }
+        } else {
+            var searchTextFinal = this.ignoreCase ? searchText.toLowerCase() : searchText;
+            posn = searchTextFinal.indexOf(this.patternFinal);
+            if (posn >= 0) {
+                matchedText = searchText.substring(posn, this.pattern.length);
+            }
+        }
+        if (matchedText) {
+            this.mainObj.ts_onAddingRecord(this.numHits);
+            this.numHits += 1;
+            this.mainObj.gTSTreeView._rows.
+	        push(this.mainObj.ts_buildRow(url,
+					      title,
+					      matchedText + ":" + posn,
+					      this.windowIdx,
+					      this.tabIdx, posn, matchedText));
+        }
+    }
+    setTimeout(function(this_) {
+        try {
+            this_.searchNextTab();
+        } catch(ex) {
+            this_.mainObj.showMessage("Searcher.searchNextTab("
+                        + this_.windowIdx
+                        + ", "
+                        + this_.tabIdx
+                        + ")", ex);
+        }
+    }, 1, this);
+}
+
+this.Searcher.prototype.launch = function() {
+    this.setupWindow(this.windowIdx = 0);
+    try {
+        this.searchNextTab();
+    } catch(ex) {
+        this.mainObj.showMessage("Searcher.searchNextTab(0, 0)", ex);
+    }
+}
+
+this.Searcher.prototype.finishSearch = function() {
+    this.mainObj.ts_enterDefaultSearchingState();
+    var newCount = this.mainObj.gTSTreeView._rows.length;
+    this.progressBar.setAttribute("value", parseInt(this.progressBar.max));
+    this.progressBarLabel.value = "Found " + this.numHits + " in " + this.progressBar.max;
+    this.mainObj.gTSTreeView.dump("<< startSearch");
+    setTimeout(function(this_) {
+        this_.tsDialog.progressMeterWrapper.setAttribute('class', 'hide');
+        this_.tsDialog.progressMeter.setAttribute('class', 'progressHide');
+        this_.tsDialog.progressMeterLabel.setAttribute('class', 'progressHide');
+        this_.mainObj.gTSTreeView.dump("Did we hide the progress meter?");
+        this_.mainObj.g_searcher = null;
+        this_.mainObj.g_SearchingState = this_.mainObj.TS_SEARCH_STATE_DEFAULT;
+    }, 3 * 1000, this);
+}
+
+// End Searcher object
+
+this.ts_startSearch = function() {
+try {
+    this.gTSTreeView.dump("About to get the searcher");
+    // alert("in this.ts_startSearch...");
+    this.g_searcher = new this.Searcher(this, this.tsDialog);
+    if (this.g_searcher.ready) {
+        this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
+        this.ts_enterActiveSearchingState();
+        this.g_searcher.launch();
+    }
+} catch(ex) {
+    alert(ex);
+    this.showMessage('startSearch', ex);
+}
+}
+
+this.ts_pauseSearch = function() {
+    this.g_SearchingState = this.TS_SEARCH_STATE_PAUSED;
+}
+
+this.ts_cancelSearch = function() {
+    this.g_SearchingState = this.TS_SEARCH_STATE_CANCELLED;
+    this.ts_enterDefaultSearchingState();
+}
+
+this.ts_continueSearch = function() {
+    this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
+    this.g_searcher.searchNextTab();
+}
+
+this.ts_enterActiveSearchingState = function() {
+    this.tsDialog.pauseGoButton.label = this.ts_bundle.GetStringFromName('pause.label');
+    var this_ = this;
+    this.tsDialog.pauseGoButton.oncommand = function() {
+        this_.ts_pauseSearch();
+    }
+    this.tsDialog.cancelButton.disabled = false;
+}
+
+this.ts_enterPausedSearchingState = function() {
+    this.tsDialog.pauseGoButton.label = this.ts_bundle.GetStringFromName('continue.label');
+    var this_ = this;
+    this.tsDialog.pauseGoButton.oncommand = function() {
+        this_.ts_continueSearch();
+    }
+    this.tsDialog.cancelButton.disabled = false;
+}
+
+this.ts_enterDefaultSearchingState = function() {
+    this.tsDialog.pauseGoButton.label = this.ts_bundle.GetStringFromName('search.label'); 
+    var this_ = this;
+    this.tsDialog.pauseGoButton.oncommand = function() {
+        this_.ts_startSearch();
+    }
+    this.tsDialog.cancelButton.disabled = true;
+}
+
+this.ts_onKeyPress = function(event)  {
+    switch (event.keyCode) {
+    case KeyEvent.DOM_VK_RETURN:
+        if (!this.tsDialog.cancelButton.disabled) {
+            this.ts_startSearch();
+        }
+        return false;
+    }
+    return true;
+}
+
+this.ts_onInput = function() {
+    this.tsDialog.pauseGoButton.disabled = (this.g_SearchingState ==
+					    this.TS_SEARCH_STATE_DEFAULT
+                                     && this.tsDialog.pattern.value.length == 0);
+}
+
+this.ts_onSelectSearchType = function(menulist) {
+    this.tsDialog.ignoreCase.disabled = (menulist.selectedItem.value == 'searchXPath');
+}
+
+this.ts_onTreeDblClick = function(event) {
+    if (event.target.nodeName != "treechildren") {
+        return;
+    }
+    this.ts_onGoCurrentLine();
+}
+
+this.onGoCurrentLine = function() {
+    try {
+        var currentLine = this.tsDialog.tree.currentIndex;
+        var row = this.gTSTreeView._rows[currentLine];
+        if (!row) {
+            this.gTSTreeView.dump("no data at row " + row);
+            return;
+        }
+        var windowInfo = this.ts_tabInfo.windowInfo[row.windowIdx];
+        var targetWindow = windowInfo.window;
+        var targetBrowser = targetWindow.getBrowser();
+        var tabContainer = targetBrowser.tabContainer;
+        tabContainer.selectedIndex = row.tabIdx;
+        targetWindow.focus();
+        targetBrowser.contentWindow.focus();
+    } catch(ex) { this.gTSTreeView.dump(ex + "\n"); }
+};
 
 }).apply(gTabhunter);
