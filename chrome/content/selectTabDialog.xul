@@ -40,66 +40,160 @@
     <key key="&tabhunter.copyURL.AccessKey;" modifiers="accel" command="cmd_copyURL"/>
   </keyset>
   
-  <vbox flex="1" id="th.v1">
-    <grid>
-      <columns>
-        <column />
-        <column flags='1' flex='1'/>
-      </columns>
-      <rows>
-        <row>
-          <label id="label-pattern" value="&thTabhunter.patternLabel;"
-                 accesskey="&thTabhunter.patternAccessKey;" 
-                 control='pattern' />
-          <textbox id="pattern"
-                    oninput="return gTabhunter.onInput(this)"
-                    onkeypress="return gTabhunter.onKeyPress(event)"/>
-        </row>
-        <row>
-          <label id="label-URL" value="&thTabhunter.uriLabel;"
-                 control='view-url' />
-          <textbox id="view-url" readonly="true"/>
-        </row>
-      </rows>
-    </grid>
-    <label id="label-tablist" value="&thTabs.label;:"
-           control="currentTabList"  collapsed='true' />
-    <listbox
-      rows="6"
-      width='300'
-      id="currentTabList"
-      onselect="gTabhunter.selectTab()"
-      ondblclick="gTabhunter.acceptTab();"
-      flex="1"
-      seltype="multiple"
-      hidecolumnpicker="true" />
-    
-    <hbox  id="th.v1.h1">
-      <label id="matchStatus" flex="2" />
-      <spacer flex="1" />
-      <button id="searchText.button"
-              oncommand="gTabhunter.onLaunchTextSearch();"
-              label="Search Text...22"
-              />
-    </hbox>
+  <tabbox id="th.tabbox">
+    <tabs id="th.tabs" >
+      <tab label="URLs &amp; Titles" />
+      <tab label="Text"/>
+    </tabs>
+    <tabpanels>
+      <tabpanel id="TitleTab">
+        <vbox flex="1" id="th.v1">
+          <grid>
+            <columns>
+              <column />
+              <column flags='1' flex='1'/>
+            </columns>
+            <rows>
+              <row>
+                <label id="label-pattern" value="&thTabhunter.patternLabel;"
+                       accesskey="&thTabhunter.patternAccessKey;" 
+                       control='pattern' />
+                <textbox id="pattern"
+                          oninput="return gTabhunter.onInput(this)"
+                          onkeypress="return gTabhunter.onKeyPress(event)"/>
+              </row>
+              <row>
+                <label id="label-URL" value="&thTabhunter.uriLabel;"
+                       control='view-url' />
+                <textbox id="view-url" readonly="true"/>
+              </row>
+            </rows>
+          </grid>
+          <label id="label-tablist" value="&thTabs.label;:"
+                 control="currentTabList"  collapsed='true' />
+          <listbox
+            rows="6"
+            width='300'
+            id="currentTabList"
+            onselect="gTabhunter.selectTab()"
+            ondblclick="gTabhunter.acceptTab();"
+            flex="1"
+            seltype="multiple"
+            hidecolumnpicker="true" />
+          
+	  <label id="matchStatus" flex="2" />
+      
+          <menupopup id='listPopupMenu' onpopupshowing="gTabhunter.showListPopupMenu(this);">
+            <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo();"
+                      id="th-lpm-go"/>
+            <menuitem label="&thTabhunter.closeMenuItem;" oncommand="gTabhunter.contextClose();"
+                      id="th-lpm-close"/>
+            <menuseparator id="th-lpm-sep" />
+            <menuitem label="&tabhunter.copyURL.MenuItem;"
+                      command="cmd_copyURL"
+                      id="th-lpm-copyURL"/>
+            <menuitem label="&tabhunter.copyTabTitle.MenuItem;"
+                      command="cmd_copyTabTitle"
+                      id="th-lpm-copyTabTitle"/>
+            <menuitem label="&tabhunter.copyURLAndTitle.MenuItem;"
+                      command="cmd_copyTabTitle_URL"
+                      id="th-lpm-copyBoth"/>
+          </menupopup>
+        </vbox>
+      </tabpanel>
+      <tabpanel id="TextTab">
+        <vbox flex="1" id="ts.v1">
 
-    <menupopup id='listPopupMenu' onpopupshowing="gTabhunter.showListPopupMenu(this);">
-      <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo();"
-                id="th-lpm-go"/>
-      <menuitem label="&thTabhunter.closeMenuItem;" oncommand="gTabhunter.contextClose();"
-                id="th-lpm-close"/>
-      <menuseparator id="th-lpm-sep" />
-      <menuitem label="&tabhunter.copyURL.MenuItem;"
-                command="cmd_copyURL"
-                id="th-lpm-copyURL"/>
-      <menuitem label="&tabhunter.copyTabTitle.MenuItem;"
-                command="cmd_copyTabTitle"
-                id="th-lpm-copyTabTitle"/>
-      <menuitem label="&tabhunter.copyURLAndTitle.MenuItem;"
-                command="cmd_copyTabTitle_URL"
-                id="th-lpm-copyBoth"/>
-    </menupopup>
-  </vbox>
+<!--<label value="shot # 015" />-->
+          <hbox id="ts.v1-h1">
+              <label id="label-pattern0" value="&thTabhunter.patternLabel;"
+                     accesskey="&thTextSearchPattern.accessKey;" 
+                     control='ts-pattern' />
+              <textbox id="ts-pattern"
+                       flex="1"
+                        oninput="return gTabhunter.ts_onInput(this)"
+                        onkeypress="return gTabhunter.ts_onKeyPress(event)"/>
+          </hbox>
+          <hbox id="ts-badXPath" collapsed="true"  style="border: 1px solid red;" >
+              <description id="ts-badXPath.description"/>
+              <button id="ts-badXPath.button"
+                      label="&thTS.hideButton;"
+                      oncommand="this.parentNode.collapsed = true;" />
+              <spacer flex="1" />
+          </hbox>
+          <hbox id="ts.v1-h2">
+              <vbox>
+              <label id="searchType" value="&thSearchType.label;"
+                     control="ts-searchTypeMenu" />
+              <menulist id="ts-searchTypeMenu" oncommand="gTabhunter.ts_onSelectSearchType(this);">
+                  <menupopup>
+                      <menuitem id="searchPlainText" value="searchPlainText"
+                                label="&thTSPlainText.menuitem;" />
+                      <menuitem id="searchRegEx" value="searchRegEx"
+                                label="&thTSRegex.menuitem;" />
+                      <menuitem id="searchXPath" value="searchXPath"
+                                label="&thTSXPath.menuitem;" />
+                  </menupopup>
+              </menulist>
+              </vbox>
+              <checkbox id="ts-ignore-case"
+                        label="&thTSIgnoreCase.checkbox;"
+                        />
+              <spacer flex="3" />
+      
+              <vbox id="progressMeterWrapper" class="hide" style="margin-left: 3em; max-width:10px;" >
+                  <progressmeter mode="determined"
+                                 id="tsSearchProgress"
+                                 class="progressHide"
+                                 />
+                  <label id="tsSearchProgressCount" class="progressHide" />
+              </vbox>
+      
+          </hbox>
+          <hbox id="ts.v1-h3">
+              <checkbox id="ts-currentURIs"
+                        label="&thTSSearchCurrentSubsetOnly.checkbox;"
+                        flex="1" />
+              <button id="ts-pauseGoButton" label="&thTS.searchButton;"
+		      oncommand="gTabhunter.ts_startSearch();" />
+              <button id="ts-stopButton" label="&thTS.cancelButton;"
+		      oncommand="gTabhunter.ts_cancelSearch();" />
+          </hbox>
+          <tree id="ts-resultsTree"
+                flex="1"
+                class="zero-space no-border"
+                orient="vertical"
+                enableColumnDrag="true"
+                ondblclick="gTabhunter.ts_onTreeDblClick(event)"
+                seltype="single">  <!-- todo: make this multiple when ready -->
+                        <!--context="results-treecols-popup"-->
+              <treecols id="ts-resultsTreeCols"
+                        onclick="gTabhunter.ts_onTreecolClick(event);"
+                        >
+                  <treecol id="treecol-url"
+                           label="&thTS.URL.treecol;"
+                           persist="width ordinal hidden"
+                           flex="1" />
+                  <splitter />
+                  <treecol id="treecol-title"
+                           label="&thTS.title.treecol;"
+                           persist="width ordinal hidden"
+                           flex="1" />
+                  <splitter />
+                  <treecol id="treecol-text"
+                           label="&thTS.match.treecol;"
+                           persist="width ordinal hidden"
+                           flex="1" />
+              </treecols>
+                            <!--context="results-treechildren-popup"-->
+              <treechildren id="ts-resultsTreechildren"
+                            flex="1"
+                            />
+          </tree>
+        </vbox>
+      </tabpanel>
+    </tabpanels>
+  </tabbox>
   <stringbundleset>
     <stringbundle id="strings" src="chrome://tabhunter/locale/strings.properties"/>
     <stringbundle id="platformKeys" src="chrome://global-platform/locale/platformKeys.properties"/>
