@@ -9,6 +9,7 @@ cat << ZAK | zip tabhunter.jar -@
 ./content/prefs.xul
 ./content/prefs.js
 ./locale/en-US/tabhunter.dtd
+./locale/en-US/tabhunter.properties
 ./locale/en-US/strings.properties
 ./skin/martini-16x16.png
 ./skin/martini-24x24.png
