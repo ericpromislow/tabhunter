@@ -4,6 +4,7 @@
 var gTabhunter = {};
 (function() {
 
+// //div[class='left_col']/div/span/[text() = 'RESOLVED']
 this.onLoad = function() {
     this.mainHunter = window.arguments[0];
     if (typeof(this.mainHunter) == 'undefined') {
@@ -53,6 +54,7 @@ this.onLoad = function() {
                         
     this.statusField = document.getElementById("matchStatus");
     this.strbundle = document.getElementById("strings");
+    this.tabBox = document.getElementById("th.tabbox");
 
     this.init();
     this.loadList();
@@ -388,7 +390,16 @@ this.onAccept = function() {
 };
 
 this.acceptTab = function() {
-    this.doAcceptTab(true);
+    switch (this.tabBox.selectedIndex) {
+    case 0:
+        this.doAcceptTab(true);
+        break;
+    case 1:
+        this.ts_onGoCurrentLine();
+        break;
+    default:
+        this.dump("Unrecognized tabBox index: " + this.tabBox.selectedIndex);
+    }
 }
 
 this._clearInfo = function() {
@@ -550,7 +561,7 @@ this.TextSearchTreeView.prototype = {
         //                 + "]\n");
         return this._rows[row][column.id];
         } catch(ex) {
-            this.dump("getCellText: " + ex);
+            //this.dump("getCellText: " + ex);
             return "";
         }
     },  
@@ -577,7 +588,6 @@ this.ts_initialize = function() {
     this.gTSTreeView = new this.TextSearchTreeView();
     // this.gTSTreeView.dump("we have rows.");
     this.tsDialog.tree.view = this.gTSTreeView;
-    this.ts_tabInfo = null;
     var boxObject =
         this.tsDialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
     boxObject.view = this.gTSTreeView;
@@ -693,9 +703,9 @@ this.Searcher = function(mainObj, dialog) {
         this.progressBar.max = this.tabCount;
         this.progressBar.value = this.numHits = 0;
         this.progressBarLabel = dialog.tsSearchProgressCount;
-        mainObj.gTSTreeView.dump("startSearch: go through "
-                       + this.progressBar.max
-                       + " tabs");
+        //mainObj.gTSTreeView.dump("startSearch: go through "
+        //               + this.progressBar.max
+        //               + " tabs");
     } catch(ex) {
         mainObj.showMessage("Searcher", ex);
         //for (var p in ex) {
@@ -826,7 +836,7 @@ this.Searcher.prototype.searchNextTab = function() {
             this.mainObj.gTSTreeView._rows.
 	        push(this.mainObj.ts_buildRow(url,
 					      title,
-					      matchedText + ":" + posn,
+					      matchedText,
 					      this.windowIdx,
 					      this.tabIdx, posn, matchedText));
         }
@@ -858,12 +868,12 @@ this.Searcher.prototype.finishSearch = function() {
     var newCount = this.mainObj.gTSTreeView._rows.length;
     this.progressBar.setAttribute("value", parseInt(this.progressBar.max));
     this.progressBarLabel.value = "Found " + this.numHits + " in " + this.progressBar.max;
-    this.mainObj.gTSTreeView.dump("<< startSearch");
+    //this.mainObj.gTSTreeView.dump("<< startSearch");
     setTimeout(function(this_) {
-        this_.tsDialog.progressMeterWrapper.setAttribute('class', 'hide');
-        this_.tsDialog.progressMeter.setAttribute('class', 'progressHide');
-        this_.tsDialog.progressMeterLabel.setAttribute('class', 'progressHide');
-        this_.mainObj.gTSTreeView.dump("Did we hide the progress meter?");
+        this_.mainObj.tsDialog.progressMeterWrapper.setAttribute('class', 'hide');
+        this_.mainObj.tsDialog.progressMeter.setAttribute('class', 'progressHide');
+        this_.mainObj.tsDialog.progressMeterLabel.setAttribute('class', 'progressHide');
+        //this_.mainObj.gTSTreeView.dump("Did we hide the progress meter?");
         this_.mainObj.g_searcher = null;
         this_.mainObj.g_SearchingState = this_.mainObj.TS_SEARCH_STATE_DEFAULT;
     }, 3 * 1000, this);
@@ -873,7 +883,7 @@ this.Searcher.prototype.finishSearch = function() {
 
 this.ts_startSearch = function() {
 try {
-    this.gTSTreeView.dump("About to get the searcher");
+    //this.gTSTreeView.dump("About to get the searcher");
     // alert("in this.ts_startSearch...");
     this.g_searcher = new this.Searcher(this, this.tsDialog);
     if (this.g_searcher.ready) {
@@ -956,7 +966,7 @@ this.ts_onTreeDblClick = function(event) {
     this.ts_onGoCurrentLine();
 }
 
-this.onGoCurrentLine = function() {
+this.ts_onGoCurrentLine = function() {
     try {
         var currentLine = this.tsDialog.tree.currentIndex;
         var row = this.gTSTreeView._rows[currentLine];
@@ -964,7 +974,7 @@ this.onGoCurrentLine = function() {
             this.gTSTreeView.dump("no data at row " + row);
             return;
         }
-        var windowInfo = this.ts_tabInfo.windowInfo[row.windowIdx];
+        var windowInfo = this.windowInfo[row.windowIdx];
         var targetWindow = windowInfo.window;
         var targetBrowser = targetWindow.getBrowser();
         var tabContainer = targetBrowser.tabContainer;
