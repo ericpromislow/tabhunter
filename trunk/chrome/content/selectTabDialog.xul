@@ -40,13 +40,13 @@
     <key key="&tabhunter.copyURL.AccessKey;" modifiers="accel" command="cmd_copyURL"/>
   </keyset>
   
-  <tabbox id="th.tabbox">
+  <tabbox id="th.tabbox"  flex="1">
     <tabs id="th.tabs" >
       <tab label="URLs &amp; Titles" />
       <tab label="Text"/>
     </tabs>
-    <tabpanels>
-      <tabpanel id="TitleTab">
+    <tabpanels  flex="1">
+      <tabpanel id="TitleTab" flex="1">
         <vbox flex="1" id="th.v1">
           <grid>
             <columns>
@@ -81,7 +81,7 @@
             seltype="multiple"
             hidecolumnpicker="true" />
           
-	  <label id="matchStatus" flex="2" />
+	  <label id="matchStatus" />
       
           <menupopup id='listPopupMenu' onpopupshowing="gTabhunter.showListPopupMenu(this);">
             <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.contextGo();"
@@ -101,7 +101,7 @@
           </menupopup>
         </vbox>
       </tabpanel>
-      <tabpanel id="TextTab">
+      <tabpanel id="TextTab" flex="1">
         <vbox flex="1" id="ts.v1">
 
 <!--<label value="shot # 015" />-->
