@@ -41,7 +41,7 @@
   </keyset>
   
   <tabbox id="th.tabbox"  flex="1">
-    <tabs id="th.tabs" >
+    <tabs id="th.tabs"  onselect="gTabhunter.onSelectTab(event);">
       <tab label="URLs &amp; Titles" />
       <tab label="Text"/>
     </tabs>

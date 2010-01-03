@@ -169,6 +169,13 @@ this.updateOnPatternChange = function() {
     }
 };
 
+this.onSelectTab = function(event) {
+    if (this.tabBox.selectedIndex == 1 && this.ts_tabListNeedsRefreshing) {
+        this.ts_tabListNeedsRefreshing = false;
+        this.ts_startSearch();
+    }
+}
+
 this.updateOnTabChange = function() {
     var obj = {};
     this.mainHunter.getTabs(obj);
@@ -181,6 +188,17 @@ this.updateOnTabChange = function() {
     }
     this.allTabs = newTabs;
     this.windowInfo = obj.windowInfo;
+    this.ts_updateOnTabChange();
+    // And either update the text-search tab, or invalidate it
+};
+
+this.ts_updateOnTabChange = function() {
+    if (this.tabBox.selectedIndex == 1) {
+        this.ts_tabListNeedsRefreshing = false;
+        this.ts_startSearch();
+    } else {
+        this.ts_tabListNeedsRefreshing = true;
+    }
 };
 
 this._updateList = function(newTabs) {
@@ -604,6 +622,8 @@ this.ts_initialize = function() {
                 .getService(Components.interfaces.nsIStringBundleService)
                 .createBundle("chrome://tabhunter/locale/tabhunter.properties");
     this.ts_enterDefaultSearchingState();
+    
+    this.ts_tabListNeedsRefreshing = false;
 
 }
 
