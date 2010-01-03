@@ -664,6 +664,7 @@ this.Searcher = function(mainObj, dialog) {
     try {
         // set up parameters here.
         this.pattern = dialog.pattern.value;
+        mainObj.ts_clearTree();
         if (this.pattern.length == 0) {
             mainObj.gTSTreeView.dump("pattern is empty");
             return;
@@ -711,9 +712,6 @@ this.Searcher = function(mainObj, dialog) {
                 this.patternFinal = this.pattern;
             }
         }
-        var oldCount = mainObj.gTSTreeView._rows.length;
-        mainObj.gTSTreeView._rows = [];
-        mainObj.ts_resetRowCount(oldCount);
         this.tabCount = mainObj.ts_countTabs(this.windows);
         this.windowCount = this.windows.length;
         dialog.progressMeterWrapper.setAttribute('class', 'show');
@@ -901,6 +899,14 @@ this.Searcher.prototype.finishSearch = function() {
 
 // End Searcher object
 
+this.ts_clearTree = function() {
+    var oldCount = this.gTSTreeView._rows.length;
+    if (oldCount > 0) {
+        this.gTSTreeView._rows = [];
+        this.ts_resetRowCount(oldCount);
+    }
+}
+
 this.ts_startSearch = function() {
 try {
     //this.gTSTreeView.dump("About to get the searcher");
@@ -909,7 +915,10 @@ try {
     if (this.g_searcher.ready) {
         this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
         this.ts_enterActiveSearchingState();
-        this.g_searcher.launch();
+        setTimeout(function(this_) {
+            // delay so the table view gets cleared.
+            this_.g_searcher.launch();
+        }, 0, this);
     }
 } catch(ex) {
     alert(ex);
