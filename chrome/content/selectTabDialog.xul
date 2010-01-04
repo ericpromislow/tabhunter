@@ -188,8 +188,26 @@
                             <!--context="results-treechildren-popup"-->
               <treechildren id="ts-resultsTreechildren"
                             flex="1"
+                            context="tsTreePopupMenu"
                             />
           </tree>
+          <menupopup id='tsTreePopupMenu' onpopupshowing="gTabhunter.ts_showPopupMenu(this);">
+            <menuitem label="&thTabhunter.goMenuItem;" oncommand="gTabhunter.ts_contextGo();"
+                      id="th-ts-go"/>
+            <menuitem label="&thTabhunter.closeMenuItem;"
+                      oncommand="gTabhunter.ts_contextClose();"
+                      id="th-ts-close"/>
+            <menuseparator id="th-lpm-sep" />
+            <menuitem label="&tabhunter.copyURL.MenuItem;"
+                      oncommand="gTabhunter.ts_copyURL();"
+                      id="th-ts-copyURL"/>
+            <menuitem label="&tabhunter.copyTabTitle.MenuItem;"
+                      oncommand="gTabhunter.ts_copyTabTitle();"
+                      id="th-ts-copyTabTitle"/>
+            <menuitem label="&tabhunter.copyURLAndTitle.MenuItem;"
+                      oncommand="gTabhunter.ts_copyURLAndTitle();"
+                      id="th-ts-copyBoth"/>
+          </menupopup>
         </vbox>
       </tabpanel>
     </tabpanels>
