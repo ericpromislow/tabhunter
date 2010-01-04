@@ -159,6 +159,83 @@ this.labelFromList = function(idx, lowerCase) {
     return s;
 };
 
+this.ts_showPopupMenu = function(listPopupMenu) {
+    try {
+        var goMenuItem = document.getElementById("th-ts-go");
+        if (this.gTSTreeView.selection.count == 1) {
+            goMenuItem.removeAttribute('disabled');
+        } else {
+            goMenuItem.setAttribute('disabled', 'true');
+        }
+    } catch(ex) {
+        alert(ex);
+    }
+};
+
+this.ts_contextGo  = function() {
+    this.ts_onGoCurrentLine();
+};
+
+this._rowFromSelectedLine = function(label) {
+    var currentLine = this.tsDialog.tree.currentIndex;
+    var row = this.gTSTreeView._rows[currentLine];
+    if (!row) {
+        this.gTSTreeView.dump(label + ": no data at row " + currentLine);
+        return null;
+    }
+    return row;
+}
+
+this.ts_contextClose  = function() {
+    try {
+        var row = this._rowFromSelectedLine("ts_contextClose");
+        if (!row) {
+            return;
+        }
+        var windowInfo = this.windowInfo[row.windowIdx];
+        var targetWindow = windowInfo.window;
+        var tabContainer = targetWindow.getBrowser().tabContainer;
+        if (tabContainer.childNodes.length == 1) {
+            targetWindow.close();
+        } else {
+            targetWindow.getBrowser().removeTab(windowInfo.tabs[row.tabIdx]);
+        }
+    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
+};
+
+this.ts_copyURL  = function() {
+    try {
+        var row = this._rowFromSelectedLine("ts_copyURL");
+        if (!row) {
+            return;
+        }
+        copyToClipboard(row[this.TS_URI_ID]);
+    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
+};
+
+this.ts_copyTabTitle  = function() {
+    try {
+        var row = this._rowFromSelectedLine("ts_copyTabTitle");
+        if (!row) {
+            return;
+        }
+        copyToClipboard(row[this.TS_TITLE_ID]);
+    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
+};
+
+this.ts_copyURLAndTitle  = function() {
+    try {
+        var row = this._rowFromSelectedLine("ts_copyURLAndTitle");
+        if (!row) {
+            return;
+        }
+        copyToClipboard(row[this.TS_TITLE_ID]
+                        + " - "
+                        + row[this.TS_URI_ID]);
+    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
+};
+
+
 this.updateOnPatternChange = function() {
     this.compilePattern();
     var newTabs = this.allTabs;
