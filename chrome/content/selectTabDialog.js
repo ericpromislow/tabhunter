@@ -176,11 +176,25 @@ this.ts_contextGo  = function() {
     this.ts_onGoCurrentLine();
 };
 
-this._rowFromSelectedLine = function(label) {
-    var currentLine = this.tsDialog.tree.currentIndex;
-    var row = this.gTSTreeView._rows[currentLine];
+
+this._tsSelectedLines = function() {
+    var selection = this.tsDialog.tree.view.selection;
+    var numParts = selection.getRangeCount();
+    var startRange = {}, endRange = {};
+    var lines = [];
+    for (var i = 0; i < numParts; i++) {
+        selection.getRangeAt(i, startRange, endRange);
+        for (var j = startRange.value; j <= endRange.value; j++) {
+            lines.push(j);
+        }
+    }
+    return lines;
+}
+
+this._rowFromSpecifiedLine = function(lineno) {
+    var row = this.gTSTreeView._rows[lineno];
     if (!row) {
-        this.gTSTreeView.dump(label + ": no data at row " + currentLine);
+        this.gTSTreeView.dump("_rowFromSpecifiedLine: no data at row " + lineno);
         return null;
     }
     return row;
@@ -188,53 +202,77 @@ this._rowFromSelectedLine = function(label) {
 
 this.ts_contextClose  = function() {
     try {
-        var row = this._rowFromSelectedLine("ts_contextClose");
-        if (!row) {
-            return;
+        var lines = this._tsSelectedLines();
+        var row;
+        var tabsToClose = {}; // windowIdx => [ array of tabIdx ]
+        for (var i = 0; i < lines.length; i++) {
+            row = this._rowFromSpecifiedLine(lines[i]);
+            if (!row) {
+                this.gTSTreeView.dump(label + ": no data at row " + lines[i]);
+                continue;
+            }
+            var widx = row.windowIdx;
+            if (!(widx in tabsToClose)) {
+                tabsToClose[widx] = [];
+            }
+            tabsToClose[widx].push(row.tabIdx);
         }
-        var windowInfo = this.windowInfo[row.windowIdx];
-        var targetWindow = windowInfo.window;
-        var tabContainer = targetWindow.getBrowser().tabContainer;
-        if (tabContainer.childNodes.length == 1) {
-            targetWindow.close();
-        } else {
-            targetWindow.getBrowser().removeTab(windowInfo.tabs[row.tabIdx]);
+        for (var i in tabsToClose) {
+            var tabList = tabsToClose[i];
+            tabList.sort(function(a, b) { return b - a; });
+            var windowInfo = this.windowInfo[i];
+            var targetWindow = windowInfo.window;
+            var targetBrowser = targetWindow.getBrowser();
+            var tabContainer = targetBrowser.tabContainer;
+            for (var j = 0; j < tabList.length; j++) {
+                if (tabContainer.childNodes.length == 1) {
+                    targetWindow.close();
+                } else {
+                    targetBrowser.removeTab(windowInfo.tabs[tabList[j]]);
+                }
+            }
         }
     } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
 };
+
+this._ts_copyParts = function(selector) {
+    var copiedLines = [];
+    try {
+        var lines = this._tsSelectedLines();
+        var row;
+        for (var i = 0; i < lines.length; i++) {
+            row = this._rowFromSpecifiedLine(lines[i]);
+            if (!row) {
+                this.gTSTreeView.dump(label + ": no data at row " + lines[i]);
+                continue;
+            }
+            copiedLines.push(selector(row));
+        }
+        copyToClipboard(copiedLines.join(this.eol));
+    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }    
+}
 
 this.ts_copyURL  = function() {
-    try {
-        var row = this._rowFromSelectedLine("ts_copyURL");
-        if (!row) {
-            return;
-        }
-        copyToClipboard(row[this.TS_URI_ID]);
-    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
-};
+    var this_ = this;
+    return this._ts_copyParts(function(row) {
+        return row[this_.TS_URI_ID];
+    });
+}
 
 this.ts_copyTabTitle  = function() {
-    try {
-        var row = this._rowFromSelectedLine("ts_copyTabTitle");
-        if (!row) {
-            return;
-        }
-        copyToClipboard(row[this.TS_TITLE_ID]);
-    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
-};
-
+    var this_ = this;
+    return this._ts_copyParts(function(row) {
+        return row[this_.TS_TITLE_ID];
+    });
+}
 this.ts_copyURLAndTitle  = function() {
-    try {
-        var row = this._rowFromSelectedLine("ts_copyURLAndTitle");
-        if (!row) {
-            return;
-        }
-        copyToClipboard(row[this.TS_TITLE_ID]
-                        + " - "
-                        + row[this.TS_URI_ID]);
-    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
+    var this_ = this;
+    return this._ts_copyParts(function(row) {
+        return row[this_.TS_TITLE_ID]
+                    + " - "
+                    + row[this_.TS_URI_ID];
+    });
 };
-
 
 this.updateOnPatternChange = function() {
     this.compilePattern();

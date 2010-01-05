@@ -165,8 +165,7 @@
                 orient="vertical"
                 enableColumnDrag="true"
                 ondblclick="gTabhunter.ts_onTreeDblClick(event)"
-                seltype="single">  <!-- todo: make this multiple when ready -->
-                        <!--context="results-treecols-popup"-->
+                seltype="multiple">
               <treecols id="ts-resultsTreeCols"
                         onclick="gTabhunter.ts_onTreecolClick(event);"
                         >
