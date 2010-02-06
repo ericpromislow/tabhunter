@@ -43,13 +43,14 @@ if (!("tabhunter" in ep_extensions)) {
 (function() {
     this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
                       getService(Components.interfaces.nsIWindowMediator));
-    function TabInfo(windowIdx, tabIdx, label, image, location) {
+    function TabInfo(windowIdx, tabIdx, label, image, location, lastSelectTime) {
         this.windowIdx = windowIdx;
         this.tabIdx = tabIdx;
         this.label = label;
         this.label_lc = this.label.toLowerCase();
         this.image = image;
         this.location = location;
+        this.lastSelectTime = lastSelectTime;
     };
     
     // OUT ARGS: tabs: unordered array of [TabInfo]
@@ -89,7 +90,8 @@ if (!("tabhunter" in ep_extensions)) {
                 if (tab.linkedBrowser.contentDocument.contentType.indexOf("image/") != 0) {
                     var image = tab.getAttribute('image');
                 }
-                obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location));
+                var lastSelectTime = tab.lastSelectTime || 0;
+                obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location, lastSelectTime));
             }
         } while (openWindows.hasMoreElements());
     };
@@ -106,6 +108,20 @@ if (!("tabhunter" in ep_extensions)) {
         return (tab1.label_lc < tab2.label_lc
                 ? -1 : (tab1.label_lc > tab2.label_lc ? 1 : 0));
     }
+
+    this.compareByLastSelectTime = function (tab1, tab2) {
+	if (!tab1.lastSelectTime && !tab2.lastSelectTime) {
+	    return (tab1.label_lc < tab2.label_lc
+		    ? -1 : (tab1.label_lc > tab2.label_lc ? 1 : 0));
+	}
+        return tab1.lastSelectTime - tab2.lastSelectTime;
+    },
+
+    this.sortByLastSelectTime = function (tabs) {
+        tabs.sort(this_.compareByLastSelectTime);
+        tabs.reverse();
+        tabs.push(tabs.shift());
+    },
     
     this.launchDialog = function(event) {
         // Look for the window first
