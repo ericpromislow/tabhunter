@@ -149,6 +149,9 @@ TabhunterWatchSessionService.prototype = {
         var tabpanels = aEvent.currentTarget.mPanelContainer;
         this.onTabMove(aEvent.currentTarget.ownerDocument.defaultView, tabpanels);
         break;
+      case "TabSelect":
+        this.onTabSelect(aEvent);
+        break;
     }
   },
 
@@ -184,6 +187,7 @@ TabhunterWatchSessionService.prototype = {
             tabContainer_.addEventListener("TabOpen", func_, false);
             tabContainer_.addEventListener("TabClose", func_, false);
             tabContainer_.addEventListener("TabMove", func_, false);
+            tabContainer_.addEventListener("TabSelect", func_, false);
         }, 1, tabContainer, func);
     if (!aNoNotification)
         this.reactorFunc.call(this.reactor);
@@ -204,6 +208,7 @@ TabhunterWatchSessionService.prototype = {
         //tabContainer.removeEventListener("TabOpen", func, false);
         //tabContainer.removeEventListener("TabClose", func, false);
         //tabContainer.removeEventListener("TabMove", func, false);
+        //tabContainer.removeEventListener("TabSelect", func, false);
         
         for (var i = 0; i < tabpanels.childNodes.length; i++) {
           this.onTabRemove(aWindow, tabpanels.childNodes[i], true);
@@ -259,7 +264,13 @@ TabhunterWatchSessionService.prototype = {
         }
   },
 
-  onTabMove: function thst_onTabSelect(aWindow, aPanels) {
+  onTabMove: function thst_onTabMove(aWindow, aPanels) {
+    this.reactorFunc.call(this.reactor);
+  },
+
+  onTabSelect: function thst_onTabSelect(aEvent) {
+    var tab = aEvent.originalTarget;
+    tab.lastSelectTime = Date.now();
     this.reactorFunc.call(this.reactor);
   },
 
