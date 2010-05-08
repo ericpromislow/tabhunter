@@ -6,6 +6,7 @@ cat << ZAK | zip tabhunter.jar -@
 ./content/selectTabDialog.xul
 ./content/tabhunter.js
 ./content/tabhunterOverlay.xul
+./content/track-tab-select.js
 ./content/prefs.xul
 ./content/prefs.js
 ./locale/en-US/tabhunter.dtd
@@ -18,6 +19,6 @@ cat << ZAK | zip tabhunter.jar -@
 ZAK
 # zip -r tabhunter.jar content locale skin
 cd ..
-T=tabhunter-0.9.6.xpi
+T=tabhunter-0.9.7.xpi
 rm -f $T
 zip $T  chrome.manifest install.rdf chrome/tabhunter.jar defaults/preferences/prefs.js
