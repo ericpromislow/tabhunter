@@ -86,7 +86,7 @@ this.init = function() {
     var obj = {};
     this.mainHunter.getTabs(obj);
     this.allTabs = obj.tabs;
-    this.mainHunter.sortByLastSelectTime(this.allTabs);
+    this.allTabs.sort(this.mainHunter.compareByName);
     this.windowInfo = obj.windowInfo;
 };
 
@@ -295,7 +295,7 @@ this.updateOnTabChange = function() {
     var obj = {};
     this.mainHunter.getTabs(obj);
     var newTabs = obj.tabs;
-    this.mainHunter.sortByLastSelectTime(newTabs);
+    newTabs.sort(this.mainHunter.compareByName);
     try {
         this._updateList(newTabs);
     } catch(ex) {
