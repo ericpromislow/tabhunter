@@ -13,16 +13,10 @@ const prefNames = ['closeOnReturn','showStatusBarIcon', 'showMenuItem'];
 
 this.onLoad = function() {
     try {
-        var parentWindow = opener;
-        if (parentWindow.document.documentElement.getAttribute('windowtype')
-            == "Extension:Manager") {
-            parentWindow = parentWindow.opener;
-        }
-    this.mainHunter = parentWindow.ep_extensions.tabhunter;
     this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
                   .getService(Components.interfaces.nsIPrefService)
                   .getBranch('extensions.tabhunter.'));
-    if (this.mainHunter.isLinux()) {
+    if (this.isLinux()) {
         var x = screenX;
         var y = screenY;
         if (this.prefs.prefHasUserValue('screenX')) {
@@ -45,7 +39,7 @@ this.onLoad = function() {
 };
 
 this.onUnload = function() {
-    if (this.mainHunter.isLinux()) {
+    if (this.isLinux()) {
         this.prefs.setIntPref('screenX', screenX);
         this.prefs.setIntPref('screenY', screenY);
     }
@@ -61,6 +55,10 @@ this.onSubmit = function() {
 };
 
 this.onCancel = function() {
+};
+
+this.isLinux = function() {
+    return navigator.platform.search(/linux/i) > -1;
 };
 
 this._updatePrefsFromDialog = function(prefs) {
