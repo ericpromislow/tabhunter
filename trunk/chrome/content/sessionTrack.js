@@ -69,7 +69,7 @@ TabhunterWatchSessionService.prototype = {
         try {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);
-        consoleService.logStringMessage("My component: " + aMessage);
+        consoleService.logStringMessage("sessionTrack: " + aMessage);
         } catch(ex) {
             // after closing, Components might be undefined.
         }
@@ -185,12 +185,17 @@ TabhunterWatchSessionService.prototype = {
             tabContainer_.addEventListener("TabClose", func_, false);
             tabContainer_.addEventListener("TabMove", func_, false);
         }, 1, tabContainer, func);
-    if (!aNoNotification)
+    if (!aNoNotification) {
         this.reactorFunc.call(this.reactor);
+    } else {
+    }
   },
 
   onClose: function thst_onClose(aWindow) {
-    
+    if (aWindow.browserDOMWindow === null) {
+      this.dump("closing a non-browser-dom window, ignoring the event");
+      return;
+    }
     this.reactorFunc.call(this.reactor);
     //XXX: Figure out why this doesn't work.
     if (!aWindow || typeof(aWindow.getBrowser) != 'function') return;
@@ -219,8 +224,9 @@ TabhunterWatchSessionService.prototype = {
     setTimeout(function(aPanel_, func_) {
             aPanel_.addEventListener("load", func_, true);
         }, 1, aPanel, func);
-    if (!aNoNotification)
+    if (!aNoNotification) {
         this.reactorFunc.call(this.reactor);
+    }
   },
 
   onTabRemove: function thst_onTabRemove(aWindow, aPanel, aNoNotification) {

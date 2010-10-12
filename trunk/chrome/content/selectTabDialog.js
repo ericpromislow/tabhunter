@@ -6,6 +6,7 @@ var gTabhunter = {};
 
 // //div[class='left_col']/div/span/[text() = 'RESOLVED']
 this.onLoad = function() {
+    try {
     this.mainHunter = window.arguments[0];
     if (typeof(this.mainHunter) == 'undefined') {
         this.mainHunter = ep_extensions.tabhunter;
@@ -80,6 +81,15 @@ this.onLoad = function() {
     this.eol = navigator.platform.toLowerCase().indexOf("win32") >= 0 ?  "\r\n" : "\n";
 
     this.tsOnLoad();
+    if (window.innerHeight < 200) {
+        window.innerHeight = 250;
+    }
+    if (window.innerWidth < 300) {
+        window.innerWidth = 350;
+    }
+    } catch(ex) {
+        this.mainHunter.dump("Error loading tabhunter: " + ex)
+    }
 };
 
 this.init = function() {
@@ -285,6 +295,10 @@ this.updateOnPatternChange = function() {
 };
 
 this.onSelectTab = function(event) {
+    if (this.tabBox === undefined) {
+        // If true, the dialog hasn't been init'ed yet.
+        return;
+    }
     if (this.tabBox.selectedIndex == 1 && this.ts_tabListNeedsRefreshing) {
         this.ts_tabListNeedsRefreshing = false;
         this.ts_startSearch();
@@ -308,7 +322,8 @@ this.updateOnTabChange = function() {
 };
 
 this.ts_updateOnTabChange = function() {
-    if (this.tabBox.selectedIndex == 1) {
+    if (false && this.tabBox.selectedIndex == 1) {
+        // Don't do this on Firefox 3.7 & up
         this.ts_tabListNeedsRefreshing = false;
         this.ts_startSearch();
     } else {
@@ -761,6 +776,10 @@ this.ts_resetRowCount = function(oldCount) {
 }
 
 this.ts_onAddingRecord = function(oldCount) {
+    if (!this.tsDialog
+        || !this.tsDialog.tree) {
+        return;
+    }
     var boxObject =
         this.tsDialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
     boxObject.rowCountChanged(oldCount, 1);
@@ -875,6 +894,14 @@ this.Searcher.prototype.setupWindow = function(windowIdx) {
 };
 
 this.Searcher.prototype.searchNextTab = function() {
+  try {
+    this.searchNextTab_aux();
+  } catch(ex) {
+    this.mainObj.gTSTreeView.dump("searchNextTab failed: " + ex + "\n");
+  }
+}
+
+this.Searcher.prototype.searchNextTab_aux = function() {
     switch (this.mainObj.g_SearchingState) {
         case this.mainObj.TS_SEARCH_STATE_PAUSED:
             this.mainObj.ts_enterPausedSearchingState();
@@ -901,6 +928,10 @@ this.Searcher.prototype.searchNextTab = function() {
                               + this.progressBar.max);
     var tab = this.tcNodes[this.tabIdx];
     var view = tab.linkedBrowser.contentWindow;
+    if (!view) {
+       this.mainObj.gTSTreeView.dump("searchNextTab: no view");
+       return; // should be no view now.
+    }
     var doc = view.document;
     var title = doc.title;
     var url = doc.location;
@@ -917,7 +948,9 @@ this.Searcher.prototype.searchNextTab = function() {
     if  (!failedTest) {
         var res, posn, matchedText = null;
         var searchText = doc.documentElement.innerHTML;
-        if (this.searchType == "searchXPath") {
+	if (!searchText) {
+            // do nothing
+        } else if (this.searchType == "searchXPath") {
             var contextNode = doc.documentElement;
             var namespaceResolver = document.createNSResolver(contextNode.ownerDocument == null
                                                               ? contextNode.documentElement
