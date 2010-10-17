@@ -82,10 +82,10 @@ this.onLoad = function() {
 
     this.tsOnLoad();
     if (window.innerHeight < 200) {
-        window.innerHeight = 250;
+        window.innerHeight = 270;
     }
     if (window.innerWidth < 300) {
-        window.innerWidth = 350;
+        window.innerWidth = 450;
     }
     } catch(ex) {
         this.mainHunter.dump("Error loading tabhunter: " + ex)

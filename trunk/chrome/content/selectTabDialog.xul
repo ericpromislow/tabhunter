@@ -16,9 +16,9 @@
   buttonlabelextra2="&thTabhunter.closeButton;"
   onload="return gTabhunter.onLoad();"
   onunload="gTabhunter.onUnload();"
-  width="400"
-  height="200"
   persist="screenX screenY width height"
+  width="488"
+  height="270"
   ondialogextra1="return gTabhunter.acceptTab();"
   ondialogextra2="gTabhunter.onClose();"
   >
@@ -50,7 +50,7 @@
     <tabpanels  flex="1">
       <tabpanel id="TitleTab" flex="1">
         <vbox flex="1" id="th.v1">
-          <grid flex="1">
+          <grid>
             <columns>
               <column />
               <column flags='1' flex='1'/>
