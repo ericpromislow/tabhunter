@@ -36,12 +36,12 @@ this.onLoad = function() {
                   .getService(Components.interfaces.nsIPrefService)
                   .getBranch('extensions.tabhunter.'));
     var vals = [];
-    if (this.prefs.prefHasUserValue("screenX")) {
-       ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
-	 forEach(function(prop) {
-	      window[prop] = this.prefs.getIntPref(prop);
-	   }.bind(this));
-    }
+    ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
+        forEach(function(prop) {
+            if (this.prefs.prefHasUserValue(prop)) {
+                window[prop] = this.prefs.getIntPref(prop);
+            }
+            }.bind(this));
     this.acceptedItem = "";
     this.patternField = document.getElementById('pattern');
     this.patternField.value = this.mainHunter.searchPattern;
@@ -536,7 +536,7 @@ this.onUnload = function() {
       }.bind(this));
     this.gTSTreeView = null;
     this._clearInfo();
-}
+};
 
 this.doAcceptTab = function(maybeCloseOnReturn) {
     var selectedItem = this.currentTabList.selectedItem;
