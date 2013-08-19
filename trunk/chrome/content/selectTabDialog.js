@@ -4,8 +4,29 @@
 var gTabhunter = {};
 (function() {
 
+ this.addAddonBarButtonIfNeeded = function() {
+       var addonBar = document.getElementById("addon-bar");
+       if (addonBar) {
+	  //alert("Found an addon bar");
+	  if (!document.getElementById("tabhunterToolbarIcon")) {
+	     //alert("But no tabhunterToolbarIcon");
+	     var addonBarCloseButton = document.getElementById("addonbar-closebutton")
+	       addonBar.insertItem("tabhunterToolbarIcon", addonBarCloseButton.nextSibling);
+	     addonBar.collapsed = false;
+	  } else {
+	     //alert("Already have tabhunterToolbarIcon");
+	  }
+       } else {
+	 //alert("Didn't find an addon bar");
+       }
+    };
 // //div[class='left_col']/div/span/[text() = 'RESOLVED']
 this.onLoad = function() {
+      try{
+        this.addAddonBarButtonIfNeeded();
+      } catch(ex) {
+	alert("Error while checking addon bar button: " + ex);
+      }
     try {
     this.mainHunter = window.arguments[0];
     if (typeof(this.mainHunter) == 'undefined') {
@@ -14,6 +35,13 @@ this.onLoad = function() {
     this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
                   .getService(Components.interfaces.nsIPrefService)
                   .getBranch('extensions.tabhunter.'));
+    var vals = [];
+    if (this.prefs.prefHasUserValue("screenX")) {
+       ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
+	 forEach(function(prop) {
+	      window[prop] = this.prefs.getIntPref(prop);
+	   }.bind(this));
+    }
     this.acceptedItem = "";
     this.patternField = document.getElementById('pattern');
     this.patternField.value = this.mainHunter.searchPattern;
@@ -502,10 +530,10 @@ this.onDoubleClick = function() {
 
 this.onUnload = function() {
     this.mainHunter.searchPattern = this.patternField.value;
-    if (this.mainHunter.isLinux()) {
-        this.prefs.setIntPref('screenX', screenX);
-        this.prefs.setIntPref('screenY', screenY);
-    }
+    ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
+    forEach(function(prop) {
+	 this.prefs.setIntPref(prop, window[prop]);
+      }.bind(this));
     this.gTSTreeView = null;
     this._clearInfo();
 }
