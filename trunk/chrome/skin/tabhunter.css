@@ -22,8 +22,11 @@ menupopup#listPopupMenu > menuitem {
   color: -moz-FieldText;
 }
 
-listitem.listitemTabhunter {
-    max-height: 8px !important;
+listitem.listitemTabhunter listcell.listcell-iconic image.listcell-icon {
+    height: 16px;
+    width: 16px;
+    max-height: 16px;
+    max-width: 16px;
 }
 
 #progressMeterWrapper.hide {
