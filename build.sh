@@ -23,3 +23,4 @@ rm -f $T
 zip $T  chrome.manifest install.rdf chrome/tabhunter.jar defaults/preferences/prefs.js
 
 # Ignore this line
+# Ignore this line
