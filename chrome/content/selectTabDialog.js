@@ -4,117 +4,117 @@
 var gTabhunter = {};
 (function() {
 
- this.addAddonBarButtonIfNeeded = function() {
-       var addonBar = document.getElementById("addon-bar");
-       if (addonBar) {
-	  //alert("Found an addon bar");
-	  if (!document.getElementById("tabhunterToolbarIcon")) {
-	     //alert("But no tabhunterToolbarIcon");
-	     var addonBarCloseButton = document.getElementById("addonbar-closebutton")
-	       addonBar.insertItem("tabhunterToolbarIcon", addonBarCloseButton.nextSibling);
-	     addonBar.collapsed = false;
-	  } else {
-	     //alert("Already have tabhunterToolbarIcon");
-	  }
-       } else {
-	 //alert("Didn't find an addon bar");
-       }
-    };
+this.addAddonBarButtonIfNeeded = function() {
+    var addonBar = document.getElementById("addon-bar");
+    if (addonBar) {
+        //alert("Found an addon bar");
+        if (!document.getElementById("tabhunterToolbarIcon")) {
+            //alert("But no tabhunterToolbarIcon");
+            var addonBarCloseButton = document.getElementById("addonbar-closebutton")
+                addonBar.insertItem("tabhunterToolbarIcon", addonBarCloseButton.nextSibling);
+            addonBar.collapsed = false;
+        } else {
+            //alert("Already have tabhunterToolbarIcon");
+        }
+    } else {
+        //alert("Didn't find an addon bar");
+    }
+};
 // //div[class='left_col']/div/span/[text() = 'RESOLVED']
 this.onLoad = function() {
-      try{
-        this.addAddonBarButtonIfNeeded();
-      } catch(ex) {
-	alert("Error while checking addon bar button: " + ex);
-      }
     try {
-    this.mainHunter = window.arguments[0];
-    if (typeof(this.mainHunter) == 'undefined') {
-        this.mainHunter = ep_extensions.tabhunter;
+        this.addAddonBarButtonIfNeeded();
+    } catch(ex) {
+        alert("Error while checking addon bar button: " + ex);
     }
-    this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
-                  .getService(Components.interfaces.nsIPrefService)
-                  .getBranch('extensions.tabhunter.'));
-    var vals = [];
-    ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
+    try {
+        this.mainHunter = window.arguments[0];
+        if (typeof(this.mainHunter) == 'undefined') {
+            this.mainHunter = ep_extensions.tabhunter;
+        }
+        this.prefs = (Components.classes['@mozilla.org/preferences-service;1']
+                      .getService(Components.interfaces.nsIPrefService)
+                      .getBranch('extensions.tabhunter.'));
+        var vals = [];
+        ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
         forEach(function(prop) {
-            if (this.prefs.prefHasUserValue(prop)) {
-                window[prop] = this.prefs.getIntPref(prop);
-            }
+                if (this.prefs.prefHasUserValue(prop)) {
+                    window[prop] = this.prefs.getIntPref(prop);
+                }
             }.bind(this));
-    this.acceptedItem = "";
-    this.patternField = document.getElementById('pattern');
-    this.patternField.value = this.mainHunter.searchPattern;
-    this.patternField.select();
-    this.currentPatternText = null; // first time only, then always text.
+        this.acceptedItem = "";
+        this.patternField = document.getElementById('pattern');
+        this.patternField.value = this.mainHunter.searchPattern;
+        this.patternField.select();
+        this.currentPatternText = null; // first time only, then always text.
     
-    this.currentURLField = document.getElementById("view-url");
+        this.currentURLField = document.getElementById("view-url");
     
-    this.currentTabList = document.getElementById('currentTabList');
-    var self= this;
-    this.currentTabList.addEventListener('mousedown',
-        function(event) {
-            if (event.button == 2 && self.currentTabList.selectedCount == 0) {// context button
-                var listitem = event.originalTarget;
-                if (listitem && listitem.nodeName == "listitem") {
-                    listitem.parentNode.selectItem(listitem);
-                }
-            }
-        }, true);
+        this.currentTabList = document.getElementById('currentTabList');
+        var self= this;
+        this.currentTabList.addEventListener('mousedown',
+                                             function(event) {
+                                                 if (event.button == 2 && self.currentTabList.selectedCount == 0) {// context button
+                                                     var listitem = event.originalTarget;
+                                                     if (listitem && listitem.nodeName == "listitem") {
+                                                         listitem.parentNode.selectItem(listitem);
+                                                     }
+                                                 }
+                                             }, true);
     
-    this.currentTabList.addEventListener('keypress',
-        function(event) {
-            if (event.keyCode == 13) {
-                // treat return in listbox same as in pattern
-                event.stopPropagation();
-                event.preventDefault();
-                if (event.target.nodeName == "listbox" && self.currentTabList.selectedCount == 1) {
-                    self.doAcceptTab(true);
-                }
-                return false;
-             }
-             return true;
-        }, true);
-    // window.addEventListener('focus', this.windowFocusCheckSetup, false);
-    this.lastGoodPattern = /./;
+        this.currentTabList.addEventListener('keypress',
+                                             function(event) {
+                                                 if (event.keyCode == 13) {
+                                                     // treat return in listbox same as in pattern
+                                                     event.stopPropagation();
+                                                     event.preventDefault();
+                                                     if (event.target.nodeName == "listbox" && self.currentTabList.selectedCount == 1) {
+                                                         self.doAcceptTab(true);
+                                                     }
+                                                     return false;
+                                                 }
+                                                 return true;
+                                             }, true);
+        // window.addEventListener('focus', this.windowFocusCheckSetup, false);
+        this.lastGoodPattern = /./;
     
-    this.observerService = Components.classes["@mozilla.org/observer-service;1"].
-                        getService(Components.interfaces.nsIObserverService);
+        this.observerService = Components.classes["@mozilla.org/observer-service;1"].
+        getService(Components.interfaces.nsIObserverService);
                         
-    this.statusField = document.getElementById("matchStatus");
-    this.strbundle = document.getElementById("strings");
-    this.tabBox = document.getElementById("th.tabbox");
+        this.statusField = document.getElementById("matchStatus");
+        this.strbundle = document.getElementById("strings");
+        this.tabBox = document.getElementById("th.tabbox");
 
-    this.init();
-    this.loadList();
-    this._showNumMatches(this.allTabs);
-    this.tabhunterSession = new TabhunterWatchSessionService(this, this.updateOnTabChange);
-    this.tabhunterSession.init();
-    // this.setupWatcher(); -- use the moz session tracker to do this. 
-    this.patternField.focus();
+        this.init();
+        this.loadList();
+        this._showNumMatches(this.allTabs);
+        this.tabhunterSession = new TabhunterWatchSessionService(this, this.updateOnTabChange);
+        this.tabhunterSession.init();
+        // this.setupWatcher(); -- use the moz session tracker to do this. 
+        this.patternField.focus();
     
-    // Fix the titlebar
-    var app = Components.classes["@mozilla.org/xre/app-info;1"].
-                getService(Components.interfaces.nsIXULAppInfo);
-    var appName = app.name;
-    var appVendor = app.vendor;
-    var title = window.document.title;
-    if (title.indexOf(appName) == -1) {
-        var s = "";
-        if (appVendor) s = appVendor;
-        if (appName) s += " " + appName;
-        title += " - " + s;
-        window.document.title = title;
-    }
-    this.eol = navigator.platform.toLowerCase().indexOf("win32") >= 0 ?  "\r\n" : "\n";
+        // Fix the titlebar
+        var app = Components.classes["@mozilla.org/xre/app-info;1"].
+        getService(Components.interfaces.nsIXULAppInfo);
+        var appName = app.name;
+        var appVendor = app.vendor;
+        var title = window.document.title;
+        if (title.indexOf(appName) == -1) {
+            var s = "";
+            if (appVendor) s = appVendor;
+            if (appName) s += " " + appName;
+            title += " - " + s;
+            window.document.title = title;
+        }
+        this.eol = navigator.platform.toLowerCase().indexOf("win32") >= 0 ?  "\r\n" : "\n";
 
-    this.tsOnLoad();
-    if (window.innerHeight < 200) {
-        window.innerHeight = 270;
-    }
-    if (window.innerWidth < 300) {
-        window.innerWidth = 450;
-    }
+        this.tsOnLoad();
+        if (window.innerHeight < 200) {
+            window.innerHeight = 270;
+        }
+        if (window.innerWidth < 300) {
+            window.innerWidth = 450;
+        }
     } catch(ex) {
         this.mainHunter.dump("Error loading tabhunter: " + ex)
     }
