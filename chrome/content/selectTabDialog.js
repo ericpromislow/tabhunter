@@ -42,7 +42,6 @@ this.onLoad = function() {
                     window[prop] = this.prefs.getIntPref(prop);
                 }
             }.bind(this));
-        this.acceptedItem = "";
         this.patternField = document.getElementById('pattern');
         this.patternField.value = this.mainHunter.searchPattern;
         this.patternField.select();
