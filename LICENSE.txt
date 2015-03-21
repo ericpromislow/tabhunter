@@ -1,3 +1,7 @@
+Copyright (C) Eric Promislow 2009 - 2015.  
+
+Distributed under the Mozilla Public License 2.0, as described here:
+
 Mozilla Public License Version 2.0
 ==================================
 
