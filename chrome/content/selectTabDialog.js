@@ -831,7 +831,7 @@ this.Searcher = function(mainObj, dialog) {
             return;
         }
         this.tabInfo = {};
-	this.mainObj = mainObj;
+        this.mainObj = mainObj;
         mainObj.mainHunter.getTabs(this.tabInfo);
         this.ignoreCase = dialog.ignoreCase.checked;
         this.searchType = dialog.searchTypeMenu.selectedItem.value;
@@ -931,11 +931,11 @@ this.Searcher.prototype.searchNextTab = function() {
 this.Searcher.prototype.searchNextTab_aux = function() {
     switch (this.mainObj.g_SearchingState) {
         case this.mainObj.TS_SEARCH_STATE_PAUSED:
-            this.mainObj.ts_enterPausedSearchingState();
-            return;
+        this.mainObj.ts_enterPausedSearchingState();
+        return;
         case this.mainObj.TS_SEARCH_STATE_CANCELLED:
-            this.finishSearch();
-            return;
+        this.finishSearch();
+        return;
     }
     this.tabIdx += 1;
     while (this.tabIdx >= this.currentTabCount) {
@@ -950,14 +950,14 @@ this.Searcher.prototype.searchNextTab_aux = function() {
     }
     this.progressBar.setAttribute("value", parseInt(this.progressBar.value) + 1);
     this.progressBarLabel.value = ("Checking "
-                              + this.progressBar.value
-                              + "/"
-                              + this.progressBar.max);
+                                   + this.progressBar.value
+                                   + "/"
+                                   + this.progressBar.max);
     var tab = this.tcNodes[this.tabIdx];
     var view = tab.linkedBrowser.contentWindow;
     if (!view) {
-       this.mainObj.gTSTreeView.dump("searchNextTab: no view");
-       return; // should be no view now.
+        this.mainObj.gTSTreeView.dump("searchNextTab: no view");
+        return; // should be no view now.
     }
     var doc = view.document;
     var title = doc.title;
@@ -967,25 +967,27 @@ this.Searcher.prototype.searchNextTab_aux = function() {
         if (!this.currentTabRE.test(title) && !this.currentTabRE.test(url)) {
             failedTest = true;
             this.mainObj.gTSTreeView.dump("No match on title:"
-                           + title
-                           + ", url:"
-                           + url);
+                                          + title
+                                          + ", url:"
+                                          + url);
         }
     }
     if  (!failedTest) {
         var res, posn, matchedText = null;
         var searchText = doc.documentElement.innerHTML;
-	if (!searchText) {
+        if (!searchText) {
             // do nothing
         } else if (this.searchType == "searchXPath") {
             var contextNode = doc.documentElement;
-            var namespaceResolver = document.createNSResolver(contextNode.ownerDocument == null
-                                                              ? contextNode.documentElement
-                                                              : contextNode.ownerDocument.documentElement);
+            var namespaceResolver =
+                document.createNSResolver(contextNode.ownerDocument == null
+                                          ? contextNode.documentElement
+                                  : contextNode.ownerDocument.documentElement);
             var resultType = XPathResult.ANY_UNORDERED_NODE_TYPE;
             var nodeSet = null;
             try {
-                nodeSet = doc.evaluate(this.pattern, contextNode, namespaceResolver, resultType, null);
+                nodeSet = doc.evaluate(this.pattern, contextNode,
+                                       namespaceResolver, resultType, null);
             } catch(ex) {
                 var msg = ex.message;
                 if (ex.inner) msg += "; " + ex.inner;
@@ -1027,24 +1029,24 @@ this.Searcher.prototype.searchNextTab_aux = function() {
             this.mainObj.ts_onAddingRecord(this.numHits);
             this.numHits += 1;
             this.mainObj.gTSTreeView._rows.
-	        push(this.mainObj.ts_buildRow(url,
-					      title,
-					      matchedText,
-					      this.windowIdx,
-					      this.tabIdx, posn, matchedText));
+	            push(this.mainObj.ts_buildRow(url,
+                                              title,
+                                              matchedText,
+                                              this.windowIdx,
+                                              this.tabIdx, posn, matchedText));
         }
     }
     setTimeout(function(this_) {
-        try {
-            this_.searchNextTab();
-        } catch(ex) {
-            this_.mainObj.showMessage("Searcher.searchNextTab("
-                        + this_.windowIdx
-                        + ", "
-                        + this_.tabIdx
-                        + ")", ex);
-        }
-    }, 1, this);
+            try {
+                this_.searchNextTab();
+            } catch(ex) {
+                this_.mainObj.showMessage("Searcher.searchNextTab("
+                                          + this_.windowIdx
+                                          + ", "
+                                          + this_.tabIdx
+                                          + ")", ex);
+            }
+        }, 1, this);
 }
 
 this.Searcher.prototype.launch = function() {
