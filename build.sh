@@ -8,6 +8,7 @@ cat << ZAK | zip tabhunter.jar -@
 ./content/tabhunterOverlay.xul
 ./content/prefs.xul
 ./content/prefs.js
+./content/frameScripts/browser-window-focus.js
 ./locale/en-US/tabhunter.dtd
 ./locale/en-US/tabhunter.properties
 ./locale/en-US/strings.properties
@@ -18,7 +19,7 @@ cat << ZAK | zip tabhunter.jar -@
 ZAK
 # zip -r tabhunter.jar content locale skin
 cd ..
-T=tabhunter-1.0.7.xpi
+T=tabhunter-1.0.8.xpi
 rm -f $T
 zip $T  chrome.manifest install.rdf chrome/tabhunter.jar defaults/preferences/prefs.js
 

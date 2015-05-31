@@ -1,6 +1,9 @@
 // Copyright (C) Eric Promislow 2008.  All Rights Reserved.
 // See full license in tabhunter.js
 
+var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+                                       .getService(Components.interfaces.nsIConsoleService);
+consoleService.logStringMessage("Loading selectTabDialog.js...");
 var gTabhunter = {};
 (function() {
 
@@ -550,14 +553,21 @@ this.doAcceptTabByIdx = function(tabIdx) {
     var tabInfo = this.allTabs[tabIdx];
     var windowIdx = tabInfo.windowIdx;
     var windowInfo = this.windowInfo[windowIdx];
+    this.finishMoveToTab(windowInfo, tabInfo.tabIdx);
+};
+
+this.finishMoveToTab = function(windowInfo, tabIdx) {
     var targetWindow = windowInfo.window;
     var targetBrowser = targetWindow.getBrowser();
     var tabContainer = targetBrowser.tabContainer;
-    tabContainer.selectedIndex = tabInfo.tabIdx;
+    tabContainer.selectedIndex = tabIdx;
     targetWindow.focus();
-    targetBrowser.contentWindow.focus();
+    if (globalMessageManager) {
+        targetBrowser.selectedBrowser.messageManager.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
+    } else {
+        targetBrowser.contentWindow.focus();
+    }
 };
-
 this.onAccept = function() {
     this.doAcceptTab(false);
     this._clearInfo();
@@ -1181,12 +1191,7 @@ this.ts_onGoCurrentLine = function() {
             return;
         }
         var windowInfo = this.windowInfo[row.windowIdx];
-        var targetWindow = windowInfo.window;
-        var targetBrowser = targetWindow.getBrowser();
-        var tabContainer = targetBrowser.tabContainer;
-        tabContainer.selectedIndex = row.tabIdx;
-        targetWindow.focus();
-        targetBrowser.contentWindow.focus();
+        this.finishMoveToTab(windowInfo, row.tabIdx);
     } catch(ex) { this.gTSTreeView.dump(ex + "\n"); }
 };
 

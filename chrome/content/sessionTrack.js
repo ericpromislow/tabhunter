@@ -40,6 +40,14 @@
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
+function getGlobalMessageManager() {
+    try {
+        return Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
+    } catch(ex) {
+        return false;
+    }
+}
+const globalMessageManager = getGlobalMessageManager();
 
 // global notifications observed
 const OBSERVING = [
