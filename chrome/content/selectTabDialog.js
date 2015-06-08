@@ -1,9 +1,24 @@
 // Copyright (C) Eric Promislow 2008.  All Rights Reserved.
 // See full license in tabhunter.js
 
-var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-                                       .getService(Components.interfaces.nsIConsoleService);
-consoleService.logStringMessage("Loading selectTabDialog.js...");
+var globalMessageManager, Cc, Ci;
+
+if (typeof(Cc) === "undefined") {
+    Cc = Components.classes;
+    Ci = Components.interfaces;
+}
+
+if (typeof(globalMessageManager) == "undefined") {
+    function getGlobalMessageManager() {
+        try {
+            return Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
+        } catch(ex) {
+            return null;
+        }
+    }
+    globalMessageManager = getGlobalMessageManager();
+}
+
 var gTabhunter = {};
 (function() {
 
@@ -118,7 +133,7 @@ this.onLoad = function() {
             window.innerWidth = 450;
         }
     } catch(ex) {
-        this.mainHunter.dump("Error loading tabhunter: " + ex)
+        this.mainHunter.dump("Error loading tabhunter: " + ex);
     }
 };
 
@@ -563,7 +578,15 @@ this.finishMoveToTab = function(windowInfo, tabIdx) {
     tabContainer.selectedIndex = tabIdx;
     targetWindow.focus();
     if (globalMessageManager) {
-        targetBrowser.selectedBrowser.messageManager.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
+        // Assume if the tab is gone we're never going to try to send it a message, so no need to listen for
+        // message-manager-disconnect notifications.
+        try {
+            targetBrowser.selectedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus");
+        } catch(ex) {
+            var consoleService = Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService);
+            consoleService.logStringMessage("* targetBrowser.selectedBrowser.messageManager.sendAsyncMessage: failed: " + ex);
+        }
+            
     } else {
         targetBrowser.contentWindow.focus();
     }
