@@ -205,6 +205,7 @@ TabhunterWatchSessionService.prototype = {
         var mm = aPanel.ownerDocument.defaultView.getBrowser().selectedBrowser.messageManager;
         if (mm) {
             mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
+            mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
         }
     } catch(ex) {
         this.dump("Failed to load the frame script browser-window-focus.js: " + ex);
