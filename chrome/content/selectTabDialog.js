@@ -581,7 +581,8 @@ this.finishMoveToTab = function(windowInfo, tabIdx) {
         // Assume if the tab is gone we're never going to try to send it a message, so no need to listen for
         // message-manager-disconnect notifications.
         try {
-            targetBrowser.selectedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus");
+            var tab = tabContainer.selectedItem;
+            tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus");
         } catch(ex) {
             var consoleService = Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService);
             consoleService.logStringMessage("* targetBrowser.selectedBrowser.messageManager.sendAsyncMessage: failed: " + ex);
@@ -1029,7 +1030,8 @@ this.Searcher.prototype.searchNextTab_aux = function() {
         try {
             //XXX: The problem with this code is the message gets sent to
             // every tab frame-script listener, not just the current tab's.
-            tab.ownerDocument.defaultView.getBrowser().selectedBrowser.
+            //tab.ownerDocument.defaultView.getBrowser().selectedBrowser.
+            tab.linkedBrowser.
                 messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab",
                                                 { currentTabRE: this.currentTabRE,
                                                         searchType: this.searchType,

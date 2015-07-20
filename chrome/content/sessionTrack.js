@@ -119,7 +119,11 @@ TabhunterWatchSessionService.prototype = {
         var panelID = aEvent.originalTarget.linkedPanel;
         var tabpanel = aEvent.originalTarget.ownerDocument.getElementById(panelID);
         if (aEvent.type == "TabOpen") {
-          this.onTabAdd(aEvent.currentTarget.ownerDocument.defaultView, tabpanel, false);
+            this.dump("adding a tab, aEvent.originalTarget: "
+                      + aEvent.originalTarget.nodeName);
+          this.onTabAdd(aEvent.currentTarget.ownerDocument.defaultView, tabpanel,
+                        
+                        aEvent.originalTarget, false);
         }
         else {
           this.onTabRemove(aEvent.currentTarget.ownerDocument.defaultView, tabpanel, false);
@@ -152,8 +156,11 @@ TabhunterWatchSessionService.prototype = {
     var tabpanels = tabbrowser.mPanelContainer;
     
     // add tab change listeners to all already existing tabs
-    for (var i = 0; i < tabpanels.childNodes.length; i++) {
-      this.onTabAdd(aWindow, tabpanels.childNodes[i], true);
+    var limit = Math.max(tabpanels.childNodes.length,
+                         tabContainer.childNodes.length);
+    for (var i = 0; i < limit; i++) {
+        this.onTabAdd(aWindow, tabpanels.childNodes[i],
+                      tabContainer.childNodes[i], true);
     }
     // notification of tab add/remove/selection
     var self = this;
@@ -196,13 +203,20 @@ TabhunterWatchSessionService.prototype = {
     }
   },
 
-  onTabAdd: function thst_onTabAdd(aWindow, aPanel, aNoNotification) {
+  onTabAdd: function thst_onTabAdd(aWindow, aPanel, aTab, aNoNotification) {
+        this.dump(">> onTabAdd panel :" +
+                  (aPanel ? aPanel.id : "<null>") +
+                  ", tab " +
+                  (aTab ? aTab.label : "<null>"));
     var self = this;
     var func = function(event) {
         self.handleEvent.call(self, event);
     }
+    if (aTab) {
     try {
-        var mm = aPanel.ownerDocument.defaultView.getBrowser().selectedBrowser.messageManager;
+        this.dump("Add frame scripts for tab "
+                  + aTab.label);
+        var mm = aTab.linkedBrowser.messageManager;
         if (mm) {
             mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
             mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
@@ -210,11 +224,17 @@ TabhunterWatchSessionService.prototype = {
     } catch(ex) {
         this.dump("Failed to load the frame script browser-window-focus.js: " + ex);
     }
+    } else {
+        this.dump("**** Don't add frame scripts for panel "
+                  + aPanel.id);
+    }
+    if (aPanel) {
     setTimeout(function(aPanel_, func_) {
             aPanel_.addEventListener("load", func_, true);
         }, 1, aPanel, func);
     if (!aNoNotification) {
         this.reactorFunc.call(this.reactor);
+    }
     }
   },
 
