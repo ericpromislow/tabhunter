@@ -581,7 +581,8 @@ this.finishMoveToTab = function(windowInfo, tabIdx) {
         // Assume if the tab is gone we're never going to try to send it a message, so no need to listen for
         // message-manager-disconnect notifications.
         try {
-            targetBrowser.selectedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus");
+            var tab = tabContainer.selectedItem;
+            tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus");
         } catch(ex) {
             var consoleService = Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService);
             consoleService.logStringMessage("* targetBrowser.selectedBrowser.messageManager.sendAsyncMessage: failed: " + ex);
@@ -918,6 +919,13 @@ this.Searcher = function(mainObj, dialog) {
         //mainObj.gTSTreeView.dump("startSearch: go through "
         //               + this.progressBar.max
         //               + " tabs");
+
+        if (globalMessageManager) {
+            globalMessageManager.addMessageListener("search-continuation-error", this.searchContinuationErrorHandler.bind(this));
+            globalMessageManager.addMessageListener("search-continuation-exception", this.searchContinuationExceptionHandler.bind(this));
+            globalMessageManager.addMessageListener("search-continuation-match", this.searchContinuationMatchHandler.bind(this));
+            globalMessageManager.addMessageListener("search-continuation-no-match", this.searchContinuationNoMatchHandler.bind(this));
+        }
     } catch(ex) {
         mainObj.showMessage("Searcher", ex);
         //for (var p in ex) {
@@ -947,14 +955,29 @@ this.showMessage = function(label, ex) {
 }
 
 this.Searcher.prototype.setupWindow = function(windowIdx) {
+    try {
     var tc = this.windows[windowIdx].window.getBrowser().tabContainer;
     this.tabIdx = -1;
     this.tcNodes = tc.childNodes;
     this.currentTabCount = this.tcNodes.length;
+    this.sessionTimestamp = (new Date()).valueOf();
+    } catch(e) {
+        this.mainObj.gTSTreeView.dump("setupWindow: error: " + e);
+    }
 };
 
 this.Searcher.prototype.searchNextTab = function() {
   try {
+      /*
+    this.mainObj.gTSTreeView.dump("searchNextTab: starting: this.windowIdx:"
+                                  + this.windowIdx + ", this.tabIdx:" + this.tabIdx
+                                  + ", this.windowCount: " + this.windowCount
+                                  + ", this.currentTabCount: " + this.currentTabCount);
+      */
+    if (this.windowIdx > this.windowCount) {
+        //this.mainObj.gTSTreeView.dump("searchNextTab: nowhere left to look");
+        return;
+    }
     this.searchNextTab_aux();
   } catch(ex) {
     this.mainObj.gTSTreeView.dump("searchNextTab failed: " + ex + "\n");
@@ -971,9 +994,19 @@ this.Searcher.prototype.searchNextTab_aux = function() {
         return;
     }
     this.tabIdx += 1;
+    /*
+    this.mainObj.gTSTreeView.dump("searchNextTab_aux pre loop: this.tabIdx: "
+                                  + this.tabIdx
+                                  + ", this.currentTabCount: " + this.currentTabCount
+                                  + ", this.windowIdx: " + this.windowIdx
+                                  + ", this.windowCount: " + this.windowCount);
+    */
+    try {
     while (this.tabIdx >= this.currentTabCount) {
         this.windowIdx += 1;
         if (this.windowIdx >= this.windowCount) {
+            this.currentTabCount = 0;
+            //this.mainObj.gTSTreeView.dump("searchNextTab_aux graceful exit")
             this.finishSearch();
             return;
         }
@@ -981,12 +1014,45 @@ this.Searcher.prototype.searchNextTab_aux = function() {
         this.tabIdx = 0;
         // Do this in a loop to handle windows with no tabs.
     }
+    } catch(e) {
+        this.mainObj.gTSTreeView.dump("searchNextTab_aux: caught error: " + e);
+        return;
+    }
+    
+    /*
+    this.mainObj.gTSTreeView.dump("searchNextTab_aux post setup: this.windowIdx:"
+                                  + this.windowIdx + ", this.tabIdx:" + this.tabIdx);
+    */
+
     this.progressBar.setAttribute("value", parseInt(this.progressBar.value) + 1);
     this.progressBarLabel.value = ("Checking "
                                    + this.progressBar.value
                                    + "/"
                                    + this.progressBar.max);
     var tab = this.tcNodes[this.tabIdx];
+    if (tab.linkedBrowser.messageManager) {
+        //this.mainObj.gTSTreeView.dump("searchNextTab: -search-next-tab");
+        //dump("-sendAsyncMessage: search-next-tab");
+        try {
+            //XXX: The problem with this code is the message gets sent to
+            // every tab frame-script listener, not just the current tab's.
+            //tab.ownerDocument.defaultView.getBrowser().selectedBrowser.
+            tab.linkedBrowser.
+                messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab",
+                                                { currentTabRE: this.currentTabRE,
+                                                        searchType: this.searchType,
+                                                        pattern: this.pattern,
+                                                        patternFinal: this.patternFinal,
+                                                        regex: this.regex,
+                                                        ignoreCase: this.ignoreCase,
+                                                        sessionTimestamp: this.sessionTimestamp});
+        } catch(e) {
+            //alert("Prolbem: " + e);
+            this.mainObj.gTSTreeView.dump("searchNextTab: trying to call search-next-tab => " + e);
+        }
+        return;
+    }
+    // Code duplicated from frameScripts/search-next-tab.js
     var view = tab.linkedBrowser.contentWindow;
     if (!view) {
         this.mainObj.gTSTreeView.dump("searchNextTab: no view");
@@ -996,7 +1062,7 @@ this.Searcher.prototype.searchNextTab_aux = function() {
     var title = doc.title;
     var url = doc.location;
     var failedTest = false;
-    if  (this.currentTabRE) {
+    if (this.currentTabRE) {
         if (!this.currentTabRE.test(title) && !this.currentTabRE.test(url)) {
             failedTest = true;
             this.mainObj.gTSTreeView.dump("No match on title:"
@@ -1005,7 +1071,7 @@ this.Searcher.prototype.searchNextTab_aux = function() {
                                           + url);
         }
     }
-    if  (!failedTest) {
+    if (!failedTest) {
         var res, posn, matchedText = null;
         var searchText = doc.documentElement.innerHTML;
         if (!searchText) {
@@ -1059,18 +1125,18 @@ this.Searcher.prototype.searchNextTab_aux = function() {
             }
         }
         if (matchedText) {
-            this.mainObj.ts_onAddingRecord(this.numHits);
-            this.numHits += 1;
-            this.mainObj.gTSTreeView._rows.
-	            push(this.mainObj.ts_buildRow(url,
-                                              title,
-                                              matchedText,
-                                              this.windowIdx,
-                                              this.tabIdx, posn, matchedText));
+            this.searchContinuationMatchHandler({posn:posn, url:url, title:title, matchedText:matchedText});
         }
     }
+    
+    //this.mainObj.gTSTreeView.dump("Searcher.searchNextTab_aux: -continueSearchNextTab()")
+    this.continueSearchNextTab();
+};
+
+this.Searcher.prototype.continueSearchNextTab = function(data) {
     setTimeout(function(this_) {
             try {
+                //this_.mainObj.gTSTreeView.dump("**** In continueSearchNextTab, calling searchNextTab")
                 this_.searchNextTab();
             } catch(ex) {
                 this_.mainObj.showMessage("Searcher.searchNextTab("
@@ -1080,7 +1146,97 @@ this.Searcher.prototype.searchNextTab_aux = function() {
                                           + ")", ex);
             }
         }, 1, this);
-}
+};
+
+this.Searcher.prototype.searchContinuationErrorHandler = function(msgData) {
+    var data = msgData.data;
+    var objects = msgData.objects;
+    //this.mainObj.gTSTreeView.dump(">>searchContinuationErrorHandler, data:" + Object.keys(data).join(" "));
+    //this.mainObj.gTSTreeView.dump(">>searchContinuationErrorHandler, objects:" + Object.keys(objects).join(" "));
+    /*
+    if (data.msg) {
+        this.mainObj.gTSTreeView.dump("data.msg:" + data.msg);
+    }
+    */
+    if (data['continue']) {
+        //this.mainObj.gTSTreeView.dump("Searcher.searchContinuationErrorHandler: -continueSearchNextTab()")
+        if (data.sessionTimestamp != this.sessionTimestamp) {
+            /*
+            this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
+                                          data.sessionTimestamp +
+                                          ", != this.sessionTimestamp: "
+                                          + this.sessionTimestamp);
+            */
+        } else {
+            this.continueSearchNextTab();
+        }
+    }
+};
+
+this.Searcher.prototype.searchContinuationExceptionHandler = function(msgData) {
+    var data = msgData.data;
+    //this.mainObj.gTSTreeView.dump(">>searchContinuationExceptionHandler, data:" + Object.keys(data).join(" "));
+    var msg = data.msg;
+    var dnode = this.mainObj.tsDialog.badXPathDescription;
+    while (dnode.hasChildNodes()) {
+        dnode.removeChild(dnode.firstChild);
+    }
+    dnode.appendChild(document.createTextNode(msg));
+    this.mainObj.tsDialog.badXPathBox.collapsed = false;
+    this.mainObj.ts_enterDefaultSearchingState();
+    // Don't continue searching here -- just exit the loop of handlers
+};
+
+this.Searcher.prototype.searchContinuationMatchHandler = function(msgData) {
+    var data = msgData.data;
+    var posn = data.posn,
+        title = data.title,
+        url = data.url,
+        matchedText = data.matchedText;
+    //this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, data:" + Object.keys(data).join(" "));
+    //this.mainObj.gTSTreeView.dump("url: " + url + ", title: " + title + ", posn:" + posn);
+    //alert("QQQ: url: " + url);
+    /*
+    this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, this.windowIdx: " + this.windowIdx
+                                  + ", this.tabIdx:" + this.tabIdx
+                                  + ", posn:" + posn);
+    */
+    if (data.sessionTimestamp != this.sessionTimestamp) {
+        /*
+        this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
+                                      data.sessionTimestamp +
+                                      ", != this.sessionTimestamp: "
+                                      + this.sessionTimestamp);
+        */
+        return;
+    }
+    
+    this.mainObj.ts_onAddingRecord(this.numHits);
+    this.numHits += 1;
+    this.mainObj.gTSTreeView._rows.push(this.mainObj.ts_buildRow(url,
+                                  title,
+                                  matchedText,
+                                  this.windowIdx,
+                                  this.tabIdx, posn, matchedText));
+    //this.mainObj.gTSTreeView.dump("Searcher.searchContinuationMatchHandler: -continueSearchNextTab()")
+    this.continueSearchNextTab();
+};
+
+this.Searcher.prototype.searchContinuationNoMatchHandler = function(msgData) {
+    var data = msgData.data;
+    // this.mainObj.gTSTreeView.dump(">>searchContinuationNoMatchHandler")
+    // this.mainObj.gTSTreeView.dump("Searcher.NoMatchHandler: -continueSearchNextTab()")
+    if (data.sessionTimestamp != this.sessionTimestamp) {
+        /*
+        this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
+                                      data.sessionTimestamp +
+                                      ", != this.sessionTimestamp: "
+                                      + this.sessionTimestamp);
+        */
+        return;
+    }
+    this.continueSearchNextTab();
+};
 
 this.Searcher.prototype.launch = function() {
     this.setupWindow(this.windowIdx = 0);
@@ -1147,6 +1303,7 @@ this.ts_cancelSearch = function() {
 
 this.ts_continueSearch = function() {
     this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
+    //this.dump("**** In ts_continueSearch, calling searchNextTab")
     this.g_searcher.searchNextTab();
 }
 
