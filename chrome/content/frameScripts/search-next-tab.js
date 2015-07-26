@@ -34,7 +34,7 @@ function doStuff_aux(data) {
     var view = content; // For compatibility with the single-process form
     if (!view) {
         consoleService.logStringMessage("search-next-tab.js: -search-continuation-error");
-        sendAsyncMessage("search-continuation-error", {msg: "searchNextTab: no view"});
+        sendAsyncMessage("search-continuation-error", {msg: "searchNextTab: no view", sessionTimestamp:sessionTimestamp});
         return;
     }
     var doc = view.document;
@@ -42,12 +42,14 @@ function doStuff_aux(data) {
     var url = doc.location;
     consoleService.logStringMessage("search-next-tab.js: doc.location: " + url);
     var failedTest = false;
+    var sessionTimestamp = data.sessionTimestamp;
     var currentTabRE = data.currentTabRE; // Does this cross the process boundary ok?
     if (currentTabRE) {
         if (!currentTabRE.test(title) && !currentTabRE.test(url)) {
             failedTest = true;
             consoleService.logStringMessage("search-next-tab.js: -search-continuation-error(2)");
             sendAsyncMessage("search-continuation-error", {msg: ("No match on title:" + title + ", url:" + url),
+                                                           "sessionTimestamp": sessionTimestamp,
                                                            "continue": true});
             return;
         }
@@ -55,20 +57,27 @@ function doStuff_aux(data) {
     if (!failedTest) {
         var res, posn, matchedText = null,
             pattern = data.pattern,
+            patternFinal = data.patternFinal,
             searchText = doc.documentElement.innerHTML,
             searchType = data.searchType,
             regex = data.regex,
             ignoreCase = data.ignoreCase,
             __zub;
         if (!searchText) {
+            consoleService.logStringMessage("!searchText")
             // do nothing
         } else if (searchType == "searchXPath") {
             var contextNode = doc.documentElement;
             var namespaceResolver =
-                document.createNSResolver(contextNode.ownerDocument == null
-                                          ? contextNode.documentElement
-                                          : contextNode.ownerDocument.documentElement);
+                doc.createNSResolver(contextNode.ownerDocument == null
+                                     ? contextNode.documentElement
+                                     : contextNode.ownerDocument.documentElement);
+            //if (!XPathResult) {
+                var XPathResult = Components.interfaces.nsIDOMXPathResult;
+            consoleService.logStringMessage("QQQ: XPathResult: " + XPathResult);
+                //}
             var resultType = XPathResult.ANY_UNORDERED_NODE_TYPE;
+            consoleService.logStringMessage("QQQ: resultType: " + resultType);
             var nodeSet = null;
             try {
                 nodeSet = doc.evaluate(pattern, contextNode,
@@ -78,7 +87,8 @@ function doStuff_aux(data) {
                 if (ex.inner) msg += "; " + ex.inner;
                 if (ex.data) msg += "; " + ex.data;
                 consoleService.logStringMessage("search-next-tab.js: -search-continuation-exception");
-                sendAsyncMessage("search-continuation-exception", {msg: msg});
+                sendAsyncMessage("search-continuation-exception", {msg: msg, 
+                                                           "sessionTimestamp": sessionTimestamp});
                 return;
             }
             var snv = nodeSet.singleNodeValue;
@@ -93,14 +103,20 @@ function doStuff_aux(data) {
                     }
                 }
             }
-        } else if (this.searchType == "searchRegEx") {
+        } else if (searchType == "searchRegEx") {
+            consoleService.logStringMessage("searchRegEx: searchText:" +
+                                            searchText.length +
+                                            " chars, regex: " +
+                                            regex);
             res = regex.exec(searchText);
             if (res) {
                 matchedText = RegExp.lastMatch;
+            } else {
+                consoleService.logStringMessage("searchRegEx: failed to regex match");
             }
         } else {
             var searchTextFinal = ignoreCase ? searchText.toLowerCase() : searchText;
-            posn = searchTextFinal.indexOf(this.patternFinal);
+            posn = searchTextFinal.indexOf(patternFinal);
             if (posn >= 0) {
                 matchedText = searchText.substring(posn, pattern.length);
             }
@@ -111,14 +127,15 @@ function doStuff_aux(data) {
                                             + ", url: " + url
                                             + ", title: " + title
                                             + ", matchedText: " + (matchedText.length < 40 ? matchedText : (matchedText.length + " chars")));
-            sendAsyncMessage("search-continuation-match", {posn:posn, url:url, title:title, matchedText:matchedText});
+            // url is a URL object of some kind, not a string, so serialize it.
+            sendAsyncMessage("search-continuation-match", {posn:posn, url:url.toString(), title:title, matchedText:matchedText, sessionTimestamp:sessionTimestamp});
         } else {
             consoleService.logStringMessage("search-next-tab.js: -search-continuation-no-match#1");
-            sendAsyncMessage("search-continuation-no-match");
+            sendAsyncMessage("search-continuation-no-match", {sessionTimestamp:sessionTimestamp});
         }
     } else {
         consoleService.logStringMessage("search-next-tab.js: -search-continuation-no-match#2");
-        sendAsyncMessage("search-continuation-no-match");
+        sendAsyncMessage("search-continuation-no-match", {sessionTimestamp:sessionTimestamp});
     }
 }
 

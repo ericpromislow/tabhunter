@@ -119,8 +119,6 @@ TabhunterWatchSessionService.prototype = {
         var panelID = aEvent.originalTarget.linkedPanel;
         var tabpanel = aEvent.originalTarget.ownerDocument.getElementById(panelID);
         if (aEvent.type == "TabOpen") {
-            this.dump("adding a tab, aEvent.originalTarget: "
-                      + aEvent.originalTarget.nodeName);
           this.onTabAdd(aEvent.currentTarget.ownerDocument.defaultView, tabpanel,
                         
                         aEvent.originalTarget, false);
@@ -204,29 +202,22 @@ TabhunterWatchSessionService.prototype = {
   },
 
   onTabAdd: function thst_onTabAdd(aWindow, aPanel, aTab, aNoNotification) {
-        this.dump(">> onTabAdd panel :" +
-                  (aPanel ? aPanel.id : "<null>") +
-                  ", tab " +
-                  (aTab ? aTab.label : "<null>"));
     var self = this;
     var func = function(event) {
         self.handleEvent.call(self, event);
     }
     if (aTab) {
-    try {
-        this.dump("Add frame scripts for tab "
-                  + aTab.label);
-        var mm = aTab.linkedBrowser.messageManager;
-        if (mm) {
-            mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
-            mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
+        try {
+            var mm = aTab.linkedBrowser.messageManager;
+            if (mm) {
+                mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
+                mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
+            }
+        } catch(ex) {
+            this.dump("Failed to load the frame script browser-window-focus.js: " + ex);
         }
-    } catch(ex) {
-        this.dump("Failed to load the frame script browser-window-focus.js: " + ex);
-    }
     } else {
-        this.dump("**** Don't add frame scripts for panel "
-                  + aPanel.id);
+        this.dump("**** Don't add frame scripts for panel " + aPanel.id);
     }
     if (aPanel) {
     setTimeout(function(aPanel_, func_) {

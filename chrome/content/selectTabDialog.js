@@ -960,7 +960,9 @@ this.Searcher.prototype.setupWindow = function(windowIdx) {
     this.tabIdx = -1;
     this.tcNodes = tc.childNodes;
     this.currentTabCount = this.tcNodes.length;
-    this.mainObj.gTSTreeView.dump("QQQ: setupWindow: this.currentTabCount: " + this.currentTabCount);
+    this.sessionTimestamp = (new Date()).valueOf();
+    this.mainObj.gTSTreeView.dump("QQQ: setupWindow: this.currentTabCount: " + this.currentTabCount +
+                                  ", this.sessionTimestamp=" + this.sessionTimestamp);
     } catch(e) {
         this.mainObj.gTSTreeView.dump("QQQ: setupWindow: error: " + e);
     }
@@ -1036,8 +1038,10 @@ this.Searcher.prototype.searchNextTab_aux = function() {
                                                 { currentTabRE: this.currentTabRE,
                                                         searchType: this.searchType,
                                                         pattern: this.pattern,
+                                                        patternFinal: this.patternFinal,
                                                         regex: this.regex,
-                                                        ignoreCase: this.ignoreCase});
+                                                        ignoreCase: this.ignoreCase,
+                                                        sessionTimestamp: this.sessionTimestamp});
         } catch(e) {
             alert("Prolbem: " + e);
             this.mainObj.gTSTreeView.dump("searchNextTab: trying to call search-next-tab => " + e);
@@ -1120,6 +1124,8 @@ this.Searcher.prototype.searchNextTab_aux = function() {
             this.searchContinuationMatchHandler({posn:posn, url:url, title:title, matchedText:matchedText});
         }
     }
+    
+    this.mainObj.gTSTreeView.dump("Searcher.searchNextTab_aux: -continueSearchNextTab()")
     this.continueSearchNextTab();
 };
 
@@ -1147,11 +1153,20 @@ this.Searcher.prototype.searchContinuationErrorHandler = function(msgData) {
         this.mainObj.gTSTreeView.dump("data.msg:" + data.msg);
     }
     if (data['continue']) {
-        this.continueSearchNextTab();
+        this.mainObj.gTSTreeView.dump("Searcher.searchContinuationErrorHandler: -continueSearchNextTab()")
+        if (data.sessionTimestamp != this.sessionTimestamp) {
+            this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
+                                          data.sessionTimestamp +
+                                          ", != this.sessionTimestamp: "
+                                          + this.sessionTimestamp);
+        } else {
+            this.continueSearchNextTab();
+        }
     }
 };
 
-this.Searcher.prototype.searchContinuationExceptionHandler = function(data) {
+this.Searcher.prototype.searchContinuationExceptionHandler = function(msgData) {
+    var data = msgData.data;
     this.mainObj.gTSTreeView.dump(">>searchContinuationExceptionHandler, data:" + Object.keys(data).join(" "));
     var msg = data.msg;
     var dnode = this.mainObj.tsDialog.badXPathDescription;
@@ -1171,9 +1186,18 @@ this.Searcher.prototype.searchContinuationMatchHandler = function(msgData) {
         url = data.url,
         matchedText = data.matchedText;
     this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, data:" + Object.keys(data).join(" "));
+    this.mainObj.gTSTreeView.dump("url: " + url + ", title: " + title + ", posn:" + posn);
+    //alert("QQQ: url: " + url);
     this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, this.windowIdx: " + this.windowIdx
                                   + ", this.tabIdx:" + this.tabIdx
                                   + ", posn:" + posn);
+    if (data.sessionTimestamp != this.sessionTimestamp) {
+        this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
+                                      data.sessionTimestamp +
+                                      ", != this.sessionTimestamp: "
+                                      + this.sessionTimestamp);
+        return;
+    }
     
     this.mainObj.ts_onAddingRecord(this.numHits);
     this.numHits += 1;
@@ -1182,11 +1206,21 @@ this.Searcher.prototype.searchContinuationMatchHandler = function(msgData) {
                                   matchedText,
                                   this.windowIdx,
                                   this.tabIdx, posn, matchedText));
+    this.mainObj.gTSTreeView.dump("Searcher.searchContinuationMatchHandler: -continueSearchNextTab()")
     this.continueSearchNextTab();
 };
 
-this.Searcher.prototype.searchContinuationNoMatchHandler = function() {
+this.Searcher.prototype.searchContinuationNoMatchHandler = function(msgData) {
+    var data = msgData.data;
     this.mainObj.gTSTreeView.dump(">>searchContinuationNoMatchHandler")
+    this.mainObj.gTSTreeView.dump("Searcher.NoMatchHandler: -continueSearchNextTab()")
+    if (data.sessionTimestamp != this.sessionTimestamp) {
+        this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
+                                      data.sessionTimestamp +
+                                      ", != this.sessionTimestamp: "
+                                      + this.sessionTimestamp);
+        return;
+    }
     this.continueSearchNextTab();
 };
 
