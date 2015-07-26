@@ -961,21 +961,21 @@ this.Searcher.prototype.setupWindow = function(windowIdx) {
     this.tcNodes = tc.childNodes;
     this.currentTabCount = this.tcNodes.length;
     this.sessionTimestamp = (new Date()).valueOf();
-    this.mainObj.gTSTreeView.dump("QQQ: setupWindow: this.currentTabCount: " + this.currentTabCount +
-                                  ", this.sessionTimestamp=" + this.sessionTimestamp);
     } catch(e) {
-        this.mainObj.gTSTreeView.dump("QQQ: setupWindow: error: " + e);
+        this.mainObj.gTSTreeView.dump("setupWindow: error: " + e);
     }
 };
 
 this.Searcher.prototype.searchNextTab = function() {
   try {
+      /*
     this.mainObj.gTSTreeView.dump("searchNextTab: starting: this.windowIdx:"
                                   + this.windowIdx + ", this.tabIdx:" + this.tabIdx
                                   + ", this.windowCount: " + this.windowCount
                                   + ", this.currentTabCount: " + this.currentTabCount);
+      */
     if (this.windowIdx > this.windowCount) {
-        this.mainObj.gTSTreeView.dump("searchNextTab: nowhere left to look");
+        //this.mainObj.gTSTreeView.dump("searchNextTab: nowhere left to look");
         return;
     }
     this.searchNextTab_aux();
@@ -994,17 +994,19 @@ this.Searcher.prototype.searchNextTab_aux = function() {
         return;
     }
     this.tabIdx += 1;
+    /*
     this.mainObj.gTSTreeView.dump("searchNextTab_aux pre loop: this.tabIdx: "
                                   + this.tabIdx
                                   + ", this.currentTabCount: " + this.currentTabCount
                                   + ", this.windowIdx: " + this.windowIdx
                                   + ", this.windowCount: " + this.windowCount);
+    */
     try {
     while (this.tabIdx >= this.currentTabCount) {
         this.windowIdx += 1;
         if (this.windowIdx >= this.windowCount) {
             this.currentTabCount = 0;
-            this.mainObj.gTSTreeView.dump("searchNextTab_aux graceful exit")
+            //this.mainObj.gTSTreeView.dump("searchNextTab_aux graceful exit")
             this.finishSearch();
             return;
         }
@@ -1017,8 +1019,10 @@ this.Searcher.prototype.searchNextTab_aux = function() {
         return;
     }
     
+    /*
     this.mainObj.gTSTreeView.dump("searchNextTab_aux post setup: this.windowIdx:"
                                   + this.windowIdx + ", this.tabIdx:" + this.tabIdx);
+    */
 
     this.progressBar.setAttribute("value", parseInt(this.progressBar.value) + 1);
     this.progressBarLabel.value = ("Checking "
@@ -1027,8 +1031,8 @@ this.Searcher.prototype.searchNextTab_aux = function() {
                                    + this.progressBar.max);
     var tab = this.tcNodes[this.tabIdx];
     if (tab.linkedBrowser.messageManager) {
-        this.mainObj.gTSTreeView.dump("searchNextTab: -search-next-tab");
-        dump("-sendAsyncMessage: search-next-tab");
+        //this.mainObj.gTSTreeView.dump("searchNextTab: -search-next-tab");
+        //dump("-sendAsyncMessage: search-next-tab");
         try {
             //XXX: The problem with this code is the message gets sent to
             // every tab frame-script listener, not just the current tab's.
@@ -1043,7 +1047,7 @@ this.Searcher.prototype.searchNextTab_aux = function() {
                                                         ignoreCase: this.ignoreCase,
                                                         sessionTimestamp: this.sessionTimestamp});
         } catch(e) {
-            alert("Prolbem: " + e);
+            //alert("Prolbem: " + e);
             this.mainObj.gTSTreeView.dump("searchNextTab: trying to call search-next-tab => " + e);
         }
         return;
@@ -1125,14 +1129,14 @@ this.Searcher.prototype.searchNextTab_aux = function() {
         }
     }
     
-    this.mainObj.gTSTreeView.dump("Searcher.searchNextTab_aux: -continueSearchNextTab()")
+    //this.mainObj.gTSTreeView.dump("Searcher.searchNextTab_aux: -continueSearchNextTab()")
     this.continueSearchNextTab();
 };
 
 this.Searcher.prototype.continueSearchNextTab = function(data) {
     setTimeout(function(this_) {
             try {
-                this_.mainObj.gTSTreeView.dump("**** In continueSearchNextTab, calling searchNextTab")
+                //this_.mainObj.gTSTreeView.dump("**** In continueSearchNextTab, calling searchNextTab")
                 this_.searchNextTab();
             } catch(ex) {
                 this_.mainObj.showMessage("Searcher.searchNextTab("
@@ -1147,18 +1151,22 @@ this.Searcher.prototype.continueSearchNextTab = function(data) {
 this.Searcher.prototype.searchContinuationErrorHandler = function(msgData) {
     var data = msgData.data;
     var objects = msgData.objects;
-    this.mainObj.gTSTreeView.dump(">>searchContinuationErrorHandler, data:" + Object.keys(data).join(" "));
-    this.mainObj.gTSTreeView.dump(">>searchContinuationErrorHandler, objects:" + Object.keys(objects).join(" "));
+    //this.mainObj.gTSTreeView.dump(">>searchContinuationErrorHandler, data:" + Object.keys(data).join(" "));
+    //this.mainObj.gTSTreeView.dump(">>searchContinuationErrorHandler, objects:" + Object.keys(objects).join(" "));
+    /*
     if (data.msg) {
         this.mainObj.gTSTreeView.dump("data.msg:" + data.msg);
     }
+    */
     if (data['continue']) {
-        this.mainObj.gTSTreeView.dump("Searcher.searchContinuationErrorHandler: -continueSearchNextTab()")
+        //this.mainObj.gTSTreeView.dump("Searcher.searchContinuationErrorHandler: -continueSearchNextTab()")
         if (data.sessionTimestamp != this.sessionTimestamp) {
+            /*
             this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
                                           data.sessionTimestamp +
                                           ", != this.sessionTimestamp: "
                                           + this.sessionTimestamp);
+            */
         } else {
             this.continueSearchNextTab();
         }
@@ -1167,7 +1175,7 @@ this.Searcher.prototype.searchContinuationErrorHandler = function(msgData) {
 
 this.Searcher.prototype.searchContinuationExceptionHandler = function(msgData) {
     var data = msgData.data;
-    this.mainObj.gTSTreeView.dump(">>searchContinuationExceptionHandler, data:" + Object.keys(data).join(" "));
+    //this.mainObj.gTSTreeView.dump(">>searchContinuationExceptionHandler, data:" + Object.keys(data).join(" "));
     var msg = data.msg;
     var dnode = this.mainObj.tsDialog.badXPathDescription;
     while (dnode.hasChildNodes()) {
@@ -1185,17 +1193,21 @@ this.Searcher.prototype.searchContinuationMatchHandler = function(msgData) {
         title = data.title,
         url = data.url,
         matchedText = data.matchedText;
-    this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, data:" + Object.keys(data).join(" "));
-    this.mainObj.gTSTreeView.dump("url: " + url + ", title: " + title + ", posn:" + posn);
+    //this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, data:" + Object.keys(data).join(" "));
+    //this.mainObj.gTSTreeView.dump("url: " + url + ", title: " + title + ", posn:" + posn);
     //alert("QQQ: url: " + url);
+    /*
     this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, this.windowIdx: " + this.windowIdx
                                   + ", this.tabIdx:" + this.tabIdx
                                   + ", posn:" + posn);
+    */
     if (data.sessionTimestamp != this.sessionTimestamp) {
+        /*
         this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
                                       data.sessionTimestamp +
                                       ", != this.sessionTimestamp: "
                                       + this.sessionTimestamp);
+        */
         return;
     }
     
@@ -1206,19 +1218,21 @@ this.Searcher.prototype.searchContinuationMatchHandler = function(msgData) {
                                   matchedText,
                                   this.windowIdx,
                                   this.tabIdx, posn, matchedText));
-    this.mainObj.gTSTreeView.dump("Searcher.searchContinuationMatchHandler: -continueSearchNextTab()")
+    //this.mainObj.gTSTreeView.dump("Searcher.searchContinuationMatchHandler: -continueSearchNextTab()")
     this.continueSearchNextTab();
 };
 
 this.Searcher.prototype.searchContinuationNoMatchHandler = function(msgData) {
     var data = msgData.data;
-    this.mainObj.gTSTreeView.dump(">>searchContinuationNoMatchHandler")
-    this.mainObj.gTSTreeView.dump("Searcher.NoMatchHandler: -continueSearchNextTab()")
+    // this.mainObj.gTSTreeView.dump(">>searchContinuationNoMatchHandler")
+    // this.mainObj.gTSTreeView.dump("Searcher.NoMatchHandler: -continueSearchNextTab()")
     if (data.sessionTimestamp != this.sessionTimestamp) {
+        /*
         this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
                                       data.sessionTimestamp +
                                       ", != this.sessionTimestamp: "
                                       + this.sessionTimestamp);
+        */
         return;
     }
     this.continueSearchNextTab();
@@ -1289,7 +1303,7 @@ this.ts_cancelSearch = function() {
 
 this.ts_continueSearch = function() {
     this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
-    this.dump("**** In ts_continueSearch, calling searchNextTab")
+    //this.dump("**** In ts_continueSearch, calling searchNextTab")
     this.g_searcher.searchNextTab();
 }
 
