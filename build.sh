@@ -9,6 +9,7 @@ cat << ZAK | zip tabhunter.jar -@
 ./content/prefs.xul
 ./content/prefs.js
 ./content/frameScripts/browser-window-focus.js
+./content/frameScripts/docType-has-image.js
 ./content/frameScripts/search-next-tab.js
 ./locale/en-US/tabhunter.dtd
 ./locale/en-US/tabhunter.properties

@@ -102,47 +102,66 @@ this.onLoad = function() {
         this.strbundle = document.getElementById("strings");
         this.tabBox = document.getElementById("th.tabbox");
 
-        this.init();
-        this.loadList();
-        this._showNumMatches(this.allTabs);
+        // This has to be done before calling getTabs() because 
+        // tabhunterSession.init loads the frame-scripts.
         this.tabhunterSession = new TabhunterWatchSessionService(this, this.updateOnTabChange);
         this.tabhunterSession.init();
         // this.setupWatcher(); -- use the moz session tracker to do this. 
-        this.patternField.focus();
+        var getTabsCallback = function() {
+            try {
+                this.loadList();
+                this._showNumMatches(this.allTabs);
+                this.patternField.focus();
     
-        // Fix the titlebar
-        var app = Components.classes["@mozilla.org/xre/app-info;1"].
-        getService(Components.interfaces.nsIXULAppInfo);
-        var appName = app.name;
-        var appVendor = app.vendor;
-        var title = window.document.title;
-        if (title.indexOf(appName) == -1) {
-            var s = "";
-            if (appVendor) s = appVendor;
-            if (appName) s += " " + appName;
-            title += " - " + s;
-            window.document.title = title;
-        }
-        this.eol = navigator.platform.toLowerCase().indexOf("win32") >= 0 ?  "\r\n" : "\n";
+                // Fix the titlebar
+                var app = Components.classes["@mozilla.org/xre/app-info;1"].
+                getService(Components.interfaces.nsIXULAppInfo);
+                var appName = app.name;
+                var appVendor = app.vendor;
+                var title = window.document.title;
+                if (title.indexOf(appName) == -1) {
+                    var s = "";
+                    if (appVendor) s = appVendor;
+                    if (appName) s += " " + appName;
+                    title += " - " + s;
+                    window.document.title = title;
+                }
+                this.eol = navigator.platform.toLowerCase().indexOf("win32") >= 0 ?  "\r\n" : "\n";
 
-        this.tsOnLoad();
-        if (window.innerHeight < 200) {
-            window.innerHeight = 270;
-        }
-        if (window.innerWidth < 300) {
-            window.innerWidth = 450;
-        }
+                this.tsOnLoad();
+                if (window.innerHeight < 200) {
+                    window.innerHeight = 270;
+                }
+                if (window.innerWidth < 300) {
+                    window.innerWidth = 450;
+                }
+            } catch(ex2) {
+                this.mainHunter.dump("Error loading tabhunter in getTabsCallback: " + ex + "\n" + ex.stack);
+            }
+        }.bind(this);
+        this.init(getTabsCallback);
     } catch(ex) {
-        this.mainHunter.dump("Error loading tabhunter: " + ex);
+        this.mainHunter.dump("Error loading tabhunter: " + ex + "\n" + ex.stack);
     }
 };
 
-this.init = function() {
-    var obj = {};
-    this.mainHunter.getTabs(obj);
-    this.allTabs = obj.tabs;
-    this.allTabs.sort(this.mainHunter.compareByName);
-    this.windowInfo = obj.windowInfo;
+this.init = function(getTabsCallback) {
+    this.mainHunter.dump("QQQ: >> mainHunter::init")
+    this.mainHunter.getTabs(function(results) {
+            this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
+            try {
+            this.allTabs = results.tabs;
+            this.allTabs.sort(this.mainHunter.compareByName);
+            this.windowInfo = results.windowInfo;
+            this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
+            if (getTabsCallback) {
+                this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
+                getTabsCallback();
+            }
+            } catch(e) {
+                this.mainHunter.dump("QQQ: >> mainHunter::init: error: " + e);
+            }                
+        }.bind(this));
 };
 
 this.compilePattern = function() {
@@ -196,11 +215,14 @@ this._finishListItem = function(listitem, tab) {
 this.loadList = function() {
     this.clearList();
     this.compilePattern();
+    this.tabhunterSession.dump("QQQ: In loadList: this.allTabs : " + this.allTabs.length);
     for (var tab, i = 0; tab = this.allTabs[i]; i++) {
         var s = this.mainHunter.getTabTitleAndURL(tab);
         if (this.pattern_RE.test(s)) {
             var listitem = this.currentTabList.appendItem(s, i);
             this._finishListItem(listitem, tab);
+        } else {
+            this.tabhunterSession.dump("QQQ: In loadList: no match");
         }
     }
     if (this.currentTabList.getRowCount() > 0) {
@@ -351,19 +373,20 @@ this.onSelectTab = function(event) {
 }
 
 this.updateOnTabChange = function() {
-    var obj = {};
-    this.mainHunter.getTabs(obj);
-    var newTabs = obj.tabs;
-    newTabs.sort(this.mainHunter.compareByName);
-    try {
-        this._updateList(newTabs);
-    } catch(ex) {
-        this.tabhunterSession.dump("updateOnTabChange exception: " + ex);
-    }
-    this.allTabs = newTabs;
-    this.windowInfo = obj.windowInfo;
-    this.ts_updateOnTabChange();
-    // And either update the text-search tab, or invalidate it
+    this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange")
+    this.mainHunter.getTabs(function(results) {
+            var newTabs = results.tabs;
+            newTabs.sort(this.mainHunter.compareByName);
+            try {
+                this._updateList(newTabs);
+            } catch(ex) {
+                this.tabhunterSession.dump("updateOnTabChange exception: " + ex);
+            }
+            this.allTabs = newTabs;
+            this.windowInfo = results.windowInfo;
+            this.ts_updateOnTabChange();
+            // And either update the text-search tab, or invalidate it
+        }.bind(this));
 };
 
 this.ts_updateOnTabChange = function() {
@@ -567,7 +590,13 @@ this.doAcceptTab = function(maybeCloseOnReturn) {
 this.doAcceptTabByIdx = function(tabIdx) {
     var tabInfo = this.allTabs[tabIdx];
     var windowIdx = tabInfo.windowIdx;
+    this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: tabIdx: " + tabIdx
+                          + ", windowIdx:" + windowIdx);
     var windowInfo = this.windowInfo[windowIdx];
+    this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: windowInfo: " + windowInfo);
+    if (windowInfo) {
+        this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: windowInfo: " + Object.keys(windowInfo).join(", "));
+    }
     this.finishMoveToTab(windowInfo, tabInfo.tabIdx);
 };
 
@@ -854,7 +883,7 @@ this.ts_countTabs = function(windows) {
     return sum;
 }
 
-this.Searcher = function(mainObj, dialog) {
+this.Searcher = function(mainObj, dialog, getTabsCallback) {
     this.ready = false;
     try {
         // set up parameters here.
@@ -864,68 +893,73 @@ this.Searcher = function(mainObj, dialog) {
             mainObj.gTSTreeView.dump("pattern is empty");
             return;
         }
-        this.tabInfo = {};
         this.mainObj = mainObj;
-        mainObj.mainHunter.getTabs(this.tabInfo);
-        this.ignoreCase = dialog.ignoreCase.checked;
-        this.searchType = dialog.searchTypeMenu.selectedItem.value;
+        this.mainHunter.dump("QQQ: >> new Searcher")
+        mainObj.mainHunter.getTabs(function(results) {
+                this.tabInfo = results;
+                this.ignoreCase = dialog.ignoreCase.checked;
+                this.searchType = dialog.searchTypeMenu.selectedItem.value;
         
-        if (!!(this.useCurrentTabs = dialog.useCurrentTabs.checked)) {
-            var p = null;
-            var text = mainObj.patternField.value;
-            if (text) {
-                try {
-                    p = new RegExp(text, 'i');
-                } catch(ex) {}
-            }
-            this.currentTabRE = p;
-        } else {
-            this.currentTabRE = null;
-        }
-        this.windows = this.tabInfo.windowInfo;
-        if (this.searchType == "searchRegEx") {
-            try {
-                this.regex = new RegExp(this.pattern,
-                                        this.ignoreCase ? "i" : undefined);
-            } catch(ex) {
-                var msg = ex.message;
-                if (ex.inner) msg += "; " + ex.inner;
-                if (ex.data) msg += "; " + ex.data;
-                var dnode = dialog.badXPathDescription;
-                while (dnode.hasChildNodes()) {
-                    dnode.removeChild(dnode.firstChild);
+                if (!!(this.useCurrentTabs = dialog.useCurrentTabs.checked)) {
+                    var p = null;
+                    var text = mainObj.patternField.value;
+                    if (text) {
+                        try {
+                            p = new RegExp(text, 'i');
+                        } catch(ex) {}
+                    }
+                    this.currentTabRE = p;
+                } else {
+                    this.currentTabRE = null;
                 }
-                dnode.appendChild(document.createTextNode(msg));
-                dialog.badXPathBox.collapsed = false;
-                mainObj.ts_enterDefaultSearchingState();
-                return;
-            }
-        } else if (this.searchType == "searchPlainText") {
-            if (this.ignoreCase) {
-                this.patternFinal = this.pattern.toLowerCase();
-            } else {
-                this.patternFinal = this.pattern;
-            }
-        }
-        this.tabCount = mainObj.ts_countTabs(this.windows);
-        this.windowCount = this.windows.length;
-        dialog.progressMeterWrapper.setAttribute('class', 'show');
-        dialog.progressMeter.setAttribute('class', 'progressShow');
-        dialog.progressMeterLabel.setAttribute('class', 'progressShow');
-        this.progressBar = dialog.tsSearchProgress;
-        this.progressBar.max = this.tabCount;
-        this.progressBar.value = this.numHits = 0;
-        this.progressBarLabel = dialog.tsSearchProgressCount;
-        //mainObj.gTSTreeView.dump("startSearch: go through "
-        //               + this.progressBar.max
-        //               + " tabs");
+                this.windows = this.tabInfo.windowInfo;
+                if (this.searchType == "searchRegEx") {
+                    try {
+                        this.regex = new RegExp(this.pattern,
+                                                this.ignoreCase ? "i" : undefined);
+                    } catch(ex) {
+                        var msg = ex.message;
+                        if (ex.inner) msg += "; " + ex.inner;
+                        if (ex.data) msg += "; " + ex.data;
+                        var dnode = dialog.badXPathDescription;
+                        while (dnode.hasChildNodes()) {
+                            dnode.removeChild(dnode.firstChild);
+                        }
+                        dnode.appendChild(document.createTextNode(msg));
+                        dialog.badXPathBox.collapsed = false;
+                        mainObj.ts_enterDefaultSearchingState();
+                        return;
+                    }
+                } else if (this.searchType == "searchPlainText") {
+                    if (this.ignoreCase) {
+                        this.patternFinal = this.pattern.toLowerCase();
+                    } else {
+                        this.patternFinal = this.pattern;
+                    }
+                }
+                this.tabCount = mainObj.ts_countTabs(this.windows);
+                this.windowCount = this.windows.length;
+                dialog.progressMeterWrapper.setAttribute('class', 'show');
+                dialog.progressMeter.setAttribute('class', 'progressShow');
+                dialog.progressMeterLabel.setAttribute('class', 'progressShow');
+                this.progressBar = dialog.tsSearchProgress;
+                this.progressBar.max = this.tabCount;
+                this.progressBar.value = this.numHits = 0;
+                this.progressBarLabel = dialog.tsSearchProgressCount;
+                //mainObj.gTSTreeView.dump("startSearch: go through "
+                //               + this.progressBar.max
+                //               + " tabs");
 
-        if (globalMessageManager) {
-            globalMessageManager.addMessageListener("search-continuation-error", this.searchContinuationErrorHandler.bind(this));
-            globalMessageManager.addMessageListener("search-continuation-exception", this.searchContinuationExceptionHandler.bind(this));
-            globalMessageManager.addMessageListener("search-continuation-match", this.searchContinuationMatchHandler.bind(this));
-            globalMessageManager.addMessageListener("search-continuation-no-match", this.searchContinuationNoMatchHandler.bind(this));
-        }
+                if (globalMessageManager) {
+                    globalMessageManager.addMessageListener("search-continuation-error", this.searchContinuationErrorHandler.bind(this));
+                    globalMessageManager.addMessageListener("search-continuation-exception", this.searchContinuationExceptionHandler.bind(this));
+                    globalMessageManager.addMessageListener("search-continuation-match", this.searchContinuationMatchHandler.bind(this));
+                    globalMessageManager.addMessageListener("search-continuation-no-match", this.searchContinuationNoMatchHandler.bind(this));
+                }
+                if (getTabsCallback) {
+                    getTabsCallback();
+                }
+            }.bind(this));
     } catch(ex) {
         mainObj.showMessage("Searcher", ex);
         //for (var p in ex) {
@@ -1277,15 +1311,17 @@ this.ts_startSearch = function() {
 try {
     //this.gTSTreeView.dump("About to get the searcher");
     // alert("in this.ts_startSearch...");
-    this.g_searcher = new this.Searcher(this, this.tsDialog);
-    if (this.g_searcher.ready) {
-        this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
-        this.ts_enterActiveSearchingState();
-        setTimeout(function(this_) {
-            // delay so the table view gets cleared.
-            this_.g_searcher.launch();
-        }, 0, this);
-    }
+    var getTabsCallback = function() {
+        if (this.g_searcher.ready) {
+            this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
+            this.ts_enterActiveSearchingState();
+            setTimeout(function(this_) {
+                    // delay so the table view gets cleared.
+                    this_.g_searcher.launch();
+                }, 0, this);
+        }
+    }.bind(this);
+    this.g_searcher = new this.Searcher(this, this.tsDialog, getTabsCallback);
 } catch(ex) {
     alert(ex);
     this.showMessage('startSearch', ex);
@@ -1365,6 +1401,7 @@ this.ts_onTreeDblClick = function(event) {
 this.ts_onGoCurrentLine = function() {
     try {
         var currentLine = this.tsDialog.tree.currentIndex;
+        this.gTSTreeView.dump("QQQ: >> ts_onGoCurrentLine, currentLine: " + currentLine);
         var row = this.gTSTreeView._rows[currentLine];
         if (!row) {
             this.gTSTreeView.dump("no data at row " + row);
