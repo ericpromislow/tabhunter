@@ -400,12 +400,6 @@ if (!("tabhunter" in ep_extensions)) {
 	if (globalMessageManager) {
 	   this.dump("QQQ: Stop listening on docType-has-image-continuation");
 	   globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
-	   
-        var tab = this.tabs[tabIdx];
-        ep_extensions.tabhunter.dump("**** go do docType-has-image for windowIdx " +
-                  this.windowIdx + ", tabIdx: " + tabIdx);
-        tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: this.windowIdx, timestamp:timestamp });
-    };
 	}
     };
 
