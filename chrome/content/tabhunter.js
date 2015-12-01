@@ -76,10 +76,7 @@ if (!("tabhunter" in ep_extensions)) {
                 var tab = tc[i];
                 currWindowInfo.tabs.push(tab);
                 var label = tab.label;
-                var image = "";
-                if (tab.linkedBrowser.contentDocument.contentType.indexOf("image/") != 0) {
-                    image = tab.getAttribute('image');
-                }
+                var image = tab.getAttribute("image") || "";
                 this.dump('tabhunter.js - getTabs_singleProcess: image - <' + image + ">");
                 obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location.href));
             }
@@ -97,6 +94,10 @@ if (!("tabhunter" in ep_extensions)) {
         var data = msg.data;
             // this.dump(">> getTabs_dualProcessContinuation: data: " + Object.keys(data).join(" "));
             //this.dump("QQQ: and keys(this): " + Object.keys(this).join(" "));
+            if (data.timestamp < this.timestamp) {
+               this.dump("QQQ: got a message from " + ((this.timestamp - data.timestamp)/1000000.0) + " msec ago");
+               return;
+            }
         var tabIdx = data.tabIdx;
         var windowIdx = data.windowIdx;
         var windowTabKey = windowIdx + "-" + tabIdx;
@@ -120,13 +121,14 @@ if (!("tabhunter" in ep_extensions)) {
         this.dump("QQQ: tabGetter.collector.currWindowInfo.tabs: " + Object.prototype.toString.call(tabGetter.collector.currWindowInfo.tabs));
         tabGetter.collector.currWindowInfo.tabs.push(tab);
         var label = tab.label;
-        var image = data.hasImage ? tab.getAttribute('image') : '';
+            //var image = data.hasImage ? tab.getAttribute('image') : '';
+        var image = tab.getAttribute('image') || '';
         tabGetter.collector.tabs.push(new TabInfo(windowIdx, tabIdx, label, image, location));
         this.dump("QQQ: window " + windowIdx +
                   ", now has " + tabGetter.collector.tabs.length + " tabs");
         if (tabIdx < tabGetter.tabs.length - 1) {
             setTimeout(function() {
-            tabGetter.setImageSetting(tabIdx + 1);
+                 tabGetter.setImageSetting(tabIdx + 1, this.timestamp);
                 }, 10000);
         } else {
             this.dump("**** dualProcessContinuation: all done with window " + windowIdx);
@@ -175,11 +177,11 @@ if (!("tabhunter" in ep_extensions)) {
         this.collector = { tabs: [],
                            currWindowInfo: {window: openWindow, tabs: []}};
     };
-    this.TabGetter.prototype.setImageSetting = function(tabIdx) {
+    this.TabGetter.prototype.setImageSetting = function(tabIdx, timestamp) {
         var tab = this.tabs[tabIdx];
         ep_extensions.tabhunter.dump("**** go do docType-has-image for windowIdx " +
                   this.windowIdx + ", tabIdx: " + tabIdx);
-        tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: this.windowIdx });
+        tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: this.windowIdx, timestamp:timestamp });
     };
     
     this.getTabs_dualProcess = function(callback) {
@@ -191,6 +193,7 @@ if (!("tabhunter" in ep_extensions)) {
         this.tabGetters = [];
         this.tabGetterCallback = callback;
         this.processedTabs = {}; // hash "windowIdx-tabIdx : true"
+        this.timestamp = new Date().valueOf();
         // Get the eligible windows 
         do {
             // There must be at least one window for an extension to run in
@@ -204,15 +207,16 @@ if (!("tabhunter" in ep_extensions)) {
             this.dump("**** setup TabGetter(" + windowIdx + ")");
             this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
         } while (openWindows.hasMoreElements());
+        this.tabGetters[i].setImageSetting(0, this.timestamp);
         /***/
         this.callbackTimeoutId = setTimeout(function() {
                 this.dump("**** Failed to continue getting tabs");
                 callback({ tabs:[], windowInfo:[] });
                 // Allow 2 seconds per window
             }.bind(this), 2000 * this.tabGetters.length);
-        for (var i = 0; i < this.tabGetters.length; i++ ) {
-            this.tabGetters[i].setImageSetting(0);
-        }
+        //for (var i = 0; i < this.tabGetters.length; i++ ) {
+        //    this.tabGetters[i].setImageSetting(0);
+        //}
         /****/
         /****
         var doSetImage = function(this_, i) {
