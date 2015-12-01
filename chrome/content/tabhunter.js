@@ -81,7 +81,7 @@ if (!("tabhunter" in ep_extensions)) {
                     image = tab.getAttribute('image');
                 }
                 this.dump('tabhunter.js - getTabs_singleProcess: image - <' + image + ">");
-                obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location));
+                obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location.href));
             }
         } while (openWindows.hasMoreElements());
         callback(obj);
@@ -121,11 +121,13 @@ if (!("tabhunter" in ep_extensions)) {
         tabGetter.collector.currWindowInfo.tabs.push(tab);
         var label = tab.label;
         var image = data.hasImage ? tab.getAttribute('image') : '';
-        tabGetter.collector.tabs.push(new TabInfo(windowIdx, tabIdx, label, image, tab.linkedBrowser.contentWindow.location));
+        tabGetter.collector.tabs.push(new TabInfo(windowIdx, tabIdx, label, image, location));
         this.dump("QQQ: window " + windowIdx +
                   ", now has " + tabGetter.collector.tabs.length + " tabs");
         if (tabIdx < tabGetter.tabs.length - 1) {
+            setTimeout(function() {
             tabGetter.setImageSetting(tabIdx + 1);
+                }, 10000);
         } else {
             this.dump("**** dualProcessContinuation: all done with window " + windowIdx);
             tabGetter.finishedGettingTabs = true;
@@ -202,6 +204,7 @@ if (!("tabhunter" in ep_extensions)) {
             this.dump("**** setup TabGetter(" + windowIdx + ")");
             this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
         } while (openWindows.hasMoreElements());
+        /***/
         this.callbackTimeoutId = setTimeout(function() {
                 this.dump("**** Failed to continue getting tabs");
                 callback({ tabs:[], windowInfo:[] });
@@ -210,12 +213,24 @@ if (!("tabhunter" in ep_extensions)) {
         for (var i = 0; i < this.tabGetters.length; i++ ) {
             this.tabGetters[i].setImageSetting(0);
         }
+        /****/
+        /****
+        var doSetImage = function(this_, i) {
+            this_.tabGetters[i].setImageSetting(0);
+            if (i + 1 < this_.tabGetters.length) {
+                setTimeout(function() {
+                        doSetImage(this_, i + 1);
+                    }, 30000);
+            }
+        }
+        doSetImage(this, 0);
+        ****/
     };
     
     this.getTabTitleAndURL = function(tab) {
         var s = tab.label;
         try {
-            s += " - " + tab.location.href;
+            s += " - " + tab.location;
         } catch(ex) {}
         return s;
     }
