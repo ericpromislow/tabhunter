@@ -207,7 +207,7 @@ if (!("tabhunter" in ep_extensions)) {
             this.dump("**** setup TabGetter(" + windowIdx + ")");
             this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
         } while (openWindows.hasMoreElements());
-        this.tabGetters[i].setImageSetting(0, this.timestamp);
+        this.tabGetters[0].setImageSetting(0, this.timestamp);
         /***/
         this.callbackTimeoutId = setTimeout(function() {
                 this.dump("**** Failed to continue getting tabs");
