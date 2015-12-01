@@ -11,7 +11,7 @@ if (typeof(Cc) === "undefined") {
 }
 
 if (typeof(globalMessageManager) == "undefined") {
-    var getGlobalMessageManager = function() {
+    function getGlobalMessageManager() {
         try {
             return Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
         } catch(ex) {
@@ -42,20 +42,16 @@ if (!("tabhunter" in ep_extensions)) {
     
     // OUT ARGS: tabs: unordered array of [TabInfo]
     //           windowInfo: array of [window: ChromeWindow, tabs: array of [DOM tabs]]
-    this.getTabs = function(callback) {
+    this.getTabs = function(obj) {
         try {
-            if (globalMessageManager) {
-                this.getTabs_dualProcess(callback);
-            } else {
-                this.getTabs_singleProcess(callback);
-            }
+            return this.getTabs_aux(obj);
         } catch(ex) {
-            this.dump('tabhunter.js - getTabs - ' + ex + "\n" + ex.stack);
+            this.dump('tabhunter.js - getTabs - ' + ex);
         }
+        return null;
     };
     
-    this.getTabs_singleProcess = function(callback) {
-        var obj = {};
+    this.getTabs_aux = function(obj) {
         var openWindows = this.wmService.getEnumerator("navigator:browser");
         obj.tabs = [];
         obj.windowInfo = [];
@@ -72,6 +68,7 @@ if (!("tabhunter" in ep_extensions)) {
                 window: openWindow,
                 tabs: []
             }
+            
             for (var i = 0; i < tc.length; i++) {
                 var tab = tc[i];
                 currWindowInfo.tabs.push(tab);
@@ -80,136 +77,9 @@ if (!("tabhunter" in ep_extensions)) {
                 if (tab.linkedBrowser.contentDocument.contentType.indexOf("image/") != 0) {
                     image = tab.getAttribute('image');
                 }
-                this.dump('tabhunter.js - getTabs_singleProcess: image - <' + image + ">");
                 obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location));
             }
         } while (openWindows.hasMoreElements());
-        callback(obj);
-    };
-
-    this.getTabs_dualProcessContinuation = function(msg) {
-        try {
-            if (!this.tabGetters) {
-                this.dump(">> getTabs_dualProcessContinuation unexpected, ignore");
-                return;
-            }
-            //this.dump(">> getTabs_dualProcessContinuation: msg: " + Object.keys(msg).join(" "));
-        var data = msg.data;
-            // this.dump(">> getTabs_dualProcessContinuation: data: " + Object.keys(data).join(" "));
-            //this.dump("QQQ: and keys(this): " + Object.keys(this).join(" "));
-        var tabIdx = data.tabIdx;
-        var windowIdx = data.windowIdx;
-        var windowTabKey = windowIdx + "-" + tabIdx;
-        if (!this.processedTabs[windowTabKey]) {
-            this.processedTabs[windowTabKey] = true;
-        } else {
-            this.dump(">> getTabs_dualProcessContinuation: already saw node " + windowTabKey);
-            return;
-        }
-        var hasImage = data.hasImage;
-        var location = data.location;
-        this.dump("QQQ: getTabs_dualProcessContinuation: tabIdx: " + tabIdx +
-                  ", windowIdx: " + windowIdx +
-                  ", hasImage: " + hasImage +
-                  ", location: " + location);
-                  
-        var tabGetter = this.tabGetters[windowIdx];
-        this.dump("QQQ: windowIdx: " + windowIdx + ", tabGetter: " + tabGetter);
-        var tab = tabGetter.tabs[tabIdx];
-        this.dump("QQQ: tabGetter.collector.currWindowInfo: " + Object.keys(tabGetter.collector.currWindowInfo).join(", "));
-        this.dump("QQQ: tabGetter.collector.currWindowInfo.tabs: " + Object.prototype.toString.call(tabGetter.collector.currWindowInfo.tabs));
-        tabGetter.collector.currWindowInfo.tabs.push(tab);
-        var label = tab.label;
-        var image = data.hasImage ? tab.getAttribute('image') : '';
-        tabGetter.collector.tabs.push(new TabInfo(windowIdx, tabIdx, label, image, tab.linkedBrowser.contentWindow.location));
-        this.dump("QQQ: window " + windowIdx +
-                  ", now has " + tabGetter.collector.tabs.length + " tabs");
-        if (tabIdx < tabGetter.tabs.length - 1) {
-            tabGetter.setImageSetting(tabIdx + 1);
-        } else {
-            this.dump("**** dualProcessContinuation: all done with window " + windowIdx);
-            tabGetter.finishedGettingTabs = true;
-            if (this.tabGetters.every(function(tabGetter) tabGetter.finishedGettingTabs)) {
-                this.dump("**** all tabs are done, loop over " +
-                          this.tabGetters.length + " tabs");
-                clearTimeout(this.callbackTimeoutId);
-                // pour everything into the return obj and
-                // pass it on using the callback
-                let result = { tabs:[], windowInfo:[] }
-                this.tabGetters.forEach(function(tabGetter) {
-                        try {
-                        this.dump("QQQ: concat in " + tabGetter.collector.tabs.length + " tabs");
-                        result.tabs = result.tabs.concat(tabGetter.collector.tabs);
-                        this.dump("QQQ: result.windowInfo.push: " + tabGetter.collector.currWindowInfo);
-                        result.windowInfo.push(tabGetter.collector.currWindowInfo);
-                        } catch(e2) {
-                            this.dump("**** this.tabGetters.forEach: bad: " + e2);
-                        }
-                    }.bind(this));
-                this.dump("QQQ: result:tabs: " + result.tabs.length
-                          + ", windowInfo: " + result.windowInfo.length);
-                //TODO: XXX: dump result here, as it's coming back empty.
-                this.tabGetterCallback(result);
-            }
-        }
-        } catch(e) {
-            this.dump("**** dualProcessContinuation: bad happened: " + e + "\n" + e.stack);
-        }
-    }
-    if (globalMessageManager) {
-        //globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.getTabs_dualProcessContinuation.bind(this));
-        let this_ = this;
-        globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", function(msg) {
-                this_.dump("**** >>> Handling a docType-has-image-continuation notific'n");
-                this_.getTabs_dualProcessContinuation(msg);
-            });
-    }
-    
-    this.TabGetter = function(windowIdx, openWindow, tabs) {
-        this.windowIdx = windowIdx;
-        this.openWindow = openWindow;
-        this.tabs = tabs;
-        this.finishedGettingTabs = false;
-        this.collector = { tabs: [],
-                           currWindowInfo: {window: openWindow, tabs: []}};
-    };
-    this.TabGetter.prototype.setImageSetting = function(tabIdx) {
-        var tab = this.tabs[tabIdx];
-        ep_extensions.tabhunter.dump("**** go do docType-has-image for windowIdx " +
-                  this.windowIdx + ", tabIdx: " + tabIdx);
-        tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: this.windowIdx });
-    };
-    
-    this.getTabs_dualProcess = function(callback) {
-        // Get all the windows with tabs synchronously. Then get the
-        // image info for each tab asynchronously, knit everything
-        // together, and send the result back via the callback.
-        var openWindows = this.wmService.getEnumerator("navigator:browser");
-        var windowIdx = -1;
-        this.tabGetters = [];
-        this.tabGetterCallback = callback;
-        this.processedTabs = {}; // hash "windowIdx-tabIdx : true"
-        // Get the eligible windows 
-        do {
-            // There must be at least one window for an extension to run in
-            var openWindow = openWindows.getNext();
-            try {
-                var tc = openWindow.getBrowser().tabContainer.childNodes;
-            } catch(ex) {
-                continue;
-            }
-            windowIdx += 1;
-            this.dump("**** setup TabGetter(" + windowIdx + ")");
-            this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
-        } while (openWindows.hasMoreElements());
-        this.callbackTimeoutId = setTimeout(function() {
-                this.dump("**** Failed to continue getting tabs");
-                callback({ tabs:[], windowInfo:[] });
-                // Allow 2 seconds per window
-            }.bind(this), 2000 * this.tabGetters.length);
-        for (var i = 0; i < this.tabGetters.length; i++ ) {
-            this.tabGetters[i].setImageSetting(0);
-        }
     };
     
     this.getTabTitleAndURL = function(tab) {
@@ -367,7 +237,7 @@ if (!("tabhunter" in ep_extensions)) {
             this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, false);
         }
         // wait 5 seconds -- on the mac the status bar icon isn't always present yet.
-	 setTimeout(function(prefs, self, document) {
+         setTimeout(function(prefs, self, document) {
             var showStatusBarIcon = prefs.getBoolPref('showStatusBarIcon');
             var showMenuItem = prefs.getBoolPref('showMenuItem');
             document.getElementById("th-status-image").collapsed = !showStatusBarIcon;
@@ -402,9 +272,9 @@ if (!("tabhunter" in ep_extensions)) {
 }).apply(ep_extensions.tabhunter);
 
 window.addEventListener("load", 
-	function(e) { 
-		ep_extensions.tabhunter.onload(e); },
-	false);
+        function(e) { 
+                ep_extensions.tabhunter.onload(e); },
+        false);
 window.addEventListener("unload",
         function(e) { 
                 ep_extensions.tabhunter.onunload(e); },
@@ -413,5 +283,4 @@ window.addEventListener("unload",
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);
         consoleService.logStringMessage("tabhunter startup: " + e);
-        consoleService.logStringMessage("th failure stack: " + e.stack);
 }
