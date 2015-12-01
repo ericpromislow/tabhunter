@@ -29,7 +29,14 @@ function doStuff(data) {
     sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-continuation", data);
 }
 
+var handleStopListeningMessage = function(msgData) {
+  var consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
+  consoleService.logStringMessage("RRR: Stop listening for docType-has-image and stop-listening");
+  removeMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
+}
+
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
+content.addEventListener("unload", handleStopListeningMessage, false);
 
 
 consoleService.logStringMessage("+ Done Loading docType-has-image.js...");
