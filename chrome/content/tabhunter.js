@@ -160,13 +160,13 @@ if (!("tabhunter" in ep_extensions)) {
             this.dump("**** dualProcessContinuation: bad happened: " + e + "\n" + e.stack);
         }
     }
+    this.process_docType_has_image_continuation_msg = function(msg) {
+      this.dump("**** >>> Handling a docType-has-image-continuation notific'n");
+      this.getTabs_dualProcessContinuation(msg);
+    };
+    this.process_docType_has_image_continuation_msg_bound = this.process_docType_has_image_continuation_msg.bind(this);
     if (globalMessageManager) {
-        //globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.getTabs_dualProcessContinuation.bind(this));
-        let this_ = this;
-        globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", function(msg) {
-                this_.dump("**** >>> Handling a docType-has-image-continuation notific'n");
-                this_.getTabs_dualProcessContinuation(msg);
-            });
+        globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
     }
     
     this.TabGetter = function(windowIdx, openWindow, tabs) {
@@ -397,6 +397,10 @@ if (!("tabhunter" in ep_extensions)) {
 
     this.onunload = function() {
         document.removeEventListener('keypress', this.keypressWrapper, false);
+	if (globalMessageManager) {
+	   this.dump("QQQ: Stop listening on docType-has-image-continuation");
+	   globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
+	}
     };
 
     this.doCommand = function(event) {
