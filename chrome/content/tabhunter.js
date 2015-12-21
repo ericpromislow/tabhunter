@@ -1,6 +1,8 @@
 // Copyright (C) Eric Promislow 2008 - 2015.  All Rights Reserved.
 // See full license in tabhunter.js
 
+const NEXT_TIMEOUT = 1;
+
 try {
 
 var globalMessageManager, Cc, Ci;
@@ -139,7 +141,7 @@ if (!("tabhunter" in ep_extensions)) {
         if (tabIdx < tabGetter.tabs.length - 1) {
             setTimeout(function() {
                  tabGetter.setImageSetting(tabIdx + 1, this.timestamp);
-                }, 10000);
+                }, NEXT_TIMEOUT);
         } else {
             this.dump("**** dualProcessContinuation: all done with window " + windowIdx);
             tabGetter.finishedGettingTabs = true;

@@ -256,6 +256,7 @@ TabhunterWatchSessionService.prototype = {
   },
 
   onTabLoad: function thst_onTabLoad(aWindow, aPanel, aEvent) {
+        this.dump("QQQ > **** sessionTrack.js: >>onTabLoad")
     var self = this;
         try {
     setTimeout(function(self) {
