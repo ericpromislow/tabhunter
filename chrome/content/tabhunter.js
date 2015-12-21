@@ -3,7 +3,6 @@
 
 const NEXT_TIMEOUT = 1;
 const MAX_NUM_TAB_TRIES = 100;
-const TAB_LOADING_LABEL = "Connecting...";
 const TAB_LOADING_WAIT_MS = 50;
 
 try {
@@ -132,10 +131,18 @@ if (!("tabhunter" in ep_extensions)) {
         var tabGetter = this.tabGetters[windowIdx];
 	    //RRR this.dump("QQQ: windowIdx: " + windowIdx + ", tabGetter: " + tabGetter);
         var tab = tabGetter.tabs[tabIdx];
+        var label = tab.label;
+	    if (location == "about:blank" && this.isConnecting(label) && tabGetter.connectAttempt < MAX_NUM_TAB_TRIES) {
+	       this.dump("QQQ: !!!! Wait to reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
+	       tabGetter.connectAttempt += 1;
+	       setTimeout(function(timestamp) {
+		    tabGetter.setImageSetting(tabIdx, timestamp);
+		 }, TAB_LOADING_WAIT_MS, this.timestamp);
+	       return;
+	    }
 	    //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo: " + Object.keys(tabGetter.collector.currWindowInfo).join(", "));
 	    //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo.tabs: " + Object.prototype.toString.call(tabGetter.collector.currWindowInfo.tabs));
         tabGetter.collector.currWindowInfo.tabs.push(tab);
-        var label = tab.label;
             //var image = data.hasImage ? tab.getAttribute('image') : '';
         var image = tab.getAttribute('image') || '';
         tabGetter.collector.tabs.push(new TabInfo(windowIdx, tabIdx, label, image, location));
@@ -192,6 +199,7 @@ if (!("tabhunter" in ep_extensions)) {
         this.openWindow = openWindow;
         this.tabs = tabs;
         this.finishedGettingTabs = false;
+	this.connectAttempt = 0; // to allow for doc loading
         this.collector = { tabs: [],
                            currWindowInfo: {window: openWindow, tabs: []}};
     };
@@ -199,17 +207,14 @@ if (!("tabhunter" in ep_extensions)) {
         var tab = this.tabs[tabIdx];
         ep_extensions.tabhunter.dump("**** go do docType-has-image for windowIdx " +
                   this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label ">");
-	var windowIdx = this.windowIdx;
-	var tryGetTabInfo = function(numTries) {
-	  if (tab.label == TAB_LOADING_LABEL && numTries < MAX_NUM_TAB_TRIES) {
-	    ep_extensions.tabhunter.dump("**** don't get tab info yet for win " + windowIdx + "-" + tabIdx);
-	    setTimeout(tryGetTabInfo, TAB_LOADING_WAIT_MS, numTries + 1);
-	    return;
-	  }
-	  tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: windowIdx, timestamp:timestamp });
-	}
+        var windowIdx = this.windowIdx;
+	tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: windowIdx, timestamp:timestamp });
     };
-    
+  
+    this.isConnecting = function(s) {
+      if (s.indexOf("Connecting") != 0) return false;
+      return s.match(/Connecting\s*(?:…|\.\.\.)/);
+    }  
     this.getTabs_dualProcess = function(callback) {
         // Get all the windows with tabs synchronously. Then get the
         // image info for each tab asynchronously, knit everything
