@@ -90,97 +90,95 @@ if (!("tabhunter" in ep_extensions)) {
 
     this.getTabs_dualProcessContinuation = function(msg) {
         try {
-	    var data = msg.data;
-	    var tabIdx = data.tabIdx;
-	    var windowIdx = data.windowIdx;
-	    var windowTabKey = windowIdx + "-" + tabIdx;
-            if (!this.tabGetters) {
-	       this.dump(">> getTabs_dualProcessContinuation unexpected:!this.tabGetters, ignore, windowTabKey:" + windowTabKey);
-		var s = [];
-		var funcCount = 0;
-		for (var p in this) {
-		   if (typeof(this[p]) != "function") s.push(p);
-		   else if (funcCount == 1) {
-		      s.push(p);
-		      funcCount += 1;
-		   }
+	  var data = msg.data;
+	  var tabIdx = data.tabIdx;
+	  var windowIdx = data.windowIdx;
+	  var windowTabKey = windowIdx + "-" + tabIdx;
+	  if (!this.tabGetters) {
+	     this.dump(">> getTabs_dualProcessContinuation unexpected:!this.tabGetters, ignore, windowTabKey:" + windowTabKey);
+	     var s = [];
+	     var funcCount = 0;
+	     for (var p in this) {
+		if (typeof(this[p]) != "function") s.push(p);
+		else if (funcCount == 1) {
+		   s.push(p);
+		   funcCount += 1;
 		}
-		this.dump("props of this: " + s.join(" "));
-                return;
-            }
-            //this.dump(">> getTabs_dualProcessContinuation: msg: " + Object.keys(msg).join(" "));
-            // this.dump(">> getTabs_dualProcessContinuation: data: " + Object.keys(data).join(" "));
-            //this.dump("QQQ: and keys(this): " + Object.keys(this).join(" "));
-            if (data.timestamp < this.timestamp) {
-               this.dump("QQQ: got a message from an older request " + ((this.timestamp - data.timestamp)/1000000.0) + " msec ago");
-               return;
-            }
-        if (!this.processedTabs[windowTabKey]) {
-            this.processedTabs[windowTabKey] = true;
-        } else {
-            this.dump(">> getTabs_dualProcessContinuation: already saw node " + windowTabKey);
-            return;
-        }
-        var hasImage = data.hasImage;
-        var location = data.location;
-        this.dump("QQQ: getTabs_dualProcessContinuation: tabIdx: " + tabIdx +
-                  ", windowIdx: " + windowIdx +
-                  ", hasImage: " + hasImage +
-                  ", location: " + location);
+	     }
+	     this.dump("props of this: " + s.join(" "));
+	     return;
+	  }
+	  //this.dump(">> getTabs_dualProcessContinuation: msg: " + Object.keys(msg).join(" "));
+	  // this.dump(">> getTabs_dualProcessContinuation: data: " + Object.keys(data).join(" "));
+	  //this.dump("QQQ: and keys(this): " + Object.keys(this).join(" "));
+	  if (data.timestamp < this.timestamp) {
+	    this.dump("QQQ: got a message from an older request " + ((this.timestamp - data.timestamp)/1000000.0) + " msec ago");
+	    return;
+	  }
+	  if (this.processedTabs[windowTabKey]) {
+	    this.dump("QQQ: we've already processed windowTabKey " + windowTabKey);
+	  }
+	  var hasImage = data.hasImage;
+	  var location = data.location;
+	  this.dump("QQQ: getTabs_dualProcessContinuation: tabIdx: " + tabIdx +
+		    ", windowIdx: " + windowIdx +
+		    ", hasImage: " + hasImage +
+		    ", location: " + location);
                   
-        var tabGetter = this.tabGetters[windowIdx];
-	    //RRR this.dump("QQQ: windowIdx: " + windowIdx + ", tabGetter: " + tabGetter);
-        var tab = tabGetter.tabs[tabIdx];
-        var label = tab.label;
-	    if (location == "about:blank" && this.isConnecting(label) && tabGetter.connectAttempt < MAX_NUM_TAB_TRIES) {
-	       this.dump("QQQ: !!!! Wait to reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
-	       tabGetter.connectAttempt += 1;
-	       setTimeout(function(timestamp) {
-		    tabGetter.setImageSetting(tabIdx, timestamp);
-		 }, TAB_LOADING_WAIT_MS, this.timestamp);
-	       return;
-	    }
-	    //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo: " + Object.keys(tabGetter.collector.currWindowInfo).join(", "));
-	    //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo.tabs: " + Object.prototype.toString.call(tabGetter.collector.currWindowInfo.tabs));
-        tabGetter.collector.currWindowInfo.tabs.push(tab);
-            //var image = data.hasImage ? tab.getAttribute('image') : '';
-        var image = tab.getAttribute('image') || '';
-        tabGetter.collector.tabs.push(new TabInfo(windowIdx, tabIdx, label, image, location));
-        this.dump("QQQ: collector for window " + windowIdx +
-                  ", now has " + tabGetter.collector.tabs.length + " tabs");
-        if (tabIdx < tabGetter.tabs.length - 1) {
-            setTimeout(function() {
-                 tabGetter.setImageSetting(tabIdx + 1, this.timestamp);
-                }, NEXT_TIMEOUT);
-        } else {
+	  var tabGetter = this.tabGetters[windowIdx];
+	  //RRR this.dump("QQQ: windowIdx: " + windowIdx + ", tabGetter: " + tabGetter);
+	  var tab = tabGetter.tabs[tabIdx];
+	  var label = tab.label;
+	  if (location == "about:blank" && this.isConnecting(label) && tabGetter.connectAttempt < MAX_NUM_TAB_TRIES) {
+	     this.dump("QQQ: !!!! Wait to reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
+	     tabGetter.connectAttempt += 1;
+	     setTimeout(function(timestamp) {
+		  tabGetter.setImageSetting(tabIdx, timestamp);
+	       }, TAB_LOADING_WAIT_MS, this.timestamp);
+	     return;
+	  }
+	  this.processedTabs[windowTabKey] = true;
+	  //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo: " + Object.keys(tabGetter.collector.currWindowInfo).join(", "));
+	  //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo.tabs: " + Object.prototype.toString.call(tabGetter.collector.currWindowInfo.tabs));
+	  tabGetter.collector.currWindowInfo.tabs.push(tab);
+	  //var image = data.hasImage ? tab.getAttribute('image') : '';
+	  var image = tab.getAttribute('image') || '';
+	  tabGetter.collector.tabs.push(new TabInfo(windowIdx, tabIdx, label, image, location));
+	  this.dump("QQQ: collector for window " + windowIdx +
+		    ", now has " + tabGetter.collector.tabs.length + " tabs");
+	  if (tabIdx < tabGetter.tabs.length - 1) {
+	     setTimeout(function() {
+		  tabGetter.setImageSetting(tabIdx + 1, this.timestamp);
+	       }, NEXT_TIMEOUT);
+	  } else {
             this.dump("**** dualProcessContinuation: all done with window " + windowIdx);
             tabGetter.finishedGettingTabs = true;
             if (this.tabGetters.every(function(tabGetter) tabGetter.finishedGettingTabs)) {
-                this.dump("**** all tabs are done, loop over " +
-                          this.tabGetters.length + " tabs");
-                clearTimeout(this.callbackTimeoutId);
-                // pour everything into the return obj and
-                // pass it on using the callback
-                let result = { tabs:[], windowInfo:[] }
-                this.tabGetters.forEach(function(tabGetter) {
-                        try {
-                        this.dump("QQQ: concat in " + tabGetter.collector.tabs.length + " tabs");
-                        result.tabs = result.tabs.concat(tabGetter.collector.tabs);
-                        this.dump("QQQ: result.windowInfo.push: " + tabGetter.collector.currWindowInfo);
-                        result.windowInfo.push(tabGetter.collector.currWindowInfo);
-                        } catch(e2) {
-                            this.dump("**** this.tabGetters.forEach: bad: " + e2);
-                        }
-                    }.bind(this));
-                this.dump("QQQ: result:tabs: " + result.tabs.length
-                          + ", windowInfo: " + result.windowInfo.length);
-                //TODO: XXX: dump result here, as it's coming back empty.
-                this.tabGetterCallback(result);
+	       this.dump("**** all tabs are done, loop over " +
+			 this.tabGetters.length + " tabs");
+	       clearTimeout(this.callbackTimeoutId);
+	       // pour everything into the return obj and
+	       // pass it on using the callback
+	       let result = { tabs:[], windowInfo:[] }
+	       this.tabGetters.forEach(function(tabGetter) {
+		    try {
+		       this.dump("QQQ: concat in " + tabGetter.collector.tabs.length + " tabs");
+		       result.tabs = result.tabs.concat(tabGetter.collector.tabs);
+		       this.dump("QQQ: result.windowInfo.push: " + tabGetter.collector.currWindowInfo);
+		       result.windowInfo.push(tabGetter.collector.currWindowInfo);
+		    } catch(e2) {
+		       this.dump("**** this.tabGetters.forEach: bad: " + e2);
+		    }
+		 }.bind(this));
+	       this.dump("QQQ: result:tabs: " + result.tabs.length
+			 + ", windowInfo: " + result.windowInfo.length);
+	       //TODO: XXX: dump result here, as it's coming back empty.
+	       this.tabGetterCallback(result);
             } else {
 	      this.dump("**** continue on with TabGetter(" + (windowIdx + 1) + ")");
 	      this.tabGetters[windowIdx + 1].setImageSetting(0, this.timestamp);
 	    }
-        }
+	  }
         } catch(e) {
             this.dump("**** dualProcessContinuation: bad happened: " + e + "\n" + e.stack);
         }
