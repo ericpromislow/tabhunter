@@ -444,7 +444,7 @@ if (!("tabhunter" in ep_extensions)) {
 	      // There must be at least one window for an extension to run in
 	      var openWindow = openWindows.getNext();
 	      try {
-		 openWindow.getBrowser().tabContainer.childNodes.forEach(function(tab) {
+		 Array.slice(openWindow.getBrowser().tabContainer.childNodes).forEach(function(tab) {
 		      try {
 		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-shutdown", {});
 		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus-shutdown", {});
@@ -488,7 +488,7 @@ window.addEventListener("load",
 window.addEventListener("unload",
         function(e) { 
                 ep_extensions.tabhunter.onunload(e); },
-        false);
+        true);
 }catch(e) {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);
