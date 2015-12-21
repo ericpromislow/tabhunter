@@ -86,16 +86,24 @@ if (!("tabhunter" in ep_extensions)) {
 
     this.getTabs_dualProcessContinuation = function(msg) {
         try {
+	    var data = msg.data;
+	    var tabIdx = data.tabIdx;
+	    var windowIdx = data.windowIdx;
+	    var windowTabKey = windowIdx + "-" + tabIdx;
             if (!this.tabGetters) {
-                this.dump(">> getTabs_dualProcessContinuation unexpected:!this.tabGetters, ignore");
+	       this.dump(">> getTabs_dualProcessContinuation unexpected:!this.tabGetters, ignore, windowTabKey:" + windowTabKey);
 		var s = [];
+		var funcCount = 0;
 		for (var p in this) {
 		   if (typeof(this[p]) != "function") s.push(p);
+		   else if (funcCount == 1) {
+		      s.push(p);
+		      funcCount += 1;
+		   }
 		}
 		this.dump("props of this: " + s.join(" "));
                 return;
             }
-	    var data = msg.data;
             //this.dump(">> getTabs_dualProcessContinuation: msg: " + Object.keys(msg).join(" "));
             // this.dump(">> getTabs_dualProcessContinuation: data: " + Object.keys(data).join(" "));
             //this.dump("QQQ: and keys(this): " + Object.keys(this).join(" "));
@@ -103,9 +111,6 @@ if (!("tabhunter" in ep_extensions)) {
                this.dump("QQQ: got a message from an older request " + ((this.timestamp - data.timestamp)/1000000.0) + " msec ago");
                return;
             }
-        var tabIdx = data.tabIdx;
-        var windowIdx = data.windowIdx;
-        var windowTabKey = windowIdx + "-" + tabIdx;
         if (!this.processedTabs[windowTabKey]) {
             this.processedTabs[windowTabKey] = true;
         } else {
