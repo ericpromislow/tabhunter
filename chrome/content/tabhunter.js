@@ -204,7 +204,7 @@ if (!("tabhunter" in ep_extensions)) {
     this.TabGetter.prototype.setImageSetting = function(tabIdx, timestamp) {
         var tab = this.tabs[tabIdx];
         ep_extensions.tabhunter.dump("**** go do docType-has-image for windowIdx " +
-                  this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label ">");
+                  this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
         var windowIdx = this.windowIdx;
 	tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: windowIdx, timestamp:timestamp });
     };
