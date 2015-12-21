@@ -111,6 +111,7 @@ TabhunterWatchSessionService.prototype = {
   handleEvent: function thst_handleEvent(aEvent) {
     switch (aEvent.type) {
       case "load":
+      case "DOMContentLoaded":
         this.onTabLoad(aEvent.currentTarget.ownerDocument.defaultView,
                        aEvent.currentTarget, aEvent);
         break;
@@ -226,7 +227,7 @@ TabhunterWatchSessionService.prototype = {
     }
     if (aPanel) {
     setTimeout(function(aPanel_, func_) {
-            aPanel_.addEventListener("load", func_, true);
+            aPanel_.addEventListener("DOMContentLoaded", func_, true);
         }, 1, aPanel, func);
     if (!aNoNotification) {
         this.reactorFunc.call(this.reactor);
