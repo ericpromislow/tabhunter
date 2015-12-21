@@ -456,7 +456,7 @@ if (!("tabhunter" in ep_extensions)) {
 	      } catch(ex3) {
 		 self.dump("QQQ !!! Failed to shutdown docType FS: " + ex3);
 	      }
-	   }
+	   } while (openWindows.hasMoreElements());
 	}
     };
 
