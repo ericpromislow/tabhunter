@@ -210,10 +210,11 @@ if (!("tabhunter" in ep_extensions)) {
         ep_extensions.tabhunter.dump("**** go do docType-has-image for windowIdx " +
                   this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
         var windowIdx = this.windowIdx;
+	var self = this;
 	var loadReadyTabFunc = function() {
-	  if (this.isConnecting(tab.label) && this.connectAttempt < MAX_NUM_TAB_TRIES) {
-	    ep_extensions.tabhunter.dump("**** don't like tab.label " + tab.label + " at attempt " + this.connectAttempt);
-	    this.connectAttempt += 1;
+	  if (self.isConnecting(tab.label) && self.connectAttempt < MAX_NUM_TAB_TRIES) {
+	    ep_extensions.tabhunter.dump("**** don't like tab.label " + tab.label + " at attempt " + self.connectAttempt);
+	    self.connectAttempt += 1;
 	    setTimeout(loadReadyTabFunc, TAB_LOADING_WAIT_MS);
 	    return;
 	  }
@@ -221,11 +222,7 @@ if (!("tabhunter" in ep_extensions)) {
 	};
 	loadReadyTabFunc();
     };
-  
-    this.isConnecting = function(s) {
-      if (s.indexOf("Connecting") != 0) return false;
-      return s.match(/Connecting\s*(?:…|\.\.\.)/);
-    }  
+    
     this.getTabs_dualProcess = function(callback) {
         // Get all the windows with tabs synchronously. Then get the
         // image info for each tab asynchronously, knit everything
