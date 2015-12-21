@@ -2,6 +2,9 @@
 // See full license in tabhunter.js
 
 const NEXT_TIMEOUT = 1;
+const MAX_NUM_TAB_TRIES = 100;
+const TAB_LOADING_LABEL = "Connecting...";
+const TAB_LOADING_WAIT_MS = 50;
 
 try {
 
@@ -195,8 +198,16 @@ if (!("tabhunter" in ep_extensions)) {
     this.TabGetter.prototype.setImageSetting = function(tabIdx, timestamp) {
         var tab = this.tabs[tabIdx];
         ep_extensions.tabhunter.dump("**** go do docType-has-image for windowIdx " +
-                  this.windowIdx + ", tabIdx: " + tabIdx);
-        tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: this.windowIdx, timestamp:timestamp });
+                  this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label ">");
+	var windowIdx = this.windowIdx;
+	var tryGetTabInfo = function(numTries) {
+	  if (tab.label == TAB_LOADING_LABEL && numTries < MAX_NUM_TAB_TRIES) {
+	    ep_extensions.tabhunter.dump("**** don't get tab info yet for win " + windowIdx + "-" + tabIdx);
+	    setTimeout(tryGetTabInfo, TAB_LOADING_WAIT_MS, numTries + 1);
+	    return;
+	  }
+	  tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: windowIdx, timestamp:timestamp });
+	}
     };
     
     this.getTabs_dualProcess = function(callback) {
