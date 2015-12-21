@@ -23,6 +23,8 @@ function doStuff(data) {
     //    consoleService.logStringMessage("RRR: content.document.contentType: " + content.document.contentType);
     // Send all data back, along with the result
     data.hasImage = content.document.contentType.indexOf("image/") >= 0;
+    if (data.location == "about:blank") {
+       // Keep waiting
     data.location = content.document.location.toString();
     //consoleService.logStringMessage("RRR: location: " + data.location);
     //consoleService.logStringMessage("RRR: hasImage: " + data.hasImage);

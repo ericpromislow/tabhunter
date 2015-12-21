@@ -129,7 +129,7 @@ if (!("tabhunter" in ep_extensions)) {
 	  //RRR this.dump("QQQ: windowIdx: " + windowIdx + ", tabGetter: " + tabGetter);
 	  var tab = tabGetter.tabs[tabIdx];
 	  var label = tab.label;
-	  if (location == "about:blank" && this.isConnecting(label) && tabGetter.connectAttempt < MAX_NUM_TAB_TRIES) {
+	  if (location == "about:blank" && tabGetter.connectAttempt < MAX_NUM_TAB_TRIES) {
 	     this.dump("QQQ: !!!! Wait to reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
 	     tabGetter.connectAttempt += 1;
 	     setTimeout(function(timestamp) {
@@ -201,12 +201,25 @@ if (!("tabhunter" in ep_extensions)) {
         this.collector = { tabs: [],
                            currWindowInfo: {window: openWindow, tabs: []}};
     };
+    this.TabGetter.prototype.isConnecting = function(s) {
+      if (s.indexOf("Connecting") != 0) return false;
+      return s.match(/Connecting\s*(?:…|\.\.\.)/);
+    }  
     this.TabGetter.prototype.setImageSetting = function(tabIdx, timestamp) {
         var tab = this.tabs[tabIdx];
         ep_extensions.tabhunter.dump("**** go do docType-has-image for windowIdx " +
                   this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
         var windowIdx = this.windowIdx;
-	tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: windowIdx, timestamp:timestamp });
+	var loadReadyTabFunc = function() {
+	  if (this.isConnecting(tab.label) && this.connectAttempt < MAX_NUM_TAB_TRIES) {
+	    ep_extensions.tabhunter.dump("**** don't like tab.label " + tab.label + " at attempt " + this.connectAttempt);
+	    this.connectAttempt += 1;
+	    setTimeout(loadReadyTabFunc, TAB_LOADING_WAIT_MS);
+	    return;
+	  }
+	  tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: windowIdx, timestamp:timestamp });
+	};
+	loadReadyTabFunc();
     };
   
     this.isConnecting = function(s) {
