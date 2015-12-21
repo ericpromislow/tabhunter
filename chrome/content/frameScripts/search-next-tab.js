@@ -130,3 +130,13 @@ addMessageListener("tabhunter@ericpromislow.com:search-next-tab", handleMessage)
 
 
 //consoleService.logStringMessage("+ Loaded search-next-tab.js.");
+
+addMessageListener("tabhunter@ericpromislow.com:search-next-tab", handleMessage);
+var handleStopListeningMessage = function(msgData) {
+  var consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
+  consoleService.logStringMessage("RRR: Stop listening for search-next-tab");
+  removeMessageListener("tabhunter@ericpromislow.com:search-next-tab", handleMessage);
+  removeMessageListener("tabhunter@ericpromislow.com:search-next-tab-shutdown", handleMessage);
+}
+
+addMessageListener("tabhunter@ericpromislow.com:search-next-tab-shutdown", handleStopListeningMessage);

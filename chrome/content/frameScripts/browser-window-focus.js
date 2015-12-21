@@ -17,8 +17,11 @@ var handleMessage = function(message) {
 };
 
 addMessageListener("tabhunter@ericpromislow.com:content-focus", handleMessage);
-// No need to remove the message-listener when the tab is removed as we won't be
-// getting any messages on it.
+var handleStopListeningMessage = function(msgData) {
+  var consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
+  consoleService.logStringMessage("RRR: Stop listening for content-focus");
+  removeMessageListener("tabhunter@ericpromislow.com:content-focus", handleMessage);
+  removeMessageListener("tabhunter@ericpromislow.com:content-focus-shutdown", handleMessage);
+}
 
-// This fires, so all the frame scripts have been loaded.
-//consoleService.logStringMessage("+ Loaded browser-window-focus.js.");
+addMessageListener("tabhunter@ericpromislow.com:content-focus-shutdown", handleStopListeningMessage);

@@ -222,7 +222,6 @@ if (!("tabhunter" in ep_extensions)) {
 	};
 	loadReadyTabFunc();
     };
-    
     this.getTabs_dualProcess = function(callback) {
         // Get all the windows with tabs synchronously. Then get the
         // image info for each tab asynchronously, knit everything
@@ -437,8 +436,27 @@ if (!("tabhunter" in ep_extensions)) {
     this.onunload = function() {
         document.removeEventListener('keypress', this.keypressWrapper, false);
 	if (globalMessageManager) {
+	   var self = this;
 	   this.dump("QQQ: Stop listening on docType-has-image-continuation");
 	   globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
+	   var openWindows = this.wmService.getEnumerator("navigator:browser");
+	   do {
+	      // There must be at least one window for an extension to run in
+	      var openWindow = openWindows.getNext();
+	      try {
+		 openWindow.getBrowser().tabContainer.childNodes.forEach(function(tab) {
+		      try {
+		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-shutdown", {});
+		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus-shutdown", {});
+		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab", {});
+		      } catch(ex2) {
+			 self.dump("QQQ !!! Failed to shutdown docType FS: " + ex2);
+		      }
+		   });
+	      } catch(ex3) {
+		 self.dump("QQQ !!! Failed to shutdown docType FS: " + ex3);
+	      }
+	   }
 	}
     };
 
