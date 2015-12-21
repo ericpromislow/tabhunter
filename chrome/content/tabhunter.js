@@ -202,7 +202,7 @@ if (!("tabhunter" in ep_extensions)) {
                            currWindowInfo: {window: openWindow, tabs: []}};
     };
     this.TabGetter.prototype.isConnecting = function(s) {
-      if (s.indexOf("Connecting") != 0) return false;
+      if (!s || s.indexOf("Connecting") != 0) return false;
       return s.match(/Connecting\s*(?:…|\.\.\.)/);
     }  
     this.TabGetter.prototype.setImageSetting = function(tabIdx, timestamp) {
@@ -485,10 +485,7 @@ window.addEventListener("load",
         function(e) { 
                 ep_extensions.tabhunter.onload(e); },
         false);
-window.addEventListener("unload",
-        function(e) { 
-                ep_extensions.tabhunter.onunload(e); },
-        true);
+ window.onunload = ep_extensions.tabhunter.onunload;
 }catch(e) {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);
