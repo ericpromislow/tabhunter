@@ -28,9 +28,11 @@ if (typeof(globalMessageManager) == "undefined") {
 var ep_extensions;
 if (typeof(ep_extensions) == "undefined") {
     ep_extensions = {};
+    Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService).logStringMessage("QQQ: **************** creating ep_extensions")
 }
 if (!("tabhunter" in ep_extensions)) {
     ep_extensions.tabhunter = { searchPattern:"" };
+    Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService).logStringMessage("QQQ: **************** creating ep_extensions.tabhunter")
 }
 (function() {
     this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
