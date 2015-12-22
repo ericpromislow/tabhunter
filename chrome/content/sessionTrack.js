@@ -248,18 +248,18 @@ TabhunterWatchSessionService.prototype = {
             if (mm) {
 	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-shutdown", {});
 	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus-shutdown", {});
-	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab", {});
+	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab-shutdown", {});
 	    }	   
-        setTimeout(function(self) {
-                this.dump("About to do tab-remove in setTimeout\n", this.log_debug);
-            try {
-            self.reactorFunc.call(self.reactor);
-            } catch(ex) {
-                this.dump("Error in onTabRemove handler:\n" + ex + "\n");
-            }
-        }, TAB_REMOVE_DELAY_TIME, self);
+	    setTimeout(function(self) {
+		 self.dump("About to do tab-remove in setTimeout\n", self.log_debug);
+		 try {
+		    self.reactorFunc.call(self.reactor);
+		 } catch(ex) {
+		    self.dump("Error in onTabRemove handler:\n" + ex + "\n");
+		 }
+	      }, TAB_REMOVE_DELAY_TIME, self);
         } catch(ex2) {
-            this.dump("onTabRemove: Caught exception outside setTimeout" + ex2);
+	   this.dump("onTabRemove: Caught exception outside setTimeout" + ex2);
         }
     }
   },

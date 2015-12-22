@@ -464,7 +464,7 @@ if (!("tabhunter" in ep_extensions)) {
 		      try {
 		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-shutdown", {});
 		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus-shutdown", {});
-		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab", {});
+		      tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab-shutdown", {});
 		      } catch(ex2) {
 			 self.dump("QQQ !!! Failed to shutdown docType FS: " + ex2);
 		      }
