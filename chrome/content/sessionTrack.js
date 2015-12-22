@@ -110,6 +110,7 @@ TabhunterWatchSessionService.prototype = {
    * Implement nsIDOMEventListener for handling various window and tab events
    */
   handleEvent: function thst_handleEvent(aEvent) {
+     this.dump("**** handleEvent " + aEvent.type);
     switch (aEvent.type) {
       case "load":
       case "DOMContentLoaded":
