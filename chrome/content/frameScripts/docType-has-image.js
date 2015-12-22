@@ -39,7 +39,6 @@ var handleStopListeningMessage = function(msgData) {
 
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image-shutdown", handleStopListeningMessage);
+
 content.addEventListener("unload", handleStopListeningMessage, false);
-
-
 consoleService.logStringMessage("+ Done Loading docType-has-image.js...");

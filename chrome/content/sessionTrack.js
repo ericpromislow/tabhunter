@@ -126,7 +126,8 @@ TabhunterWatchSessionService.prototype = {
                         aEvent.originalTarget, false);
         }
         else {
-          this.onTabRemove(aEvent.currentTarget.ownerDocument.defaultView, tabpanel, false);
+          this.dump("**** TabClose: originalTarget: " + aEvent.originalTarget);
+	  this.onTabRemove(aEvent.currentTarget.ownerDocument.defaultView, tabpanel, false);
         }
         break;
       case "TabMove":

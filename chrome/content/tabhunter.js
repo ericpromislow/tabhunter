@@ -125,7 +125,7 @@ if (!("tabhunter" in ep_extensions)) {
 	  var windowIdx = data.windowIdx;
 	  var windowTabKey = windowIdx + "-" + tabIdx;
 	  if (!this.tabGetters) {
-	     this.dump(">> getTabs_dualProcessContinuation unexpected:!this.tabGetters, ignore, windowTabKey:" + windowTabKey);
+	     this.dump(">> getTabs_dualProcessContinuation unexpected:!this.tabGetters, ignore, windowTabKey:" + windowTabKey.substr(0, 40) + ", timestamp:" + this.timestamp);
 	     var s = [];
 	     var funcCount = 0;
 	     for (var p in this) {
@@ -181,7 +181,7 @@ if (!("tabhunter" in ep_extensions)) {
 	  if (tabIdx < tabGetter.tabs.length - 1) {
 	     setTimeout(function() {
 		  this.dump("QQQ: go get location/image for window " + windowIdx +
-			    ", tab " + (tabIdx + 1) + ", title:" + tabGetters.tabs[tabIdx + 1].label + ", ts " + this.timestamp);
+			    ", tab " + (tabIdx + 1) + ", title:" + tabGetter.tabs[tabIdx + 1].label + ", ts " + this.timestamp);
 		  tabGetter.setImageSetting(tabIdx + 1, this.timestamp);
 	       }.bind(this), NEXT_TIMEOUT);
 	  } else {
