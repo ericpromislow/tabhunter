@@ -482,6 +482,9 @@ if (!("tabhunter" in ep_extensions)) {
     
 }).apply(ep_extensions.tabhunter);
 
+ window.onload = ep_extensions.tabhunter.onload;
+ window.onunload = ep_extensions.tabhunter.onunload;
+/****
 window.addEventListener("load", 
         function(e) { 
                 ep_extensions.tabhunter.onload(e); },
@@ -493,3 +496,4 @@ window.addEventListener("load",
         consoleService.logStringMessage("tabhunter startup: " + e);
         consoleService.logStringMessage("th failure stack: " + e.stack);
 }
+*/
