@@ -127,8 +127,7 @@ TabhunterWatchSessionService.prototype = {
                         aEvent.originalTarget, false);
         }
         else {
-          this.dump("**** TabClose: originalTarget: " + aEvent.originalTarget);
-	  this.onTabRemove(aEvent.currentTarget.ownerDocument.defaultView, tabpanel, false);
+	  this.onTabRemove(aEvent.currentTarget.ownerDocument.defaultView, tabpanel, aEvent.originalTarget, false);
         }
         break;
       case "TabMove":
@@ -202,7 +201,7 @@ TabhunterWatchSessionService.prototype = {
         //tabContainer.removeEventListener("TabMove", func, false);
         
         for (var i = 0; i < tabpanels.childNodes.length; i++) {
-          this.onTabRemove(aWindow, tabpanels.childNodes[i], true);
+	   this.onTabRemove(aWindow, tabpanels.childNodes[i], null, true);
         }
     }
   },
@@ -238,13 +237,19 @@ TabhunterWatchSessionService.prototype = {
     }
   },
 
-  onTabRemove: function thst_onTabRemove(aWindow, aPanel, aNoNotification) {
+  onTabRemove: function thst_onTabRemove(aWindow, aPanel, aTab, aNoNotification) {
     //TODO: cache the event-handler, refer to it here, and delete it.  Based on panel ID?
     // aPanel.removeEventListener("load", func, true);
     var self = this;
     if (!aNoNotification) {
         this.dump("About to do tab-remove before setTimeout\n", this.log_debug);
         try {
+            var mm = aTab.linkedBrowser.messageManager;
+            if (mm) {
+	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-shutdown", {});
+	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus-shutdown", {});
+	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab", {});
+	    }	   
         setTimeout(function(self) {
                 this.dump("About to do tab-remove in setTimeout\n", this.log_debug);
             try {
