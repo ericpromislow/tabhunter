@@ -88,6 +88,36 @@ if (!("tabhunter" in ep_extensions)) {
         callback(obj);
     };
 
+    this.dualProcessContinuationFinish = function() {
+      if (!this.tabGetters.every(function(tabGetter) tabGetter.finishedGettingTabs)) {
+	return false;
+      }
+      this.dump("**** all tabs are done at " + this.timestamp + ", loop over " +
+		this.tabGetters.length + " tabs");
+      clearTimeout(this.callbackTimeoutId);
+      // pour everything into the return obj and
+      // pass it on using the callback
+      let result = { tabs:[], windowInfo:[] }
+      this.tabGetters.forEach(function(tabGetter) {
+	   try {
+	      this.dump("QQQ: concat in " + tabGetter.collector.tabs.length + " tabs");
+	      result.tabs = result.tabs.concat(tabGetter.collector.tabs);
+	      this.dump("QQQ: result.windowInfo.push: " + tabGetter.collector.currWindowInfo);
+	      result.windowInfo.push(tabGetter.collector.currWindowInfo);
+	   } catch(e2) {
+	      this.dump("**** this.tabGetters.forEach: bad: " + e2);
+	   }
+	}.bind(this));
+      this.dump("QQQ: result:tabs: " + result.tabs.length
+		+ ", windowInfo: " + result.windowInfo.length);
+      result.tabs.forEach(function(tab) {
+	   this.dump("QQQ: window/tab " + tab.windowIdx + "-" + tab.tabIdx + "/" + tab.label + " - " + tab.location);
+	}.bind(this));
+      //TODO: XXX: dump result here, as it's coming back empty.
+      this.tabGetterCallback(result);
+      return true;
+    };
+
     this.getTabs_dualProcessContinuation = function(msg) {
         try {
 	  var data = msg.data;
@@ -117,6 +147,8 @@ if (!("tabhunter" in ep_extensions)) {
 	  }
 	  if (this.processedTabs[windowTabKey]) {
 	    this.dump("QQQ: we've already processed windowTabKey " + windowTabKey);
+	    this.dualProcessContinuationFinish();
+	    return;
 	  }
 	  var hasImage = data.hasImage;
 	  var location = data.location;
@@ -153,28 +185,7 @@ if (!("tabhunter" in ep_extensions)) {
 	  } else {
             this.dump("**** dualProcessContinuation: all done with window " + windowIdx);
             tabGetter.finishedGettingTabs = true;
-            if (this.tabGetters.every(function(tabGetter) tabGetter.finishedGettingTabs)) {
-	       this.dump("**** all tabs are done, loop over " +
-			 this.tabGetters.length + " tabs");
-	       clearTimeout(this.callbackTimeoutId);
-	       // pour everything into the return obj and
-	       // pass it on using the callback
-	       let result = { tabs:[], windowInfo:[] }
-	       this.tabGetters.forEach(function(tabGetter) {
-		    try {
-		       this.dump("QQQ: concat in " + tabGetter.collector.tabs.length + " tabs");
-		       result.tabs = result.tabs.concat(tabGetter.collector.tabs);
-		       this.dump("QQQ: result.windowInfo.push: " + tabGetter.collector.currWindowInfo);
-		       result.windowInfo.push(tabGetter.collector.currWindowInfo);
-		    } catch(e2) {
-		       this.dump("**** this.tabGetters.forEach: bad: " + e2);
-		    }
-		 }.bind(this));
-	       this.dump("QQQ: result:tabs: " + result.tabs.length
-			 + ", windowInfo: " + result.windowInfo.length);
-	       //TODO: XXX: dump result here, as it's coming back empty.
-	       this.tabGetterCallback(result);
-            } else {
+	    if (!this.dualProcessContinuationFinish()) {
 	      this.dump("**** continue on with TabGetter(" + (windowIdx + 1) + ")");
 	      this.tabGetters[windowIdx + 1].setImageSetting(0, this.timestamp);
 	    }
