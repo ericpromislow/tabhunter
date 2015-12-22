@@ -180,6 +180,8 @@ if (!("tabhunter" in ep_extensions)) {
 		    ", now has " + tabGetter.collector.tabs.length + " tabs");
 	  if (tabIdx < tabGetter.tabs.length - 1) {
 	     setTimeout(function() {
+		  this.dump("QQQ: go get location/image for window " + windowIdx +
+			    ", tab " + (tabIdx + 1) + ", title:" + tabGetters.tabs[tabIdx + 1].label + ", ts " + this.timestamp);
 		  tabGetter.setImageSetting(tabIdx + 1, this.timestamp);
 	       }.bind(this), NEXT_TIMEOUT);
 	  } else {
@@ -193,14 +195,15 @@ if (!("tabhunter" in ep_extensions)) {
         } catch(e) {
             this.dump("**** dualProcessContinuation: bad happened: " + e + "\n" + e.stack);
         }
-    }
-    this.process_docType_has_image_continuation_msg = function(msg) {
-      this.dump("**** >>> Handling a docType-has-image-continuation notific'n");
-      this.getTabs_dualProcessContinuation(msg);
     };
-    this.process_docType_has_image_continuation_msg_bound = this.process_docType_has_image_continuation_msg.bind(this);
+
+    this.process_docType_has_image_continuation_msg = function(msg) {
+      ep_extensions.tabhunter.dump("**** >>> Handling a docType-has-image-continuation notific'n");
+      ep_extensions.tabhunter.getTabs_dualProcessContinuation(msg);
+    };
+    //this.process_docType_has_image_continuation_msg_bound = this.process_docType_has_image_continuation_msg.bind(this);
     if (globalMessageManager) {
-        globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
+        globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg);
     }
     
     this.TabGetter = function(windowIdx, openWindow, tabs) {
