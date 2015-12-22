@@ -8,9 +8,9 @@ var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
     var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
     .getService(Components.interfaces.nsIConsoleService);
     try {
-        consoleService.logStringMessage("RRR: -doStuff(msgData.data: " + Object.keys(msgData.data).join(" ") + ")");
+       //        consoleService.logStringMessage("RRR: -doStuff(msgData.data: " + Object.keys(msgData.data).join(" ") + ")");
         doStuff(msgData.data);
-        consoleService.logStringMessage("RRR: +doStuff()")
+	//        consoleService.logStringMessage("RRR: +doStuff()")
     } catch(e) {
         consoleService.logStringMessage("Bad happened: " + e);
     }
@@ -26,7 +26,7 @@ function doStuff(data) {
     if (data.location == "about:blank") {
        // Keep waiting
     data.location = content.document.location.toString();
-    //consoleService.logStringMessage("RRR: location: " + data.location);
+    consoleService.logStringMessage("RRR: doc FS got location: " + data.location.substr(0, 40) + ", hasImage:" + data.hasImage);
     //consoleService.logStringMessage("RRR: hasImage: " + data.hasImage);
     sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-continuation", data);
 }
@@ -40,5 +40,4 @@ var handleStopListeningMessage = function(msgData) {
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image-shutdown", handleStopListeningMessage);
 
-content.addEventListener("unload", handleStopListeningMessage, false);
 consoleService.logStringMessage("+ Done Loading docType-has-image.js...");

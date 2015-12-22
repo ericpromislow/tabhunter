@@ -130,10 +130,13 @@ if (!("tabhunter" in ep_extensions)) {
 	     var funcCount = 0;
 	     for (var p in this) {
 		if (typeof(this[p]) != "function") s.push(p);
-		else if (funcCount == 1) {
+		else if (funcCount == 0) {
 		   s.push(p);
 		   funcCount += 1;
 		}
+	     }
+	     if (this.tabGetterCallback) {
+		s.push("tabGetterCallback");
 	     }
 	     this.dump("props of this: " + s.join(" "));
 	     return;
@@ -199,7 +202,7 @@ if (!("tabhunter" in ep_extensions)) {
 
     this.process_docType_has_image_continuation_msg = function(msg) {
       ep_extensions.tabhunter.dump("**** >>> Handling a docType-has-image-continuation notific'n");
-      ep_extensions.tabhunter.getTabs_dualProcessContinuation(msg);
+      ep_extensions.tabhunter.call.getTabs_dualProcessContinuation(ep_extensions.tabhunter, msg);
     };
     //this.process_docType_has_image_continuation_msg_bound = this.process_docType_has_image_continuation_msg.bind(this);
     if (globalMessageManager) {
@@ -260,27 +263,6 @@ if (!("tabhunter" in ep_extensions)) {
             this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
         } while (openWindows.hasMoreElements());
         this.tabGetters[0].setImageSetting(0, this.timestamp);
-        /***/
-        this.callbackTimeoutId = setTimeout(function() {
-                this.dump("**** Failed to continue getting tabs");
-                callback({ tabs:[], windowInfo:[] });
-                // Allow 2 seconds per window
-            }.bind(this), 2000 * this.tabGetters.length);
-        //for (var i = 0; i < this.tabGetters.length; i++ ) {
-        //    this.tabGetters[i].setImageSetting(0);
-        //}
-        /****/
-        /****
-        var doSetImage = function(this_, i) {
-            this_.tabGetters[i].setImageSetting(0);
-            if (i + 1 < this_.tabGetters.length) {
-                setTimeout(function() {
-                        doSetImage(this_, i + 1);
-                    }, 30000);
-            }
-        }
-        doSetImage(this, 0);
-        ****/
     };
     
     this.getTabTitleAndURL = function(tab) {
