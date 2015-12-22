@@ -202,7 +202,7 @@ if (!("tabhunter" in ep_extensions)) {
 
     this.process_docType_has_image_continuation_msg = function(msg) {
       ep_extensions.tabhunter.dump("**** >>> Handling a docType-has-image-continuation notific'n");
-      ep_extensions.tabhunter.call.getTabs_dualProcessContinuation(ep_extensions.tabhunter, msg);
+      ep_extensions.tabhunter.getTabs_dualProcessContinuation.call(ep_extensions.tabhunter, msg);
     };
     //this.process_docType_has_image_continuation_msg_bound = this.process_docType_has_image_continuation_msg.bind(this);
     if (globalMessageManager) {
