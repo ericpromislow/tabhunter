@@ -181,7 +181,7 @@ if (!("tabhunter" in ep_extensions)) {
 	  if (tabIdx < tabGetter.tabs.length - 1) {
 	     setTimeout(function() {
 		  tabGetter.setImageSetting(tabIdx + 1, this.timestamp);
-	       }, NEXT_TIMEOUT);
+	       }.bind(this), NEXT_TIMEOUT);
 	  } else {
             this.dump("**** dualProcessContinuation: all done with window " + windowIdx);
             tabGetter.finishedGettingTabs = true;
@@ -450,7 +450,9 @@ if (!("tabhunter" in ep_extensions)) {
 	   var self = this;
 	   this.dump("QQQ: Stop listening on docType-has-image-continuation");
 	   globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
-	   var openWindows = this.wmService.getEnumerator("navigator:browser");
+	   var  wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
+			     getService(Components.interfaces.nsIWindowMediator));
+	   var openWindows = wmService.getEnumerator("navigator:browser");
 	   do {
 	      // There must be at least one window for an extension to run in
 	      var openWindow = openWindows.getNext();
