@@ -26,9 +26,16 @@ var handleStopListeningMessage = function(msgData) {
   var consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
   consoleService.logStringMessage("RRR: Stop listening for docType-has-image and stop-listening");
   removeMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
+  removeEventListener("DOMContentLoaded", handleDOMContentLoaded, false);
+}
+
+var handleDOMContentLoaded = function(event) {
+  dump("****DOMContentLoaded ...");
+  sendAsyncMessage("tabhunter@ericpromislow.com:DOMContentLoaded");
 }
 
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image-shutdown", handleStopListeningMessage);
 
 consoleService.logStringMessage("+ Done Loading docType-has-image.js...");
+addEventListener("DOMContentLoaded", handleDOMContentLoaded, false);

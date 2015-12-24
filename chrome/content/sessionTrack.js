@@ -76,6 +76,17 @@ TabhunterWatchSessionService.prototype = {
         var win = openWindows.getNext();
         this.onLoad(win, true);
     } while(openWindows.hasMoreElements());
+
+    if (globalMessageManager) {
+       // globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded.bind);
+        globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded",
+						function(msg) {
+        var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+	  .getService(Components.interfaces.nsIConsoleService).logStringMessage("**************** sessionTrack -- got a DOMContentLoaded msg from a frame script!");
+						});
+						   
+    }
+    
   },
 
   /**
@@ -113,7 +124,6 @@ TabhunterWatchSessionService.prototype = {
      this.dump("**** handleEvent " + aEvent.type);
     switch (aEvent.type) {
       case "load":
-      case "DOMContentLoaded":
         this.onTabLoad(aEvent.currentTarget.ownerDocument.defaultView,
                        aEvent.currentTarget, aEvent);
         break;
