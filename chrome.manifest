@@ -1,4 +1,4 @@
-content tabhunter chrome/tabhunter/content/ xpcnativewrappers=yes
+content tabhunter chrome/content/
 overlay chrome://browser/content/browser.xul chrome://tabhunter/content/tabhunterOverlay.xul
 
 locale tabhunter en-US chrome/locale/en-US/

@@ -1,4 +1,4 @@
-T=tabhunter-1.0.13.xpi
+T=tabhunter-1.0.14.xpi
 rm -f $T
 zip $T  chrome.manifest install.rdf chrome/tabhunter.jar defaults/preferences/prefs.js \
 chrome/content/selectTabDialog.js \
