@@ -22,6 +22,7 @@
   ondialogextra1="return gTabhunter.acceptTab();"
   ondialogextra2="gTabhunter.onClose();"
   >
+  <script type="application/x-javascript" src="chrome://tabhunter/content/asyncTabCollector.js" />
   <script type="application/x-javascript" src="chrome://tabhunter/content/selectTabDialog.js" />
   <script type="application/x-javascript" src="chrome://tabhunter/content/sessionTrack.js" />
   <script type="application/x-javascript" src="chrome://tabhunter/content/tabhunter.js" />

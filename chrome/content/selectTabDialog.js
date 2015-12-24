@@ -40,6 +40,7 @@ this.addAddonBarButtonIfNeeded = function() {
 };
 // //div[class='left_col']/div/span/[text() = 'RESOLVED']
 this.onLoad = function() {
+  alert("selectTabDialog.js onLoad: tabCollector: " + typeof(tabCollector));
     try {
         this.addAddonBarButtonIfNeeded();
     } catch(ex) {
