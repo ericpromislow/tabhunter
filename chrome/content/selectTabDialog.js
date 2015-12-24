@@ -1422,7 +1422,7 @@ this.ts_onGoCurrentLine = function() {
     } catch(ex) { this.gTSTreeView.dump(ex + "\n"); }
 };
 
- this.dump = function(msg) {
+ this.dump = function(aMessage) {
    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
    .getService(Components.interfaces.nsIConsoleService);
    consoleService.logStringMessage("th: " + aMessage);
