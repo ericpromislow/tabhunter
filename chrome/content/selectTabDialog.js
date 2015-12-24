@@ -106,7 +106,8 @@ this.onLoad = function() {
         // This has to be done before calling getTabs() because 
         // tabhunterSession.init loads the frame-scripts.
 	var reactor, reactorFunc;
-	if (globalMessageManager) {
+        this.dump("onLoad: globalMessageManager:" + globalMessageManager + ", tabCollector: " + tabCollector);
+	if (globalMessageManager && tabCollector) {
 	   reactor = tabCollector;
 	   reactorFunc = tabCollector.collectTabs;
 	} else {
@@ -157,7 +158,16 @@ this.onLoad = function() {
 
 this.init = function(getTabsCallback) {
     this.mainHunter.dump("QQQ: >> mainHunter::init")
-    this.mainHunter.getTabs(function(results) {
+    var reactor, reactorFunc;
+    if (globalMessageManager && tabCollector) {
+        reactor = tabCollector;
+        reactorFunc = tabCollector.collectTabs;
+    } else {
+        reactor = this.mainHunter;
+        reactorFunc = reactor.getTabs;
+    }
+
+    reactorFunc.call(reactor, function(results) {
             this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
             try {
             this.allTabs = results.tabs;
