@@ -483,9 +483,11 @@ if (!("tabhunter" in ep_extensions)) {
 }).apply(ep_extensions.tabhunter);
 
 window.addEventListener("load", 
-        function(e) { 
+        function(e) {
+	   window.removeEventListener("load", arguments.callee, false);
                 ep_extensions.tabhunter.onload(e); },
         false);
+
  window.onunload = ep_extensions.tabhunter.onunload;
 }catch(e) {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
