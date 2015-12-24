@@ -105,7 +105,16 @@ this.onLoad = function() {
 
         // This has to be done before calling getTabs() because 
         // tabhunterSession.init loads the frame-scripts.
-        this.tabhunterSession = new TabhunterWatchSessionService(this, this.updateOnTabChange);
+	var reactor, reactorFunc;
+	if (globalMessageManager) {
+	   reactor = tabCollector;
+	   reactorFunc = tabCollector.collectTabs;
+	} else {
+	   reactor = this;
+	   reactorFunc = this.updateOnTabChange;
+	}
+	   
+        this.tabhunterSession = new TabhunterWatchSessionService(reactor, reactorFunc);
         this.tabhunterSession.init();
         // this.setupWatcher(); -- use the moz session tracker to do this. 
         var getTabsCallback = function() {

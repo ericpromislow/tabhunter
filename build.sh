@@ -1,6 +1,7 @@
 cd chrome
 rm -f tabhunter.jar
 cat << ZAK | zip tabhunter.jar -@
+./content/asyncTabCollector.js
 ./content/selectTabDialog.js
 ./content/sessionTrack.js
 ./content/selectTabDialog.xul
