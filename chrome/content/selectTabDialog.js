@@ -25,26 +25,26 @@ var gTabhunter = {};
 this.addAddonBarButtonIfNeeded = function() {
     var addonBar = document.getElementById("addon-bar");
     if (addonBar) {
-        //alert("Found an addon bar");
+        //this.dump("Found an addon bar");
         if (!document.getElementById("tabhunterToolbarIcon")) {
-            //alert("But no tabhunterToolbarIcon");
+            //this.dump("But no tabhunterToolbarIcon");
             var addonBarCloseButton = document.getElementById("addonbar-closebutton")
                 addonBar.insertItem("tabhunterToolbarIcon", addonBarCloseButton.nextSibling);
             addonBar.collapsed = false;
         } else {
-            //alert("Already have tabhunterToolbarIcon");
+            //this.dump("Already have tabhunterToolbarIcon");
         }
     } else {
-        //alert("Didn't find an addon bar");
+        //this.dump("Didn't find an addon bar");
     }
 };
 // //div[class='left_col']/div/span/[text() = 'RESOLVED']
 this.onLoad = function() {
-  alert("selectTabDialog.js onLoad: tabCollector: " + typeof(tabCollector));
+  this.dump("selectTabDialog.js onLoad: tabCollector: " + typeof(tabCollector));
     try {
         this.addAddonBarButtonIfNeeded();
     } catch(ex) {
-        alert("Error while checking addon bar button: " + ex);
+        this.dump("Error while checking addon bar button: " + ex);
     }
     try {
         this.mainHunter = window.arguments[0];
@@ -246,7 +246,7 @@ this.ts_showPopupMenu = function(listPopupMenu) {
             goMenuItem.setAttribute('disabled', 'true');
         }
     } catch(ex) {
-        alert(ex);
+        this.dump(ex);
     }
 };
 
@@ -659,7 +659,7 @@ this.showListPopupMenu = function(listPopupMenu) {
             goMenuItem.setAttribute('disabled', 'true');
         }
     } catch(ex) {
-        alert(ex);
+        this.dump(ex);
     }
 };
 
@@ -775,7 +775,7 @@ try {
     
   this.ts_initialize();
 }catch(ex) {
-    alert("tsOnLoad: " + ex);
+    this.dump("tsOnLoad: " + ex);
 }
 };
 
@@ -985,7 +985,7 @@ this.showMessage = function(label, ex) {
         msg += "#" + ex.lineNumber;
     }
     msg += ": " + ex.message;
-    alert(label +": " + msg);
+    this.dump(label +": " + msg);
     this.gTSTreeView.dump(label +": " + msg);
 }
 
@@ -1311,7 +1311,7 @@ this.ts_clearTree = function() {
 this.ts_startSearch = function() {
 try {
     //this.gTSTreeView.dump("About to get the searcher");
-    // alert("in this.ts_startSearch...");
+    // this.dump("in this.ts_startSearch...");
     var getTabsCallback = function() {
         if (this.g_searcher.ready) {
             this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
@@ -1324,7 +1324,7 @@ try {
     }.bind(this);
     this.g_searcher = new this.Searcher(this, this.tsDialog, getTabsCallback);
 } catch(ex) {
-    alert(ex);
+    this.dump(ex);
     this.showMessage('startSearch', ex);
 }
 }
@@ -1412,5 +1412,11 @@ this.ts_onGoCurrentLine = function() {
         this.finishMoveToTab(windowInfo, row.tabIdx);
     } catch(ex) { this.gTSTreeView.dump(ex + "\n"); }
 };
+
+ this.dump = function(msg) {
+   var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+   .getService(Components.interfaces.nsIConsoleService);
+   consoleService.logStringMessage("th: " + aMessage);
+ };
 
 }).apply(gTabhunter);
