@@ -108,6 +108,7 @@ this.onLoad = function() {
 	var reactor, reactorFunc;
         this.dump("onLoad: globalMessageManager:" + globalMessageManager + ", tabCollector: " + tabCollector);
 	if (globalMessageManager && tabCollector) {
+	   tabCollector.init(globalMessageManager);
 	   reactor = tabCollector;
 	   reactorFunc = tabCollector.collectTabs;
 	} else {
@@ -171,7 +172,7 @@ this.init = function(getTabsCallback) {
             this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
             try {
             this.allTabs = results.tabs;
-            this.allTabs.sort(this.mainHunter.compareByName);
+            this.allTabs.sort(this.compareByName);
             this.windowInfo = results.windowInfo;
             this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
             if (getTabsCallback) {
@@ -237,7 +238,7 @@ this.loadList = function() {
     this.compilePattern();
     this.tabhunterSession.dump("QQQ: In loadList: this.allTabs : " + this.allTabs.length);
     for (var tab, i = 0; tab = this.allTabs[i]; i++) {
-        var s = this.mainHunter.getTabTitleAndURL(tab);
+        var s = this.getTabTitleAndURL(tab);
         if (this.pattern_RE.test(s)) {
             var listitem = this.currentTabList.appendItem(s, i);
             this._finishListItem(listitem, tab);
@@ -396,7 +397,7 @@ this.updateOnTabChange = function() {
     this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange")
     this.mainHunter.getTabs(function(results) {
             var newTabs = results.tabs;
-            newTabs.sort(this.mainHunter.compareByName);
+            newTabs.sort(this.compareByName);
             try {
                 this._updateList(newTabs);
             } catch(ex) {
@@ -438,7 +439,7 @@ this._updateList = function(newTabs) {
     while (i < newLen && j < oldLen) {
         // i tracks the new list of tabs, j tracks the current list
         var newTab = newTabs[i];
-        var s = this.mainHunter.getTabTitleAndURL(newTab);
+        var s = this.getTabTitleAndURL(newTab);
         if (!this.pattern_RE.test(s)) {
             i += 1;
             continue;
@@ -470,7 +471,7 @@ this._updateList = function(newTabs) {
     if (i < newLen) {
         for (; i < newLen; i += 1) {
             var newTab = newTabs[i];
-            var s = this.mainHunter.getTabTitleAndURL(newTab);
+            var s = this.getTabTitleAndURL(newTab);
             if (this.pattern_RE.test(s)) {
                 var listitem = this.currentTabList.appendItem(s, i);
                 this._finishListItem(listitem, newTab);
@@ -589,6 +590,9 @@ this.onDoubleClick = function() {
 };
 
 this.onUnload = function() {
+  if (tabCollector) {
+    tabCollector.onUnload();
+  }
     this.mainHunter.searchPattern = this.patternField.value;
     ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
     forEach(function(prop) {
@@ -1432,6 +1436,19 @@ this.ts_onGoCurrentLine = function() {
     } catch(ex) { this.gTSTreeView.dump(ex + "\n"); }
 };
 
+    this.getTabTitleAndURL = function(tab) {
+        var s = tab.label;
+        try {
+            s += " - " + tab.location;
+        } catch(ex) {}
+        return s;
+    }
+
+    this.compareByName = function(tab1, tab2) {
+        return (tab1.label_lc < tab2.label_lc
+                ? -1 : (tab1.label_lc > tab2.label_lc ? 1 : 0));
+    }
+        
  this.dump = function(aMessage) {
    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
    .getService(Components.interfaces.nsIConsoleService);
