@@ -20,7 +20,6 @@ var globalMessageManager;
    this.init = function(_globalMessageManager) {
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
 		       getService(Components.interfaces.nsIWindowMediator));
-     this.dump("**************** Init asyncTabCollector.js (tabCollector object)");
      if (typeof(globalMessageManager) == "undefined") {
        globalMessageManager = _globalMessageManager;
      }
@@ -65,7 +64,6 @@ var globalMessageManager;
      // OUT ARGS: tabs: unordered array of [TabInfo]
      //           windowInfo: array of [window: ChromeWindow, tabs: array of [DOM tabs]]   
      this.collectTabs = function(callback) {
-       this.dump("**************** HEYYYA we're collecting");
        try {
 	  this.getTabs_dualProcess(callback);
        } catch(ex) {
@@ -114,9 +112,8 @@ var globalMessageManager;
 	 var windowIdx = data.windowIdx;
 	 var windowTabKey = windowIdx + "-" + tabIdx;
 	 
-	 this.dump("QQQ: getTabs_dualProcessContinuation: this.tabGetterCallback = " + typeof(this.tabGetterCallback));
 	 if (data.timestamp < this.timestamp) {
-	   this.dump("QQQ: got a message from an older request " + ((this.timestamp - data.timestamp)/1000000.0) + " msec ago");
+	   this.dump("QQQ: got a message from an older request " + ((this.timestamp - data.timestamp) * 1000) + " msec ago");
 	   return;
 	 }
 	 if (this.processedTabs[windowTabKey]) {
@@ -140,7 +137,7 @@ var globalMessageManager;
 	 var tab = tabGetter.tabs[tabIdx];
 	 var label = tab.label;
 	 if (isConnecting(label) && location == "about:blank" && tabGetter.connectAttempt < MAX_NUM_TAB_TRIES) {
-           this.dump("QQQ: !!!! Wait to reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
+           this.dump("QQQ: Go reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
            tabGetter.connectAttempt += 1;
            setTimeout(function(timestamp) {
                 tabGetter.setImageSetting(tabIdx, timestamp);
@@ -149,10 +146,7 @@ var globalMessageManager;
         }
 
 	 this.processedTabs[windowTabKey] = true;
-	 //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo: " + Object.keys(tabGetter.collector.currWindowInfo).join(", "));
-	 //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo.tabs: " + Object.prototype.toString.call(tabGetter.collector.currWindowInfo.tabs));
 	 tabGetter.collector.currWindowInfo.tabs.push(tab);
-	 //var image = data.hasImage ? tab.getAttribute('image') : '';
 	 var image = tab.getAttribute('image') || '';
 	 tabGetter.collector.tabs.push(new ep_extensions.tabhunter.TabInfo(windowIdx, tabIdx, label, image, location));
 	 tabGetter.gotTabArray[tabIdx] = true;
@@ -213,7 +207,6 @@ var globalMessageManager;
        var windowIdx = -1;
        this.tabGetters = [];
        this.tabGetterCallback = callback;
-       this.dump("QQQ: getTabs_dualProcess: this.tabGetterCallback = " + typeof(this.tabGetterCallback));
        this.processedTabs = {}; // hash "windowIdx-tabIdx : true"
        this.timestamp = new Date().valueOf();
        // Get the eligible windows

@@ -24,7 +24,8 @@ if (typeof(globalMessageManager) == "undefined") {
 
 // global notifications observed
 const OBSERVING = [
-  "domwindowopened", "domwindowclosed",
+		   //"domwindowopened",
+  "domwindowclosed",
 ];
 
 function TabhunterWatchSessionService(reactor, func, level) {
@@ -86,15 +87,15 @@ TabhunterWatchSessionService.prototype = {
     // for event listeners
     var _this = this;
 
+    this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
     switch (aTopic) {
     case "domwindowopened": // catch new windows
         try {
-	   this.dump(">> QQQ: domwindowopened before setTimeout")
 	     setTimeout(function() {
-		  _this.dump(">> QQQ: domwindowopened in setTimeout");
+		  //_this.dump(">> QQQ: domwindowopened in setTimeout");
 		  aSubject.addEventListener("load", function(aEvent) {
 		       try {
-			  _this.dump(">> QQQ: domwindowopened/load event");
+			  //_this.dump(">> QQQ: domwindowopened/load event");
 			  aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
 			  _this.onLoad(aEvent.currentTarget, false);
 		       } catch(ex) {

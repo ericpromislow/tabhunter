@@ -40,7 +40,6 @@ this.addAddonBarButtonIfNeeded = function() {
 };
 // //div[class='left_col']/div/span/[text() = 'RESOLVED']
 this.onLoad = function() {
-  this.dump("selectTabDialog.js onLoad: tabCollector: " + typeof(tabCollector));
     try {
         this.addAddonBarButtonIfNeeded();
     } catch(ex) {
@@ -108,12 +107,10 @@ this.onLoad = function() {
 	var reactor, reactorFunc;
         this.dump("onLoad: globalMessageManager:" + globalMessageManager + ", tabCollector: " + tabCollector);
 	if (globalMessageManager && tabCollector) {
-	   this.dump("onLoad: get tabs via tabCollector.collectTabs")
 	   tabCollector.init(globalMessageManager);
 	   this.reactor = tabCollector;
 	   this.reactorFunc = tabCollector.collectTabs;
 	} else {
-	   this.dump("onLoad: get tabs via mainHunter.getTabs")
 	   this.reactor = this.mainHunter;
 	   this.reactorFunc = this.mainHunter.getTabs;
 	}
@@ -160,7 +157,6 @@ this.onLoad = function() {
 };
 
 this.init = function(getTabsCallback) {
-    this.mainHunter.dump("QQQ: >> mainHunter::init")
     var reactor, reactorFunc;
     if (globalMessageManager && tabCollector) {
        this.mainHunter.dump("QQQ: we have messages & an async tab collector")
@@ -178,9 +174,9 @@ this.init = function(getTabsCallback) {
             this.allTabs = results.tabs;
             this.allTabs.sort(this.compareByName);
             this.windowInfo = results.windowInfo;
-            this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
+            //this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
             if (getTabsCallback) {
-                this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
+	       //this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
                 getTabsCallback();
             }
             } catch(e) {
