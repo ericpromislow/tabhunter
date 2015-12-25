@@ -22,7 +22,7 @@ if (!("tabhunter" in ep_extensions)) {
 (function() {
     this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
                       getService(Components.interfaces.nsIWindowMediator));
-    function this.TabInfo(windowIdx, tabIdx, label, image, location) {
+    this.TabInfo = function(windowIdx, tabIdx, label, image, location) {
         this.windowIdx = windowIdx;
         this.tabIdx = tabIdx;
         this.label = label;
