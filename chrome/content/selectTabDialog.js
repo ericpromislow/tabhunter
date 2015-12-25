@@ -161,14 +161,16 @@ this.init = function(getTabsCallback) {
     this.mainHunter.dump("QQQ: >> mainHunter::init")
     var reactor, reactorFunc;
     if (globalMessageManager && tabCollector) {
-        reactor = tabCollector;
-        reactorFunc = tabCollector.collectTabs;
+       this.mainHunter.dump("QQQ: we have messages & an async tab collector")
+        this.reactor = tabCollector;
+        this.reactorFunc = tabCollector.collectTabs;
     } else {
-        reactor = this.mainHunter;
-        reactorFunc = reactor.getTabs;
+       this.mainHunter.dump("QQQ: !!!! we don't have messages & an async tab collector")
+        this.reactor = this.mainHunter;
+        this.reactorFunc = reactor.getTabs;
     }
 
-    reactorFunc.call(reactor, function(results) {
+    this.reactorFunc.call(this.reactor, function(results) {
             this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
             try {
             this.allTabs = results.tabs;
@@ -394,8 +396,8 @@ this.onSelectTab = function(event) {
 }
 
 this.updateOnTabChange = function() {
-    this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange")
-    this.mainHunter.getTabs(function(results) {
+    this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
+    this.reactorFunc.call(this.reactor, function(results) {
             var newTabs = results.tabs;
             newTabs.sort(this.compareByName);
             try {

@@ -227,14 +227,6 @@ TabhunterWatchSessionService.prototype = {
     } else {
         this.dump("**** Don't add frame scripts for panel " + aPanel.id);
     }
-    if (aPanel) {
-    setTimeout(function(aPanel_, func_) {
-            aPanel_.addEventListener("DOMContentLoaded", func_, true);
-        }, 1, aPanel, func);
-    if (!aNoNotification) {
-        this.reactorFunc.call(this.reactor);
-    }
-    }
   },
 
   onTabRemove: function thst_onTabRemove(aWindow, aPanel, aTab, aNoNotification) {
