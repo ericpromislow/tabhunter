@@ -3,12 +3,20 @@
 */
 
 const NEXT_TIMEOUT = 1;
+const MAX_NUM_TAB_TRIES = 100;
+const TAB_LOADING_WAIT_MS = 50;
 
 try {
 
 var tabCollector = {};
 var globalMessageManager;
 (function() {
+   var isConnecting = function(s) {
+     // Probably a way to look at the tab and figure out if it's connected
+     if (!s || s.indexOf("Connecting") != 0) return false;
+     return s.match(/Connecting\s*(?:…|\.\.\.)/) || s == "New Tab";
+   };
+
    this.init = function(_globalMessageManager) {
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
 		       getService(Components.interfaces.nsIWindowMediator));
@@ -28,7 +36,7 @@ var globalMessageManager;
    
    this.onUnload = function() {
      // Called from selectTabDialog.js:onUnload - do this when the tabhunter window is closed.
-     this.dump("QQQ: Stop listening on docType-has-image-continuation");
+     this.dump("!!!!!!!!!!!!!!!! asyncTabCollector.js:onUnload - removing message listeners!!!!!!!!!!!!!!!!");
      globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg);
      globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded);
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
@@ -72,6 +80,11 @@ var globalMessageManager;
        this.dump("**** all tabs are done at " + this.timestamp + ", loop over " +
 		 this.tabGetters.length + " tabGetters");
        clearTimeout(this.callbackTimeoutId);
+       this.dualProcessSetupFinalCallback();
+       return true;
+     };
+
+     this.dualProcessSetupFinalCallback = function() {
        // pour everything into the return obj and
        // pass it on using the callback
        let result = { tabs:[], windowInfo:[] }
@@ -92,7 +105,6 @@ var globalMessageManager;
 	 }.bind(this));
        this.dump("QQQ: getTabs_dualProcessContinuationFinish: this.tabGetterCallback = " + typeof(this.tabGetterCallback));
        this.tabGetterCallback(result);
-       return true;
      };
 
      this.getTabs_dualProcessContinuation = function(msg) {
@@ -120,9 +132,22 @@ var globalMessageManager;
 		   ", location: " + location);
                   
 	 var tabGetter = this.tabGetters[windowIdx];
+	 if (!tabGetter) {
+	    this.dump("!!!! Can't get a tabGetter for window " + windowIdx + " (tabIdx " + tabIdx + "), current length: " + this.tabGetters.length);
+	    return;
+	 }
 	 //RRR this.dump("QQQ: windowIdx: " + windowIdx + ", tabGetter: " + tabGetter);
 	 var tab = tabGetter.tabs[tabIdx];
 	 var label = tab.label;
+	 if (isConnecting(label) && location == "about:blank" && tabGetter.connectAttempt < MAX_NUM_TAB_TRIES) {
+           this.dump("QQQ: !!!! Wait to reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
+           tabGetter.connectAttempt += 1;
+           setTimeout(function(timestamp) {
+                tabGetter.setImageSetting(tabIdx, timestamp);
+             }, TAB_LOADING_WAIT_MS, this.timestamp);
+           return;
+        }
+
 	 this.processedTabs[windowTabKey] = true;
 	 //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo: " + Object.keys(tabGetter.collector.currWindowInfo).join(", "));
 	 //RRR this.dump("QQQ: tabGetter.collector.currWindowInfo.tabs: " + Object.prototype.toString.call(tabGetter.collector.currWindowInfo.tabs));
@@ -130,21 +155,10 @@ var globalMessageManager;
 	 //var image = data.hasImage ? tab.getAttribute('image') : '';
 	 var image = tab.getAttribute('image') || '';
 	 tabGetter.collector.tabs.push(new ep_extensions.tabhunter.TabInfo(windowIdx, tabIdx, label, image, location));
-	 this.dump("QQQ: collector for window " + windowIdx +
-		   ", now has " + tabGetter.collector.tabs.length + " tabs");
-	 if (tabIdx < tabGetter.tabs.length - 1) {
-	    setTimeout(function() {
-		 this.dump("QQQ: go get location/image for window " + windowIdx +
-			   ", tab " + (tabIdx + 1) + ", title:" + tabGetter.tabs[tabIdx + 1].label + ", ts " + this.timestamp);
-		 tabGetter.setImageSetting(tabIdx + 1, this.timestamp);
-	      }.bind(this), NEXT_TIMEOUT);
-	 } else {
-	   this.dump("**** dualProcessContinuation: all done with window " + windowIdx);
-	   tabGetter.finishedGettingTabs = true;
-	   if (!this.dualProcessContinuationFinish()) {
-	      this.dump("**** continue on with TabGetter(" + (windowIdx + 1) + ")");
-	      this.tabGetters[windowIdx + 1].setImageSetting(0, this.timestamp);
-	   }
+	 tabGetter.gotTabArray[tabIdx] = true;
+	 if (tabGetter.gotTabArray.every(function(x) x)) {
+	    tabGetter.finishedGettingTabs = true;
+	    this.dualProcessContinuationFinish();
 	 }
        } catch(e) {
 	 this.dump("**** dualProcessContinuation: bad happened: " + e + "\n" + e.stack);
@@ -161,14 +175,28 @@ var globalMessageManager;
        this.windowIdx = windowIdx;
        this.tabs = tabs;
        this.finishedGettingTabs = false;
+       this.connectAttempt = 0; // to allow for doc loading
        this.collector = { tabs: [],
 			  currWindowInfo: {window: openWindow, tabs: []}};
+       this.gotTabArray = new Array(tabs.length);
+       for (let i = 0; i < tabs.length; i++) this.gotTabArray[i] = false;
+
      };
      this.TabGetter.prototype.setImageSetting = function(tabIdx, timestamp) {
        var tab = this.tabs[tabIdx];
-       this.dump("**** go do docType-has-image for windowIdx " +
-		 this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
-       tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: this.windowIdx, timestamp:timestamp });
+       var self = this;
+       var attempt = 0;
+       var checkForConnectedTabFunc = function() {
+	 self.dump("**** go do docType-has-image for windowIdx " +
+		   self.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
+	 if (isConnecting(tab.label) && attempt < MAX_NUM_TAB_TRIES) {
+	    attempt += 1;
+	    setTimeout(checkForConnectedTabFunc, TAB_LOADING_WAIT_MS);
+	 } else {
+	   tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: self.windowIdx, timestamp:timestamp });
+	 }
+       }
+       checkForConnectedTabFunc();
      };
 
      this.TabGetter.prototype.dump = function(aMessage) {
@@ -188,20 +216,32 @@ var globalMessageManager;
        this.dump("QQQ: getTabs_dualProcess: this.tabGetterCallback = " + typeof(this.tabGetterCallback));
        this.processedTabs = {}; // hash "windowIdx-tabIdx : true"
        this.timestamp = new Date().valueOf();
-       // Get the eligible windows 
+       // Get the eligible windows
+       var numTabs = 0;
        do {
 	  // There must be at least one window for an extension to run in
 	  var openWindow = openWindows.getNext();
 	  try {
 	     var tc = openWindow.getBrowser().tabContainer.childNodes;
+	     numTabs += tc.length;
 	  } catch(ex) {
 	     continue;
 	  }
 	  windowIdx += 1;
 	  this.dump("**** setup TabGetter(" + windowIdx + ")");
 	  this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
+	  for (let i = 0; i < tc.length; i++) {
+	     this.tabGetters[windowIdx].setImageSetting(i, this.timestamp);
+	  }
        } while (openWindows.hasMoreElements());
-       this.tabGetters[0].setImageSetting(0, this.timestamp);
+       let timeoutTabFactor = 500;
+       let timeoutWindowFactor = 2000;
+       let totalTimeout = timeoutTabFactor * numTabs + timeoutWindowFactor * windowIdx;
+       this.callbackTimeoutId = setTimeout(function() {
+	    this.dump("**** Hit callback timeout (" + (totalTimeout/1000) + " sec. before getting all the tabs ");
+	    this.dualProcessSetupFinalCallback();
+	 }.bind(this), totalTimeout);
+
      };
 
      
