@@ -22,7 +22,7 @@ if (!("tabhunter" in ep_extensions)) {
 (function() {
     this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
                       getService(Components.interfaces.nsIWindowMediator));
-    function TabInfo(windowIdx, tabIdx, label, image, location) {
+    function this.TabInfo(windowIdx, tabIdx, label, image, location) {
         this.windowIdx = windowIdx;
         this.tabIdx = tabIdx;
         this.label = label;
@@ -65,7 +65,7 @@ if (!("tabhunter" in ep_extensions)) {
                 var label = tab.label;
                 var image = tab.getAttribute("image") || "";
                 this.dump('tabhunter.js - getTabs_singleProcess: image - <' + image + ">");
-                obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location.href));
+                obj.tabs.push(new this.TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location.href));
             }
         } while (openWindows.hasMoreElements());
         callback(obj);

@@ -51,7 +51,8 @@ var globalMessageManager;
 	} catch(ex3) {
 	   self.dump("QQQ !!! Failed to shutdown docType FS: " + ex3);
 	}
-     };
+     } while (openWindows.hasMoreElements());
+   };
 
 
      // OUT ARGS: tabs: unordered array of [TabInfo]
@@ -155,7 +156,7 @@ var globalMessageManager;
 	 tabGetter.collector.currWindowInfo.tabs.push(tab);
 	 //var image = data.hasImage ? tab.getAttribute('image') : '';
 	 var image = tab.getAttribute('image') || '';
-	 tabGetter.collector.tabs.push(new TabInfo(windowIdx, tabIdx, label, image, location));
+	 tabGetter.collector.tabs.push(new ep_extensions.tabhunter.TabInfo(windowIdx, tabIdx, label, image, location));
 	 this.dump("QQQ: collector for window " + windowIdx +
 		   ", now has " + tabGetter.collector.tabs.length + " tabs");
 	 if (tabIdx < tabGetter.tabs.length - 1) {
@@ -182,11 +183,9 @@ var globalMessageManager;
        tabCollector.dump("**** tabCollector.tabGetters: " + (tabCollector.tabGetters.length + " tabGetters")); 
        tabCollector.getTabs_dualProcessContinuation.call(tabCollector, msg);
      };
-     this.process_docType_has_image_continuation_msg = function(msg) {
-    
+         
      this.TabGetter = function(windowIdx, openWindow, tabs) {
        this.windowIdx = windowIdx;
-       this.openWindow = openWindow;
        this.tabs = tabs;
        this.finishedGettingTabs = false;
        this.connectAttempt = 0; // to allow for doc loading
@@ -205,7 +204,7 @@ var globalMessageManager;
        var self = this;
        var loadReadyTabFunc = function() {
 	 if (self.isConnecting(tab.label) && self.connectAttempt < MAX_NUM_TAB_TRIES) {
-	   this.dump("**** don't like tab.label " + tab.label + " at attempt " + self.connectAttempt);
+	   self.dump("**** don't like tab.label " + tab.label + " at attempt " + self.connectAttempt);
 	   self.connectAttempt += 1;
 	   setTimeout(loadReadyTabFunc, TAB_LOADING_WAIT_MS);
 	   return;
@@ -214,6 +213,12 @@ var globalMessageManager;
        };
        loadReadyTabFunc();
      };
+     this.TabGetter.prototype.dump = function(aMessage) {
+       var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+       .getService(Components.interfaces.nsIConsoleService);
+       consoleService.logStringMessage("TH/ATC/TabGetter: " + aMessage);
+     };
+
      this.getTabs_dualProcess = function(callback) {
        // Get all the windows with tabs synchronously. Then get the
        // image info for each tab asynchronously, knit everything
