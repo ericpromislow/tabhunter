@@ -12,6 +12,7 @@ var globalMessageManager;
    this.init = function(_globalMessageManager) {
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
 		       getService(Components.interfaces.nsIWindowMediator));
+     this.dump("**************** Init asyncTabCollector.js (tabCollector object)");
      if (typeof(globalMessageManager) == "undefined") {
        globalMessageManager = _globalMessageManager;
      }
@@ -69,7 +70,7 @@ var globalMessageManager;
 	 return false;
        }
        this.dump("**** all tabs are done at " + this.timestamp + ", loop over " +
-		 this.tabGetters.length + " tabs");
+		 this.tabGetters.length + " tabGetters");
        clearTimeout(this.callbackTimeoutId);
        // pour everything into the return obj and
        // pass it on using the callback
@@ -89,7 +90,7 @@ var globalMessageManager;
        result.tabs.forEach(function(tab) {
 	    this.dump("QQQ: window/tab " + tab.windowIdx + "-" + tab.tabIdx + "/" + tab.label + " - " + tab.location);
 	 }.bind(this));
-       //TODO: XXX: dump result here, as it's coming back empty.
+       this.dump("QQQ: getTabs_dualProcessContinuationFinish: this.tabGetterCallback = " + typeof(this.tabGetterCallback));
        this.tabGetterCallback(result);
        return true;
      };
@@ -100,26 +101,8 @@ var globalMessageManager;
 	 var tabIdx = data.tabIdx;
 	 var windowIdx = data.windowIdx;
 	 var windowTabKey = windowIdx + "-" + tabIdx;
-	 if (!this.tabGetters) {
-	    this.dump(">> getTabs_dualProcessContinuation unexpected:!this.tabGetters, ignore, windowTabKey:" + windowTabKey.substr(0, 40) + ", timestamp:" + this.timestamp);
-	    var s = [];
-	    var funcCount = 0;
-	    for (var p in this) {
-	       if (typeof(this[p]) != "function") s.push(p);
-	       else if (funcCount == 0) {
-		  s.push(p);
-		  funcCount += 1;
-	       }
-	    }
-	    if (this.tabGetterCallback) {
-	       s.push("tabGetterCallback");
-	    }
-	    this.dump("props of this: " + s.join(" "));
-	    return;
-	 }
-	 //this.dump(">> getTabs_dualProcessContinuation: msg: " + Object.keys(msg).join(" "));
-	 // this.dump(">> getTabs_dualProcessContinuation: data: " + Object.keys(data).join(" "));
-	 //this.dump("QQQ: and keys(this): " + Object.keys(this).join(" "));
+	 
+	 this.dump("QQQ: getTabs_dualProcessContinuation: this.tabGetterCallback = " + typeof(this.tabGetterCallback));
 	 if (data.timestamp < this.timestamp) {
 	   this.dump("QQQ: got a message from an older request " + ((this.timestamp - data.timestamp)/1000000.0) + " msec ago");
 	   return;
@@ -202,6 +185,7 @@ var globalMessageManager;
        var windowIdx = -1;
        this.tabGetters = [];
        this.tabGetterCallback = callback;
+       this.dump("QQQ: getTabs_dualProcess: this.tabGetterCallback = " + typeof(this.tabGetterCallback));
        this.processedTabs = {}; // hash "windowIdx-tabIdx : true"
        this.timestamp = new Date().valueOf();
        // Get the eligible windows 

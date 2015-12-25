@@ -89,12 +89,18 @@ TabhunterWatchSessionService.prototype = {
     switch (aTopic) {
     case "domwindowopened": // catch new windows
         try {
-            setTimeout(function(aSubject_) {
-                aSubject_.addEventListener("load", function(aEvent) {
+	   this.dump(">> QQQ: domwindowopened before setTimeout")
+	     //            setTimeout(function(aSubject_) {
+	     //		 _this.dump(">> QQQ: domwindowopened in setTimeout")
+                aSubject.addEventListener("load", function(aEvent) {
+		     try {
                     aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
                     _this.onLoad(aEvent.currentTarget, false);
-                }, false);
-            }, 1, aSubject);
+		     } catch(ex) {
+			this_.dump("**************** Error handling domwindowopened/load event: " + ex);
+		     }
+		     }, false);
+	   //            }, 1000, aSubject);
         } catch(ex) {
             this.dump("observe:domwindowopened: " + ex)
         }

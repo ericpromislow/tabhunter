@@ -108,15 +108,17 @@ this.onLoad = function() {
 	var reactor, reactorFunc;
         this.dump("onLoad: globalMessageManager:" + globalMessageManager + ", tabCollector: " + tabCollector);
 	if (globalMessageManager && tabCollector) {
+	   this.dump("onLoad: get tabs via tabCollector.collectTabs")
 	   tabCollector.init(globalMessageManager);
-	   reactor = tabCollector;
-	   reactorFunc = tabCollector.collectTabs;
+	   this.reactor = tabCollector;
+	   this.reactorFunc = tabCollector.collectTabs;
 	} else {
-	   reactor = this;
-	   reactorFunc = this.updateOnTabChange;
+	   this.dump("onLoad: get tabs via mainHunter.getTabs")
+	   this.reactor = this.mainHunter;
+	   this.reactorFunc = this.mainHunter.getTabs;
 	}
 	   
-        this.tabhunterSession = new TabhunterWatchSessionService(reactor, reactorFunc);
+        this.tabhunterSession = new TabhunterWatchSessionService(this, this.updateOnTabChange);
         this.tabhunterSession.init();
         // this.setupWatcher(); -- use the moz session tracker to do this. 
         var getTabsCallback = function() {
@@ -167,7 +169,7 @@ this.init = function(getTabsCallback) {
     } else {
        this.mainHunter.dump("QQQ: !!!! we don't have messages & an async tab collector")
         this.reactor = this.mainHunter;
-        this.reactorFunc = reactor.getTabs;
+        this.reactorFunc = this.mainHunter.getTabs;
     }
 
     this.reactorFunc.call(this.reactor, function(results) {
