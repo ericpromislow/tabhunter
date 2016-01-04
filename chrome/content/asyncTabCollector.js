@@ -30,8 +30,9 @@ var globalMessageManager;
    };
 
    this.process_DOMContentLoaded = function() {
-        var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-	  .getService(Components.interfaces.nsIConsoleService).logStringMessage("**************** sessionTrack -- got a DOMContentLoaded msg from a frame script!");
+     if (Debug) {
+       this.dump("**************** sessionTrack -- got a DOMContentLoaded msg from a frame script!");
+     }
 	gTabhunter.updateOnTabChange();
    };
    
@@ -115,7 +116,9 @@ var globalMessageManager;
 	 var windowTabKey = windowIdx + "-" + tabIdx;
 	 
 	 if (data.timestamp < this.timestamp) {
-	   this.dump("got a message from an older request " + ((this.timestamp - data.timestamp) * 1000) + " msec ago");
+	    if (Debug) {
+	       this.dump("got a message from an older request " + ((this.timestamp - data.timestamp) * 1000) + " msec ago");
+	    }
 	   return;
 	 }
 	 if (this.processedTabs[windowTabKey]) {
