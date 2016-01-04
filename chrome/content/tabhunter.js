@@ -13,11 +13,9 @@ if (typeof(Cc) === "undefined") {
 var ep_extensions;
 if (typeof(ep_extensions) == "undefined") {
     ep_extensions = {};
-    Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService).logStringMessage("QQQ: **************** creating ep_extensions")
 }
 if (!("tabhunter" in ep_extensions)) {
     ep_extensions.tabhunter = { searchPattern:"" };
-    Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService).logStringMessage("QQQ: **************** creating ep_extensions.tabhunter")
 }
 (function() {
     this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
@@ -64,7 +62,7 @@ if (!("tabhunter" in ep_extensions)) {
                 currWindowInfo.tabs.push(tab);
                 var label = tab.label;
                 var image = tab.getAttribute("image") || "";
-                this.dump('tabhunter.js - getTabs_singleProcess: image - <' + image + ">");
+                //this.dump('tabhunter.js - getTabs_singleProcess: image - <' + image + ">");
                 obj.tabs.push(new this.TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location.href));
             }
         } while (openWindows.hasMoreElements());
