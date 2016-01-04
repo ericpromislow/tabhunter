@@ -25,17 +25,17 @@ var gTabhunter = {};
 this.addAddonBarButtonIfNeeded = function() {
     var addonBar = document.getElementById("addon-bar");
     if (addonBar) {
-        //alert("Found an addon bar");
+        //this.dump("Found an addon bar");
         if (!document.getElementById("tabhunterToolbarIcon")) {
-            //alert("But no tabhunterToolbarIcon");
+            //this.dump("But no tabhunterToolbarIcon");
             var addonBarCloseButton = document.getElementById("addonbar-closebutton")
                 addonBar.insertItem("tabhunterToolbarIcon", addonBarCloseButton.nextSibling);
             addonBar.collapsed = false;
         } else {
-            //alert("Already have tabhunterToolbarIcon");
+            //this.dump("Already have tabhunterToolbarIcon");
         }
     } else {
-        //alert("Didn't find an addon bar");
+        //this.dump("Didn't find an addon bar");
     }
 };
 // //div[class='left_col']/div/span/[text() = 'RESOLVED']
@@ -43,7 +43,7 @@ this.onLoad = function() {
     try {
         this.addAddonBarButtonIfNeeded();
     } catch(ex) {
-        alert("Error while checking addon bar button: " + ex);
+        this.dump("Error while checking addon bar button: " + ex);
     }
     try {
         this.mainHunter = window.arguments[0];
@@ -104,6 +104,17 @@ this.onLoad = function() {
 
         // This has to be done before calling getTabs() because 
         // tabhunterSession.init loads the frame-scripts.
+	var reactor, reactorFunc;
+        this.dump("onLoad: globalMessageManager:" + globalMessageManager + ", tabCollector: " + tabCollector);
+	if (globalMessageManager && tabCollector) {
+	   tabCollector.init(globalMessageManager);
+	   this.reactor = tabCollector;
+	   this.reactorFunc = tabCollector.collectTabs;
+	} else {
+	   this.reactor = this.mainHunter;
+	   this.reactorFunc = this.mainHunter.getTabs;
+	}
+	   
         this.tabhunterSession = new TabhunterWatchSessionService(this, this.updateOnTabChange);
         this.tabhunterSession.init();
         // this.setupWatcher(); -- use the moz session tracker to do this. 
@@ -128,7 +139,6 @@ this.onLoad = function() {
                 }
                 this.eol = navigator.platform.toLowerCase().indexOf("win32") >= 0 ?  "\r\n" : "\n";
 
-                this.tsOnLoad();
                 if (window.innerHeight < 200) {
                     window.innerHeight = 270;
                 }
@@ -136,7 +146,7 @@ this.onLoad = function() {
                     window.innerWidth = 450;
                 }
             } catch(ex2) {
-                this.mainHunter.dump("Error loading tabhunter in getTabsCallback: " + ex + "\n" + ex.stack);
+                this.mainHunter.dump("Error loading tabhunter in getTabsCallback: " + ex2 + "\n" + ex2.stack);
             }
         }.bind(this);
         this.init(getTabsCallback);
@@ -146,20 +156,30 @@ this.onLoad = function() {
 };
 
 this.init = function(getTabsCallback) {
-    this.mainHunter.dump("QQQ: >> mainHunter::init")
-    this.mainHunter.getTabs(function(results) {
+    var reactor, reactorFunc;
+    if (globalMessageManager && tabCollector) {
+       this.mainHunter.dump("QQQ: we have messages & an async tab collector")
+        this.reactor = tabCollector;
+        this.reactorFunc = tabCollector.collectTabs;
+    } else {
+       this.mainHunter.dump("QQQ: !!!! we don't have messages & an async tab collector")
+        this.reactor = this.mainHunter;
+        this.reactorFunc = this.mainHunter.getTabs;
+    }
+
+    this.reactorFunc.call(this.reactor, function(results) {
             this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
             try {
             this.allTabs = results.tabs;
-            this.allTabs.sort(this.mainHunter.compareByName);
+            this.allTabs.sort(this.compareByName);
             this.windowInfo = results.windowInfo;
-            this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
+            //this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
             if (getTabsCallback) {
-                this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
+	       //this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
                 getTabsCallback();
             }
             } catch(e) {
-                this.mainHunter.dump("QQQ: >> mainHunter::init: error: " + e);
+                this.mainHunter.dump("QQQ: >> mainHunter::init: error: " + e + ", stack:" + e.stack);
             }                
         }.bind(this));
 };
@@ -217,7 +237,7 @@ this.loadList = function() {
     this.compilePattern();
     this.tabhunterSession.dump("QQQ: In loadList: this.allTabs : " + this.allTabs.length);
     for (var tab, i = 0; tab = this.allTabs[i]; i++) {
-        var s = this.mainHunter.getTabTitleAndURL(tab);
+        var s = this.getTabTitleAndURL(tab);
         if (this.pattern_RE.test(s)) {
             var listitem = this.currentTabList.appendItem(s, i);
             this._finishListItem(listitem, tab);
@@ -236,38 +256,6 @@ this.labelFromList = function(idx, lowerCase) {
     return s;
 };
 
-this.ts_showPopupMenu = function(listPopupMenu) {
-    try {
-        var goMenuItem = document.getElementById("th-ts-go");
-        if (this.gTSTreeView.selection.count == 1) {
-            goMenuItem.removeAttribute('disabled');
-        } else {
-            goMenuItem.setAttribute('disabled', 'true');
-        }
-    } catch(ex) {
-        alert(ex);
-    }
-};
-
-this.ts_contextGo  = function() {
-    this.ts_onGoCurrentLine();
-};
-
-
-this._tsSelectedLines = function() {
-    var selection = this.tsDialog.tree.view.selection;
-    var numParts = selection.getRangeCount();
-    var startRange = {}, endRange = {};
-    var lines = [];
-    for (var i = 0; i < numParts; i++) {
-        selection.getRangeAt(i, startRange, endRange);
-        for (var j = startRange.value; j <= endRange.value; j++) {
-            lines.push(j);
-        }
-    }
-    return lines;
-}
-
 this._rowFromSpecifiedLine = function(lineno) {
     var row = this.gTSTreeView._rows[lineno];
     if (!row) {
@@ -275,80 +263,6 @@ this._rowFromSpecifiedLine = function(lineno) {
         return null;
     }
     return row;
-}
-
-this.ts_contextClose  = function() {
-    try {
-        var lines = this._tsSelectedLines();
-        var row;
-        var tabsToClose = {}; // windowIdx => [ array of tabIdx ]
-        for (var i = 0; i < lines.length; i++) {
-            row = this._rowFromSpecifiedLine(lines[i]);
-            if (!row) {
-                this.gTSTreeView.dump(label + ": no data at row " + lines[i]);
-                continue;
-            }
-            var widx = row.windowIdx;
-            if (!(widx in tabsToClose)) {
-                tabsToClose[widx] = [];
-            }
-            tabsToClose[widx].push(row.tabIdx);
-        }
-        for (var i in tabsToClose) {
-            var tabList = tabsToClose[i];
-            tabList.sort(function(a, b) { return b - a; });
-            var windowInfo = this.windowInfo[i];
-            var targetWindow = windowInfo.window;
-            var targetBrowser = targetWindow.getBrowser();
-            var tabContainer = targetBrowser.tabContainer;
-            for (var j = 0; j < tabList.length; j++) {
-                if (tabContainer.childNodes.length == 1) {
-                    targetWindow.close();
-                } else {
-                    targetBrowser.removeTab(windowInfo.tabs[tabList[j]]);
-                }
-            }
-        }
-    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }
-};
-
-this._ts_copyParts = function(selector) {
-    var copiedLines = [];
-    try {
-        var lines = this._tsSelectedLines();
-        var row;
-        for (var i = 0; i < lines.length; i++) {
-            row = this._rowFromSpecifiedLine(lines[i]);
-            if (!row) {
-                this.gTSTreeView.dump(label + ": no data at row " + lines[i]);
-                continue;
-            }
-            copiedLines.push(selector(row));
-        }
-        copyToClipboard(copiedLines.join(this.eol));
-    } catch(ex) { this.tabhunterSession.dump(ex + "\n"); }    
-}
-
-this.ts_copyURL  = function() {
-    var this_ = this;
-    return this._ts_copyParts(function(row) {
-        return row[this_.TS_URI_ID];
-    });
-}
-
-this.ts_copyTabTitle  = function() {
-    var this_ = this;
-    return this._ts_copyParts(function(row) {
-        return row[this_.TS_TITLE_ID];
-    });
-}
-this.ts_copyURLAndTitle  = function() {
-    var this_ = this;
-    return this._ts_copyParts(function(row) {
-        return row[this_.TS_TITLE_ID]
-                    + " - "
-                    + row[this_.TS_URI_ID];
-    });
 };
 
 this.updateOnPatternChange = function() {
@@ -361,22 +275,11 @@ this.updateOnPatternChange = function() {
     }
 };
 
-this.onSelectTab = function(event) {
-    if (this.tabBox === undefined) {
-        // If true, the dialog hasn't been init'ed yet.
-        return;
-    }
-    if (this.tabBox.selectedIndex == 1 && this.ts_tabListNeedsRefreshing) {
-        this.ts_tabListNeedsRefreshing = false;
-        this.ts_startSearch();
-    }
-}
-
 this.updateOnTabChange = function() {
-    this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange")
-    this.mainHunter.getTabs(function(results) {
+    this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
+    this.reactorFunc.call(this.reactor, function(results) {
             var newTabs = results.tabs;
-            newTabs.sort(this.mainHunter.compareByName);
+            newTabs.sort(this.compareByName);
             try {
                 this._updateList(newTabs);
             } catch(ex) {
@@ -384,19 +287,8 @@ this.updateOnTabChange = function() {
             }
             this.allTabs = newTabs;
             this.windowInfo = results.windowInfo;
-            this.ts_updateOnTabChange();
             // And either update the text-search tab, or invalidate it
         }.bind(this));
-};
-
-this.ts_updateOnTabChange = function() {
-    if (false && this.tabBox.selectedIndex == 1) {
-        // Don't do this on Firefox 3.7 & up
-        this.ts_tabListNeedsRefreshing = false;
-        this.ts_startSearch();
-    } else {
-        this.ts_tabListNeedsRefreshing = true;
-    }
 };
 
 this._updateList = function(newTabs) {
@@ -418,7 +310,7 @@ this._updateList = function(newTabs) {
     while (i < newLen && j < oldLen) {
         // i tracks the new list of tabs, j tracks the current list
         var newTab = newTabs[i];
-        var s = this.mainHunter.getTabTitleAndURL(newTab);
+        var s = this.getTabTitleAndURL(newTab);
         if (!this.pattern_RE.test(s)) {
             i += 1;
             continue;
@@ -450,7 +342,7 @@ this._updateList = function(newTabs) {
     if (i < newLen) {
         for (; i < newLen; i += 1) {
             var newTab = newTabs[i];
-            var s = this.mainHunter.getTabTitleAndURL(newTab);
+            var s = this.getTabTitleAndURL(newTab);
             if (this.pattern_RE.test(s)) {
                 var listitem = this.currentTabList.appendItem(s, i);
                 this._finishListItem(listitem, newTab);
@@ -493,10 +385,10 @@ this.showCurrentURL = function() {
     try {
         var tabIdx = this.currentTabList.selectedItem.getAttribute('value');
         var location = this.allTabs[tabIdx].location;
-        this.currentURLField.value = location.href;
+        this.currentURLField.value = globalMessageManager ? location : location.href;
         this.currentURLField.removeAttribute('class');
     } catch(ex) {
-        //dump(ex + "\n");
+        this.gTSTreeView.dump("!!!!: QQQ: Error in showCurrentURL: "  + ex + "\n");
         this.currentURLField.value = this.strbundle.getString("notApplicableLabel");
         this.currentURLField.setAttribute('class', 'nohits');
     }
@@ -569,6 +461,9 @@ this.onDoubleClick = function() {
 };
 
 this.onUnload = function() {
+  if (tabCollector) {
+    tabCollector.onUnload();
+  }
     this.mainHunter.searchPattern = this.patternField.value;
     ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
     forEach(function(prop) {
@@ -628,16 +523,7 @@ this.onAccept = function() {
 };
 
 this.acceptTab = function() {
-    switch (this.tabBox.selectedIndex) {
-    case 0:
-        this.doAcceptTab(true);
-        break;
-    case 1:
-        this.ts_onGoCurrentLine();
-        break;
-    default:
-        this.dump("Unrecognized tabBox index: " + this.tabBox.selectedIndex);
-    }
+  this.doAcceptTab(true);
 }
 
 this._clearInfo = function() {
@@ -658,7 +544,7 @@ this.showListPopupMenu = function(listPopupMenu) {
             goMenuItem.setAttribute('disabled', 'true');
         }
     } catch(ex) {
-        alert(ex);
+        this.dump(ex);
     }
 };
 
@@ -751,32 +637,6 @@ this.copyTabTitle_URL = function(event) {
 
 // TextSearch methods
 
-this.tsOnLoad = function() {
-try {
-    this.tsDialog = {};
-  this.tsDialog.tree = document.getElementById("ts-resultsTree");
-  this.tsDialog.pattern = document.getElementById("ts-pattern");
-  this.tsDialog.ignoreCase = document.getElementById("ts-ignore-case");
-  this.tsDialog.searchTypeMenu = document.getElementById("ts-searchTypeMenu");
-  this.tsDialog.useCurrentTabs = document.getElementById("ts-currentURIs");
-  this.tsDialog.pauseGoButton = document.getElementById("ts-pauseGoButton");
-  this.g_SearchingState = this.TS_SEARCH_STATE_DEFAULT;
-  this.ts_onInput();
-  this.tsDialog.cancelButton = document.getElementById("ts-stopButton");
-    
-  this.tsDialog.badXPathBox = document.getElementById("ts-badXPath");
-  this.tsDialog.badXPathDescription = document.getElementById("ts-badXPath.description");
-  this.tsDialog.progressMeter = document.getElementById("tsSearchProgress");
-  this.tsDialog.progressMeterLabel = document.getElementById("tsSearchProgressCount");
-  this.tsDialog.progressMeterWrapper = document.getElementById("progressMeterWrapper");
-  this.tsDialog.tsSearchProgress = document.getElementById("tsSearchProgress");
-  this.tsDialog.tsSearchProgressCount = document.getElementById("tsSearchProgressCount");
-    
-  this.ts_initialize();
-}catch(ex) {
-    alert("tsOnLoad: " + ex);
-}
-};
 
 this.TextSearchTreeView = function() {
     this._rows = [];
@@ -822,159 +682,6 @@ this.TextSearchTreeView.prototype = {
     _EOL_ : function() {}
 };
 
-this.ts_initialize = function() {
-    this.gTSTreeView = new this.TextSearchTreeView();
-    // this.gTSTreeView.dump("we have rows.");
-    this.tsDialog.tree.view = this.gTSTreeView;
-    var boxObject =
-        this.tsDialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
-    boxObject.view = this.gTSTreeView;
-    this.TS_URI_ID = "treecol-url";
-    this.TS_TITLE_ID = "treecol-title";
-    this.TS_TEXT_ID = "treecol-text";
-
-    this.TS_SEARCH_STATE_DEFAULT = 0;
-    this.TS_SEARCH_STATE_PAUSED = 1;
-    this.TS_SEARCH_STATE_CONTINUED = 2;
-    this.TS_SEARCH_STATE_CANCELLED = 3
-
-    this.ts_bundle = Components.classes["@mozilla.org/intl/stringbundle;1"]
-                .getService(Components.interfaces.nsIStringBundleService)
-                .createBundle("chrome://tabhunter/locale/tabhunter.properties");
-    this.ts_enterDefaultSearchingState();
-    
-    this.ts_tabListNeedsRefreshing = false;
-
-}
-
-this.ts_buildRow = function(uri, title, displayText, windowIdx, tabIdx, posn, matchedText) {
-    var r = {};
-    r[this.TS_URI_ID] = uri;
-    r[this.TS_TITLE_ID] = title;
-    r[this.TS_TEXT_ID] = displayText;
-    r.windowIdx = windowIdx;
-    r.tabIdx = tabIdx;
-    r.posn = posn;
-    r.matchedText = windowIdx;
-    return r;
-}
-
-this.ts_resetRowCount = function(oldCount) {
-    var boxObject =
-        this.tsDialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
-    boxObject.rowCountChanged(0, -oldCount);
-}
-
-this.ts_onAddingRecord = function(oldCount) {
-    if (!this.tsDialog
-        || !this.tsDialog.tree) {
-        return;
-    }
-    var boxObject =
-        this.tsDialog.tree.treeBoxObject.QueryInterface(Components.interfaces.nsITreeBoxObject);
-    boxObject.rowCountChanged(oldCount, 1);
-}
-
-this.ts_countTabs = function(windows) {
-    var sum = 0;
-    for (var win, windowIdx = 0; win = windows[windowIdx]; windowIdx++) {
-        sum += win.window.getBrowser().tabContainer.childNodes.length;
-    }
-    return sum;
-}
-
-this.Searcher = function(mainObj, dialog, getTabsCallback) {
-    this.ready = false;
-    try {
-        // set up parameters here.
-        this.pattern = dialog.pattern.value;
-        mainObj.ts_clearTree();
-        if (this.pattern.length == 0) {
-            mainObj.gTSTreeView.dump("pattern is empty");
-            return;
-        }
-        this.mainObj = mainObj;
-        this.mainHunter.dump("QQQ: >> new Searcher")
-        mainObj.mainHunter.getTabs(function(results) {
-                this.tabInfo = results;
-                this.ignoreCase = dialog.ignoreCase.checked;
-                this.searchType = dialog.searchTypeMenu.selectedItem.value;
-        
-                if (!!(this.useCurrentTabs = dialog.useCurrentTabs.checked)) {
-                    var p = null;
-                    var text = mainObj.patternField.value;
-                    if (text) {
-                        try {
-                            p = new RegExp(text, 'i');
-                        } catch(ex) {}
-                    }
-                    this.currentTabRE = p;
-                } else {
-                    this.currentTabRE = null;
-                }
-                this.windows = this.tabInfo.windowInfo;
-                if (this.searchType == "searchRegEx") {
-                    try {
-                        this.regex = new RegExp(this.pattern,
-                                                this.ignoreCase ? "i" : undefined);
-                    } catch(ex) {
-                        var msg = ex.message;
-                        if (ex.inner) msg += "; " + ex.inner;
-                        if (ex.data) msg += "; " + ex.data;
-                        var dnode = dialog.badXPathDescription;
-                        while (dnode.hasChildNodes()) {
-                            dnode.removeChild(dnode.firstChild);
-                        }
-                        dnode.appendChild(document.createTextNode(msg));
-                        dialog.badXPathBox.collapsed = false;
-                        mainObj.ts_enterDefaultSearchingState();
-                        return;
-                    }
-                } else if (this.searchType == "searchPlainText") {
-                    if (this.ignoreCase) {
-                        this.patternFinal = this.pattern.toLowerCase();
-                    } else {
-                        this.patternFinal = this.pattern;
-                    }
-                }
-                this.tabCount = mainObj.ts_countTabs(this.windows);
-                this.windowCount = this.windows.length;
-                dialog.progressMeterWrapper.setAttribute('class', 'show');
-                dialog.progressMeter.setAttribute('class', 'progressShow');
-                dialog.progressMeterLabel.setAttribute('class', 'progressShow');
-                this.progressBar = dialog.tsSearchProgress;
-                this.progressBar.max = this.tabCount;
-                this.progressBar.value = this.numHits = 0;
-                this.progressBarLabel = dialog.tsSearchProgressCount;
-                //mainObj.gTSTreeView.dump("startSearch: go through "
-                //               + this.progressBar.max
-                //               + " tabs");
-
-                if (globalMessageManager) {
-                    globalMessageManager.addMessageListener("search-continuation-error", this.searchContinuationErrorHandler.bind(this));
-                    globalMessageManager.addMessageListener("search-continuation-exception", this.searchContinuationExceptionHandler.bind(this));
-                    globalMessageManager.addMessageListener("search-continuation-match", this.searchContinuationMatchHandler.bind(this));
-                    globalMessageManager.addMessageListener("search-continuation-no-match", this.searchContinuationNoMatchHandler.bind(this));
-                }
-                if (getTabsCallback) {
-                    getTabsCallback();
-                }
-            }.bind(this));
-    } catch(ex) {
-        mainObj.showMessage("Searcher", ex);
-        //for (var p in ex) {
-        //    var o = ex[p];
-        //    if (typeof(o) != "function") {
-        //        mainObj.gTSTreeView.dump(p + ":" + o)
-        //    }
-        //}
-        //mainObj.gTSTreeView.dump("Searcher:" + ex);
-        return;
-    }
-    this.ready = true;
-    return;
-}
-
 this.showMessage = function(label, ex) {
     var msg = "";
     if (ex.fileName) {
@@ -984,432 +691,27 @@ this.showMessage = function(label, ex) {
         msg += "#" + ex.lineNumber;
     }
     msg += ": " + ex.message;
-    alert(label +": " + msg);
+    this.dump(label +": " + msg);
     this.gTSTreeView.dump(label +": " + msg);
 }
 
-this.Searcher.prototype.setupWindow = function(windowIdx) {
-    try {
-    var tc = this.windows[windowIdx].window.getBrowser().tabContainer;
-    this.tabIdx = -1;
-    this.tcNodes = tc.childNodes;
-    this.currentTabCount = this.tcNodes.length;
-    this.sessionTimestamp = (new Date()).valueOf();
-    } catch(e) {
-        this.mainObj.gTSTreeView.dump("setupWindow: error: " + e);
-    }
-};
-
-this.Searcher.prototype.searchNextTab = function() {
-  try {
-      /*
-    this.mainObj.gTSTreeView.dump("searchNextTab: starting: this.windowIdx:"
-                                  + this.windowIdx + ", this.tabIdx:" + this.tabIdx
-                                  + ", this.windowCount: " + this.windowCount
-                                  + ", this.currentTabCount: " + this.currentTabCount);
-      */
-    if (this.windowIdx > this.windowCount) {
-        //this.mainObj.gTSTreeView.dump("searchNextTab: nowhere left to look");
-        return;
-    }
-    this.searchNextTab_aux();
-  } catch(ex) {
-    this.mainObj.gTSTreeView.dump("searchNextTab failed: " + ex + "\n");
-  }
-}
-
-this.Searcher.prototype.searchNextTab_aux = function() {
-    switch (this.mainObj.g_SearchingState) {
-        case this.mainObj.TS_SEARCH_STATE_PAUSED:
-        this.mainObj.ts_enterPausedSearchingState();
-        return;
-        case this.mainObj.TS_SEARCH_STATE_CANCELLED:
-        this.finishSearch();
-        return;
-    }
-    this.tabIdx += 1;
-    /*
-    this.mainObj.gTSTreeView.dump("searchNextTab_aux pre loop: this.tabIdx: "
-                                  + this.tabIdx
-                                  + ", this.currentTabCount: " + this.currentTabCount
-                                  + ", this.windowIdx: " + this.windowIdx
-                                  + ", this.windowCount: " + this.windowCount);
-    */
-    try {
-    while (this.tabIdx >= this.currentTabCount) {
-        this.windowIdx += 1;
-        if (this.windowIdx >= this.windowCount) {
-            this.currentTabCount = 0;
-            //this.mainObj.gTSTreeView.dump("searchNextTab_aux graceful exit")
-            this.finishSearch();
-            return;
-        }
-        this.setupWindow(this.windowIdx);
-        this.tabIdx = 0;
-        // Do this in a loop to handle windows with no tabs.
-    }
-    } catch(e) {
-        this.mainObj.gTSTreeView.dump("searchNextTab_aux: caught error: " + e);
-        return;
-    }
-    
-    /*
-    this.mainObj.gTSTreeView.dump("searchNextTab_aux post setup: this.windowIdx:"
-                                  + this.windowIdx + ", this.tabIdx:" + this.tabIdx);
-    */
-
-    this.progressBar.setAttribute("value", parseInt(this.progressBar.value) + 1);
-    this.progressBarLabel.value = ("Checking "
-                                   + this.progressBar.value
-                                   + "/"
-                                   + this.progressBar.max);
-    var tab = this.tcNodes[this.tabIdx];
-    if (tab.linkedBrowser.messageManager) {
-        //this.mainObj.gTSTreeView.dump("searchNextTab: -search-next-tab");
-        //dump("-sendAsyncMessage: search-next-tab");
+    this.getTabTitleAndURL = function(tab) {
+        var s = tab.label;
         try {
-            //XXX: The problem with this code is the message gets sent to
-            // every tab frame-script listener, not just the current tab's.
-            //tab.ownerDocument.defaultView.getBrowser().selectedBrowser.
-            tab.linkedBrowser.
-                messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab",
-                                                { currentTabRE: this.currentTabRE,
-                                                        searchType: this.searchType,
-                                                        pattern: this.pattern,
-                                                        patternFinal: this.patternFinal,
-                                                        regex: this.regex,
-                                                        ignoreCase: this.ignoreCase,
-                                                        sessionTimestamp: this.sessionTimestamp});
-        } catch(e) {
-            //alert("Prolbem: " + e);
-            this.mainObj.gTSTreeView.dump("searchNextTab: trying to call search-next-tab => " + e);
-        }
-        return;
+            s += " - " + tab.location;
+        } catch(ex) {}
+        return s;
     }
-    // Code duplicated from frameScripts/search-next-tab.js
-    var view = tab.linkedBrowser.contentWindow;
-    if (!view) {
-        this.mainObj.gTSTreeView.dump("searchNextTab: no view");
-        return; // should be no view now.
+
+    this.compareByName = function(tab1, tab2) {
+        return (tab1.label_lc < tab2.label_lc
+                ? -1 : (tab1.label_lc > tab2.label_lc ? 1 : 0));
     }
-    var doc = view.document;
-    var title = doc.title;
-    var url = doc.location;
-    var failedTest = false;
-    if (this.currentTabRE) {
-        if (!this.currentTabRE.test(title) && !this.currentTabRE.test(url)) {
-            failedTest = true;
-            this.mainObj.gTSTreeView.dump("No match on title:"
-                                          + title
-                                          + ", url:"
-                                          + url);
-        }
-    }
-    if (!failedTest) {
-        var res, posn, matchedText = null;
-        var searchText = doc.documentElement.innerHTML;
-        if (!searchText) {
-            // do nothing
-        } else if (this.searchType == "searchXPath") {
-            var contextNode = doc.documentElement;
-            var namespaceResolver =
-                document.createNSResolver(contextNode.ownerDocument == null
-                                          ? contextNode.documentElement
-                                  : contextNode.ownerDocument.documentElement);
-            var resultType = XPathResult.ANY_UNORDERED_NODE_TYPE;
-            var nodeSet = null;
-            try {
-                nodeSet = doc.evaluate(this.pattern, contextNode,
-                                       namespaceResolver, resultType, null);
-            } catch(ex) {
-                var msg = ex.message;
-                if (ex.inner) msg += "; " + ex.inner;
-                if (ex.data) msg += "; " + ex.data;
-                var dnode = this.mainObj.tsDialog.badXPathDescription;
-                while (dnode.hasChildNodes()) {
-                    dnode.removeChild(dnode.firstChild);
-                }
-                dnode.appendChild(document.createTextNode(msg));
-                this.mainObj.tsDialog.badXPathBox.collapsed = false;
-                this.mainObj.ts_enterDefaultSearchingState();
-                return;
-            }
-            var snv = nodeSet.singleNodeValue;
-            if (snv) {
-                matchedText = snv.innerHTML;
-                if (matchedText) {
-                    matchedText = matchedText.replace(/^[\s\r\n]+/, '');
-                    if (matchedText.length > 40) {
-                        matchedText = matchedText.substring(0, 40) + "...";
-                    } else if (matchedText.length == 0) {
-                        matchedText = "<white space only>";
-                    }
-                }
-            }
-        } else if (this.searchType == "searchRegEx") {
-            res = this.regex.exec(searchText);
-            if (res) {
-                matchedText = RegExp.lastMatch;
-            }
-        } else {
-            var searchTextFinal = this.ignoreCase ? searchText.toLowerCase() : searchText;
-            posn = searchTextFinal.indexOf(this.patternFinal);
-            if (posn >= 0) {
-                matchedText = searchText.substring(posn, this.pattern.length);
-            }
-        }
-        if (matchedText) {
-            this.searchContinuationMatchHandler({posn:posn, url:url, title:title, matchedText:matchedText});
-        }
-    }
-    
-    //this.mainObj.gTSTreeView.dump("Searcher.searchNextTab_aux: -continueSearchNextTab()")
-    this.continueSearchNextTab();
-};
-
-this.Searcher.prototype.continueSearchNextTab = function(data) {
-    setTimeout(function(this_) {
-            try {
-                //this_.mainObj.gTSTreeView.dump("**** In continueSearchNextTab, calling searchNextTab")
-                this_.searchNextTab();
-            } catch(ex) {
-                this_.mainObj.showMessage("Searcher.searchNextTab("
-                                          + this_.windowIdx
-                                          + ", "
-                                          + this_.tabIdx
-                                          + ")", ex);
-            }
-        }, 1, this);
-};
-
-this.Searcher.prototype.searchContinuationErrorHandler = function(msgData) {
-    var data = msgData.data;
-    var objects = msgData.objects;
-    //this.mainObj.gTSTreeView.dump(">>searchContinuationErrorHandler, data:" + Object.keys(data).join(" "));
-    //this.mainObj.gTSTreeView.dump(">>searchContinuationErrorHandler, objects:" + Object.keys(objects).join(" "));
-    /*
-    if (data.msg) {
-        this.mainObj.gTSTreeView.dump("data.msg:" + data.msg);
-    }
-    */
-    if (data['continue']) {
-        //this.mainObj.gTSTreeView.dump("Searcher.searchContinuationErrorHandler: -continueSearchNextTab()")
-        if (data.sessionTimestamp != this.sessionTimestamp) {
-            /*
-            this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
-                                          data.sessionTimestamp +
-                                          ", != this.sessionTimestamp: "
-                                          + this.sessionTimestamp);
-            */
-        } else {
-            this.continueSearchNextTab();
-        }
-    }
-};
-
-this.Searcher.prototype.searchContinuationExceptionHandler = function(msgData) {
-    var data = msgData.data;
-    //this.mainObj.gTSTreeView.dump(">>searchContinuationExceptionHandler, data:" + Object.keys(data).join(" "));
-    var msg = data.msg;
-    var dnode = this.mainObj.tsDialog.badXPathDescription;
-    while (dnode.hasChildNodes()) {
-        dnode.removeChild(dnode.firstChild);
-    }
-    dnode.appendChild(document.createTextNode(msg));
-    this.mainObj.tsDialog.badXPathBox.collapsed = false;
-    this.mainObj.ts_enterDefaultSearchingState();
-    // Don't continue searching here -- just exit the loop of handlers
-};
-
-this.Searcher.prototype.searchContinuationMatchHandler = function(msgData) {
-    var data = msgData.data;
-    var posn = data.posn,
-        title = data.title,
-        url = data.url,
-        matchedText = data.matchedText;
-    //this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, data:" + Object.keys(data).join(" "));
-    //this.mainObj.gTSTreeView.dump("url: " + url + ", title: " + title + ", posn:" + posn);
-    //alert("QQQ: url: " + url);
-    /*
-    this.mainObj.gTSTreeView.dump(">>searchContinuationMatchHandler, this.windowIdx: " + this.windowIdx
-                                  + ", this.tabIdx:" + this.tabIdx
-                                  + ", posn:" + posn);
-    */
-    if (data.sessionTimestamp != this.sessionTimestamp) {
-        /*
-        this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
-                                      data.sessionTimestamp +
-                                      ", != this.sessionTimestamp: "
-                                      + this.sessionTimestamp);
-        */
-        return;
-    }
-    
-    this.mainObj.ts_onAddingRecord(this.numHits);
-    this.numHits += 1;
-    this.mainObj.gTSTreeView._rows.push(this.mainObj.ts_buildRow(url,
-                                  title,
-                                  matchedText,
-                                  this.windowIdx,
-                                  this.tabIdx, posn, matchedText));
-    //this.mainObj.gTSTreeView.dump("Searcher.searchContinuationMatchHandler: -continueSearchNextTab()")
-    this.continueSearchNextTab();
-};
-
-this.Searcher.prototype.searchContinuationNoMatchHandler = function(msgData) {
-    var data = msgData.data;
-    // this.mainObj.gTSTreeView.dump(">>searchContinuationNoMatchHandler")
-    // this.mainObj.gTSTreeView.dump("Searcher.NoMatchHandler: -continueSearchNextTab()")
-    if (data.sessionTimestamp != this.sessionTimestamp) {
-        /*
-        this.mainObj.gTSTreeView.dump("NO!!! data.sessionTimestamp: " +
-                                      data.sessionTimestamp +
-                                      ", != this.sessionTimestamp: "
-                                      + this.sessionTimestamp);
-        */
-        return;
-    }
-    this.continueSearchNextTab();
-};
-
-this.Searcher.prototype.launch = function() {
-    this.setupWindow(this.windowIdx = 0);
-    try {
-        this.searchNextTab();
-    } catch(ex) {
-        this.mainObj.showMessage("Searcher.searchNextTab(0, 0)", ex);
-    }
-}
-
-this.Searcher.prototype.finishSearch = function() {
-    this.mainObj.ts_enterDefaultSearchingState();
-    var newCount = this.mainObj.gTSTreeView._rows.length;
-    this.progressBar.setAttribute("value", parseInt(this.progressBar.max));
-    this.progressBarLabel.value = "Found " + this.numHits + " in " + this.progressBar.max;
-    //this.mainObj.gTSTreeView.dump("<< startSearch");
-    setTimeout(function(this_) {
-        this_.mainObj.tsDialog.progressMeterWrapper.setAttribute('class', 'hide');
-        this_.mainObj.tsDialog.progressMeter.setAttribute('class', 'progressHide');
-        this_.mainObj.tsDialog.progressMeterLabel.setAttribute('class', 'progressHide');
-        //this_.mainObj.gTSTreeView.dump("Did we hide the progress meter?");
-        this_.mainObj.g_searcher = null;
-        this_.mainObj.g_SearchingState = this_.mainObj.TS_SEARCH_STATE_DEFAULT;
-    }, 3 * 1000, this);
-}
-
-// End Searcher object
-
-this.ts_clearTree = function() {
-    var oldCount = this.gTSTreeView._rows.length;
-    if (oldCount > 0) {
-        this.gTSTreeView._rows = [];
-        this.ts_resetRowCount(oldCount);
-    }
-}
-
-this.ts_startSearch = function() {
-try {
-    //this.gTSTreeView.dump("About to get the searcher");
-    // alert("in this.ts_startSearch...");
-    var getTabsCallback = function() {
-        if (this.g_searcher.ready) {
-            this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
-            this.ts_enterActiveSearchingState();
-            setTimeout(function(this_) {
-                    // delay so the table view gets cleared.
-                    this_.g_searcher.launch();
-                }, 0, this);
-        }
-    }.bind(this);
-    this.g_searcher = new this.Searcher(this, this.tsDialog, getTabsCallback);
-} catch(ex) {
-    alert(ex);
-    this.showMessage('startSearch', ex);
-}
-}
-
-this.ts_pauseSearch = function() {
-    this.g_SearchingState = this.TS_SEARCH_STATE_PAUSED;
-}
-
-this.ts_cancelSearch = function() {
-    this.g_SearchingState = this.TS_SEARCH_STATE_CANCELLED;
-    this.ts_enterDefaultSearchingState();
-}
-
-this.ts_continueSearch = function() {
-    this.g_SearchingState = this.TS_SEARCH_STATE_CONTINUED;
-    //this.dump("**** In ts_continueSearch, calling searchNextTab")
-    this.g_searcher.searchNextTab();
-}
-
-this.ts_enterActiveSearchingState = function() {
-    this.tsDialog.pauseGoButton.label = this.ts_bundle.GetStringFromName('pause.label');
-    var this_ = this;
-    this.tsDialog.pauseGoButton.oncommand = function() {
-        this_.ts_pauseSearch();
-    }
-    this.tsDialog.cancelButton.disabled = false;
-}
-
-this.ts_enterPausedSearchingState = function() {
-    this.tsDialog.pauseGoButton.label = this.ts_bundle.GetStringFromName('continue.label');
-    var this_ = this;
-    this.tsDialog.pauseGoButton.oncommand = function() {
-        this_.ts_continueSearch();
-    }
-    this.tsDialog.cancelButton.disabled = false;
-}
-
-this.ts_enterDefaultSearchingState = function() {
-    this.tsDialog.pauseGoButton.label = this.ts_bundle.GetStringFromName('search.label'); 
-    var this_ = this;
-    this.tsDialog.pauseGoButton.oncommand = function() {
-        this_.ts_startSearch();
-    }
-    this.tsDialog.cancelButton.disabled = true;
-}
-
-this.ts_onKeyPress = function(event)  {
-    switch (event.keyCode) {
-    case KeyEvent.DOM_VK_RETURN:
-        if (!this.tsDialog.cancelButton.disabled) {
-            this.ts_startSearch();
-        }
-        return false;
-    }
-    return true;
-}
-
-this.ts_onInput = function() {
-    this.tsDialog.pauseGoButton.disabled = (this.g_SearchingState ==
-					    this.TS_SEARCH_STATE_DEFAULT
-                                     && this.tsDialog.pattern.value.length == 0);
-}
-
-this.ts_onSelectSearchType = function(menulist) {
-    this.tsDialog.ignoreCase.disabled = (menulist.selectedItem.value == 'searchXPath');
-}
-
-this.ts_onTreeDblClick = function(event) {
-    if (event.target.nodeName != "treechildren") {
-        return;
-    }
-    this.ts_onGoCurrentLine();
-}
-
-this.ts_onGoCurrentLine = function() {
-    try {
-        var currentLine = this.tsDialog.tree.currentIndex;
-        this.gTSTreeView.dump("QQQ: >> ts_onGoCurrentLine, currentLine: " + currentLine);
-        var row = this.gTSTreeView._rows[currentLine];
-        if (!row) {
-            this.gTSTreeView.dump("no data at row " + row);
-            return;
-        }
-        var windowInfo = this.windowInfo[row.windowIdx];
-        this.finishMoveToTab(windowInfo, row.tabIdx);
-    } catch(ex) { this.gTSTreeView.dump(ex + "\n"); }
-};
+        
+ this.dump = function(aMessage) {
+   var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+   .getService(Components.interfaces.nsIConsoleService);
+   consoleService.logStringMessage("th: " + aMessage);
+ };
 
 }).apply(gTabhunter);

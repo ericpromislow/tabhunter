@@ -24,7 +24,8 @@ if (typeof(globalMessageManager) == "undefined") {
 
 // global notifications observed
 const OBSERVING = [
-  "domwindowopened", "domwindowclosed",
+		   //"domwindowopened",
+  "domwindowclosed",
 ];
 
 function TabhunterWatchSessionService(reactor, func, level) {
@@ -76,6 +77,7 @@ TabhunterWatchSessionService.prototype = {
         var win = openWindows.getNext();
         this.onLoad(win, true);
     } while(openWindows.hasMoreElements());
+    
   },
 
   /**
@@ -85,15 +87,22 @@ TabhunterWatchSessionService.prototype = {
     // for event listeners
     var _this = this;
 
+    this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
     switch (aTopic) {
     case "domwindowopened": // catch new windows
         try {
-            setTimeout(function(aSubject_) {
-                aSubject_.addEventListener("load", function(aEvent) {
-                    aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
-                    _this.onLoad(aEvent.currentTarget, false);
-                }, false);
-            }, 1, aSubject);
+	     setTimeout(function() {
+		  //_this.dump(">> QQQ: domwindowopened in setTimeout");
+		  aSubject.addEventListener("load", function(aEvent) {
+		       try {
+			  //_this.dump(">> QQQ: domwindowopened/load event");
+			  aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
+			  _this.onLoad(aEvent.currentTarget, false);
+		       } catch(ex) {
+			  this_.dump("**************** Error handling domwindowopened/load event: " + ex);
+		       }
+		    }, false);
+	       }, 1);
         } catch(ex) {
             this.dump("observe:domwindowopened: " + ex)
         }
@@ -113,7 +122,6 @@ TabhunterWatchSessionService.prototype = {
      this.dump("**** handleEvent " + aEvent.type);
     switch (aEvent.type) {
       case "load":
-      case "DOMContentLoaded":
         this.onTabLoad(aEvent.currentTarget.ownerDocument.defaultView,
                        aEvent.currentTarget, aEvent);
         break;
@@ -207,6 +215,7 @@ TabhunterWatchSessionService.prototype = {
   },
 
   onTabAdd: function thst_onTabAdd(aWindow, aPanel, aTab, aNoNotification) {
+     this.dump(">>>>>>>>>>>>>>>> sessionTrack.js:onTabAdd, aNoNotification: " + aNoNotification)
     var self = this;
     var func = function(event) {
         self.handleEvent.call(self, event);
@@ -215,11 +224,11 @@ TabhunterWatchSessionService.prototype = {
         try {
             var mm = aTab.linkedBrowser.messageManager;
             if (mm) {
-                //this.dump("-QQQ: loading the linkedBrowser frame scripts...")
+                this.dump("-QQQ: loading the linkedBrowser frame scripts...")
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/docType-has-image.js", true);
-                //this.dump("+QQQ: loading the linkedBrowser frame scripts...")
+                this.dump("+QQQ: loading the linkedBrowser frame scripts...")
             }
         } catch(ex) {
             this.dump("Failed to load 1 or more frame scripts: " + ex + "\n" + ex.stack);
@@ -227,14 +236,14 @@ TabhunterWatchSessionService.prototype = {
     } else {
         this.dump("**** Don't add frame scripts for panel " + aPanel.id);
     }
-    if (aPanel) {
-    setTimeout(function(aPanel_, func_) {
-            aPanel_.addEventListener("DOMContentLoaded", func_, true);
-        }, 1, aPanel, func);
-    if (!aNoNotification) {
-        this.reactorFunc.call(this.reactor);
-    }
-    }
+    aPanel.addEventListener("load", func, true);
+     if (!aNoNotification) {
+	this.dump("!!!!!!!!!!!!!!!! onTabAdd before timeout, after frameScripts are loaded");
+	setTimeout(function() {
+	     this.dump("!!!!!!!!!!!!!!!! onTabAdd in timeout, after frameScripts are loaded");
+	     this.reactorFunc.call(this.reactor);
+	  }.bind(this), 3000)
+     }
   },
 
   onTabRemove: function thst_onTabRemove(aWindow, aPanel, aTab, aNoNotification) {

@@ -1,6 +1,7 @@
 cd chrome
 rm -f tabhunter.jar
 cat << ZAK | zip tabhunter.jar -@
+./content/asyncTabCollector.js
 ./content/selectTabDialog.js
 ./content/sessionTrack.js
 ./content/selectTabDialog.xul
@@ -21,6 +22,6 @@ cat << ZAK | zip tabhunter.jar -@
 ZAK
 # zip -r tabhunter.jar content locale skin
 cd ..
-T=tabhunter-1.0.15.xpi
+T=tabhunter-1.0.16.xpi
 rm -f $T
 zip $T  chrome.manifest install.rdf chrome/tabhunter.jar defaults/preferences/prefs.js modules/tabhunter.jsm
