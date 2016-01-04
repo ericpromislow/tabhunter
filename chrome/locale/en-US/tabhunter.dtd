@@ -27,18 +27,7 @@
 <!ENTITY th.prefs.showMenuItem.label "Show Menu Item">
 
 <!-- text search -->
-<!ENTITY thTextSearchPattern.accessKey "P" >
-<!ENTITY thTextSearchDialog.caption "Search Tabs in More Detail">
-<!ENTITY thTSIgnoreCase.checkbox "Ignore case">
-<!ENTITY thTSSearchCurrentSubsetOnly.checkbox "Search current matched set only">
-<!ENTITY thTS.hideButton "Hide" >
-<!ENTITY thTS.searchButton "Search" >
-<!ENTITY thTS.cancelButton "Cancel" >
-<!ENTITY thTS.URL.treecol "URL" >
-<!ENTITY thTS.title.treecol "Title" >
-<!ENTITY thTS.match.treecol "Match" >
 
-<!ENTITY thSearchType.label "Search Type:">
-<!ENTITY thTSPlainText.menuitem "Plain Text">
-<!ENTITY thTSXPath.menuitem "XPath Expression">
-<!ENTITY thTSRegex.menuitem "Regular Expression">
+<!ENTITY thTextSearchDialog.caption "Search Tabs in More Detail">
+
+
