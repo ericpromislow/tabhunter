@@ -43,3 +43,8 @@ listitem.listitemTabhunter listcell.listcell-iconic image.listcell-icon {
   display: none;  
 }
 */
+
+/* Hide the TestTab as we move into the e10s dual-process world */
+#TextTab {
+    visibility: hidden;
+}

@@ -3,35 +3,26 @@
 
 try {
 
-var globalMessageManager, Cc, Ci;
+var Cc, Ci;
 
 if (typeof(Cc) === "undefined") {
     Cc = Components.classes;
     Ci = Components.interfaces;
 }
 
-if (typeof(globalMessageManager) == "undefined") {
-    function getGlobalMessageManager() {
-        try {
-            return Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
-        } catch(ex) {
-            return false;
-        }
-    }
-    globalMessageManager = getGlobalMessageManager();
-}
-
 var ep_extensions;
 if (typeof(ep_extensions) == "undefined") {
     ep_extensions = {};
+    Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService).logStringMessage("QQQ: **************** creating ep_extensions")
 }
 if (!("tabhunter" in ep_extensions)) {
     ep_extensions.tabhunter = { searchPattern:"" };
+    Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService).logStringMessage("QQQ: **************** creating ep_extensions.tabhunter")
 }
 (function() {
     this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
                       getService(Components.interfaces.nsIWindowMediator));
-    function TabInfo(windowIdx, tabIdx, label, image, location) {
+    this.TabInfo = function(windowIdx, tabIdx, label, image, location) {
         this.windowIdx = windowIdx;
         this.tabIdx = tabIdx;
         this.label = label;
@@ -42,16 +33,16 @@ if (!("tabhunter" in ep_extensions)) {
     
     // OUT ARGS: tabs: unordered array of [TabInfo]
     //           windowInfo: array of [window: ChromeWindow, tabs: array of [DOM tabs]]
-    this.getTabs = function(obj) {
+    this.getTabs = function(callback) {
         try {
-            return this.getTabs_aux(obj);
+	  this.getTabs_singleProcess(callback);
         } catch(ex) {
-            this.dump('tabhunter.js - getTabs - ' + ex);
+            this.dump('tabhunter.js - getTabs - ' + ex + "\n" + ex.stack);
         }
-        return null;
     };
     
-    this.getTabs_aux = function(obj) {
+    this.getTabs_singleProcess = function(callback) {
+        var obj = {};
         var openWindows = this.wmService.getEnumerator("navigator:browser");
         obj.tabs = [];
         obj.windowInfo = [];
@@ -68,32 +59,17 @@ if (!("tabhunter" in ep_extensions)) {
                 window: openWindow,
                 tabs: []
             }
-            
             for (var i = 0; i < tc.length; i++) {
                 var tab = tc[i];
                 currWindowInfo.tabs.push(tab);
                 var label = tab.label;
-                var image = "";
-                if (tab.linkedBrowser.contentDocument.contentType.indexOf("image/") != 0) {
-                    image = tab.getAttribute('image');
-                }
-                obj.tabs.push(new TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location));
+                var image = tab.getAttribute("image") || "";
+                this.dump('tabhunter.js - getTabs_singleProcess: image - <' + image + ">");
+                obj.tabs.push(new this.TabInfo(windowIdx, i, label, image, tab.linkedBrowser.contentWindow.location.href));
             }
         } while (openWindows.hasMoreElements());
+        callback(obj);
     };
-    
-    this.getTabTitleAndURL = function(tab) {
-        var s = tab.label;
-        try {
-            s += " - " + tab.location.href;
-        } catch(ex) {}
-        return s;
-    }
-    
-    this.compareByName = function(tab1, tab2) {
-        return (tab1.label_lc < tab2.label_lc
-                ? -1 : (tab1.label_lc > tab2.label_lc ? 1 : 0));
-    }
     
     this.launchDialog = function(event) {
         // Look for the window first
@@ -237,7 +213,7 @@ if (!("tabhunter" in ep_extensions)) {
             this.prefs.setBoolPref(this.kbLaunchNames.userIsKeyCode, false);
         }
         // wait 5 seconds -- on the mac the status bar icon isn't always present yet.
-	 setTimeout(function(prefs, self, document) {
+         setTimeout(function(prefs, self, document) {
             var showStatusBarIcon = prefs.getBoolPref('showStatusBarIcon');
             var showMenuItem = prefs.getBoolPref('showMenuItem');
             document.getElementById("th-status-image").collapsed = !showStatusBarIcon;
@@ -272,15 +248,15 @@ if (!("tabhunter" in ep_extensions)) {
 }).apply(ep_extensions.tabhunter);
 
 window.addEventListener("load", 
-	function(e) { 
-		ep_extensions.tabhunter.onload(e); },
-	false);
-window.addEventListener("unload",
-        function(e) { 
-                ep_extensions.tabhunter.onunload(e); },
+        function(e) {
+	   window.removeEventListener("load", arguments.callee, false);
+                ep_extensions.tabhunter.onload(e); },
         false);
+
+ window.onunload = ep_extensions.tabhunter.onunload;
 }catch(e) {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);
         consoleService.logStringMessage("tabhunter startup: " + e);
+        consoleService.logStringMessage("th failure stack: " + e.stack);
 }

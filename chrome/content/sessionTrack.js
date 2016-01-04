@@ -4,6 +4,7 @@
 /* :::::::: Constants and Helpers ::::::::::::::: */
 
 var globalMessageManager, Cc, Ci;
+const TAB_REMOVE_DELAY_TIME = 500; // ms
 
 if (typeof(Cc) === "undefined") {
     var Cc = Components.classes;
@@ -23,7 +24,8 @@ if (typeof(globalMessageManager) == "undefined") {
 
 // global notifications observed
 const OBSERVING = [
-  "domwindowopened", "domwindowclosed",
+		   //"domwindowopened",
+  "domwindowclosed",
 ];
 
 function TabhunterWatchSessionService(reactor, func, level) {
@@ -75,6 +77,7 @@ TabhunterWatchSessionService.prototype = {
         var win = openWindows.getNext();
         this.onLoad(win, true);
     } while(openWindows.hasMoreElements());
+    
   },
 
   /**
@@ -84,15 +87,22 @@ TabhunterWatchSessionService.prototype = {
     // for event listeners
     var _this = this;
 
+    this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
     switch (aTopic) {
     case "domwindowopened": // catch new windows
         try {
-            setTimeout(function(aSubject_) {
-                aSubject_.addEventListener("load", function(aEvent) {
-                    aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
-                    _this.onLoad(aEvent.currentTarget, false);
-                }, false);
-            }, 1, aSubject);
+	     setTimeout(function() {
+		  //_this.dump(">> QQQ: domwindowopened in setTimeout");
+		  aSubject.addEventListener("load", function(aEvent) {
+		       try {
+			  //_this.dump(">> QQQ: domwindowopened/load event");
+			  aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
+			  _this.onLoad(aEvent.currentTarget, false);
+		       } catch(ex) {
+			  this_.dump("**************** Error handling domwindowopened/load event: " + ex);
+		       }
+		    }, false);
+	       }, 1);
         } catch(ex) {
             this.dump("observe:domwindowopened: " + ex)
         }
@@ -109,6 +119,7 @@ TabhunterWatchSessionService.prototype = {
    * Implement nsIDOMEventListener for handling various window and tab events
    */
   handleEvent: function thst_handleEvent(aEvent) {
+     this.dump("**** handleEvent " + aEvent.type);
     switch (aEvent.type) {
       case "load":
         this.onTabLoad(aEvent.currentTarget.ownerDocument.defaultView,
@@ -124,7 +135,7 @@ TabhunterWatchSessionService.prototype = {
                         aEvent.originalTarget, false);
         }
         else {
-          this.onTabRemove(aEvent.currentTarget.ownerDocument.defaultView, tabpanel, false);
+	  this.onTabRemove(aEvent.currentTarget.ownerDocument.defaultView, tabpanel, aEvent.originalTarget, false);
         }
         break;
       case "TabMove":
@@ -140,6 +151,7 @@ TabhunterWatchSessionService.prototype = {
    *        Window reference
    */
   onLoad: function thst_onLoad(aWindow, aNoNotification) {
+        this.dump("QQQ > sessionTrack.js: onLoad")
     if (!aWindow) {
         this.dump("!!! thst_onLoad: aWindow is null", this.log_debug);
         return;
@@ -157,6 +169,7 @@ TabhunterWatchSessionService.prototype = {
     var limit = Math.max(tabpanels.childNodes.length,
                          tabContainer.childNodes.length);
     for (var i = 0; i < limit; i++) {
+        //this.dump("QQQ - sessionTrack.js: onTabAdd(" + i + ")");
         this.onTabAdd(aWindow, tabpanels.childNodes[i],
                       tabContainer.childNodes[i], true);
     }
@@ -196,12 +209,13 @@ TabhunterWatchSessionService.prototype = {
         //tabContainer.removeEventListener("TabMove", func, false);
         
         for (var i = 0; i < tabpanels.childNodes.length; i++) {
-          this.onTabRemove(aWindow, tabpanels.childNodes[i], true);
+	   this.onTabRemove(aWindow, tabpanels.childNodes[i], null, true);
         }
     }
   },
 
   onTabAdd: function thst_onTabAdd(aWindow, aPanel, aTab, aNoNotification) {
+     this.dump(">>>>>>>>>>>>>>>> sessionTrack.js:onTabAdd, aNoNotification: " + aNoNotification)
     var self = this;
     var func = function(event) {
         self.handleEvent.call(self, event);
@@ -210,47 +224,57 @@ TabhunterWatchSessionService.prototype = {
         try {
             var mm = aTab.linkedBrowser.messageManager;
             if (mm) {
+                this.dump("-QQQ: loading the linkedBrowser frame scripts...")
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
+                mm.loadFrameScript("chrome://tabhunter/content/frameScripts/docType-has-image.js", true);
+                this.dump("+QQQ: loading the linkedBrowser frame scripts...")
             }
         } catch(ex) {
-            this.dump("Failed to load the frame script browser-window-focus.js: " + ex);
+            this.dump("Failed to load 1 or more frame scripts: " + ex + "\n" + ex.stack);
         }
     } else {
         this.dump("**** Don't add frame scripts for panel " + aPanel.id);
     }
-    if (aPanel) {
-    setTimeout(function(aPanel_, func_) {
-            aPanel_.addEventListener("load", func_, true);
-        }, 1, aPanel, func);
-    if (!aNoNotification) {
-        this.reactorFunc.call(this.reactor);
-    }
-    }
+    aPanel.addEventListener("load", func, true);
+     if (!aNoNotification) {
+	this.dump("!!!!!!!!!!!!!!!! onTabAdd before timeout, after frameScripts are loaded");
+	setTimeout(function() {
+	     this.dump("!!!!!!!!!!!!!!!! onTabAdd in timeout, after frameScripts are loaded");
+	     this.reactorFunc.call(this.reactor);
+	  }.bind(this), 3000)
+     }
   },
 
-  onTabRemove: function thst_onTabRemove(aWindow, aPanel, aNoNotification) {
+  onTabRemove: function thst_onTabRemove(aWindow, aPanel, aTab, aNoNotification) {
     //TODO: cache the event-handler, refer to it here, and delete it.  Based on panel ID?
     // aPanel.removeEventListener("load", func, true);
     var self = this;
     if (!aNoNotification) {
         this.dump("About to do tab-remove before setTimeout\n", this.log_debug);
         try {
-        setTimeout(function(self) {
-                this.dump("About to do tab-remove in setTimeout\n", this.log_debug);
-            try {
-            self.reactorFunc.call(self.reactor);
-            } catch(ex) {
-                this.dump("Error in onTabRemove handler:\n" + ex + "\n");
-            }
-        }, 60, self);
+            var mm = aTab.linkedBrowser.messageManager;
+            if (mm) {
+	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-shutdown", {});
+	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus-shutdown", {});
+	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab-shutdown", {});
+	    }	   
+	    setTimeout(function(self) {
+		 self.dump("About to do tab-remove in setTimeout\n", self.log_debug);
+		 try {
+		    self.reactorFunc.call(self.reactor);
+		 } catch(ex) {
+		    self.dump("Error in onTabRemove handler:\n" + ex + "\n");
+		 }
+	      }, TAB_REMOVE_DELAY_TIME, self);
         } catch(ex2) {
-            this.dump("onTabRemove: Caught exception outside setTimeout" + ex2);
+	   this.dump("onTabRemove: Caught exception outside setTimeout" + ex2);
         }
     }
   },
 
   onTabLoad: function thst_onTabLoad(aWindow, aPanel, aEvent) {
+        this.dump("QQQ > **** sessionTrack.js: >>onTabLoad")
     var self = this;
         try {
     setTimeout(function(self) {

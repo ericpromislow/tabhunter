@@ -5,15 +5,11 @@
   <RDF:Description RDF:about="rdf:#Firefox"
                    em:id="{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
                    em:minVersion="2.0"
-                   em:maxVersion="38.*" />
-  <RDF:Description RDF:about="rdf:#Flock"
-                   em:id="{a463f10c-3994-11da-9945-000d60ca027b}"
-                   em:minVersion="1.1.4"
-                   em:maxVersion="3.*" />
+                   em:maxVersion="45.*" />
   <RDF:Description RDF:about="urn:mozilla:install-manifest"
                    em:id="tabhunter@ericpromislow.com"
                    em:name="Tabhunter"
-                   em:version="1.0.10"
+                   em:version="1.0.16"
                    em:description="Find tabs in multiple windows"
                    em:creator="Eric Promislow"
                    em:homepageURL="http://code.google.com/p/tabhunter/"
@@ -21,6 +17,5 @@
                    em:iconURL="chrome://tabhunter/skin/tabhunter-install.png"
                    em:optionsURL="chrome://tabhunter/content/prefs.xul">
     <em:targetApplication RDF:resource="rdf:#Firefox"/>
-    <em:targetApplication RDF:resource="rdf:#Flock"/>
   </RDF:Description>
 </RDF:RDF>
