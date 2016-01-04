@@ -253,15 +253,6 @@ this.labelFromList = function(idx, lowerCase) {
     return s;
 };
 
-this._rowFromSpecifiedLine = function(lineno) {
-    var row = this.gTSTreeView._rows[lineno];
-    if (!row) {
-        this.gTSTreeView.dump("_rowFromSpecifiedLine: no data at row " + lineno);
-        return null;
-    }
-    return row;
-};
-
 this.updateOnPatternChange = function() {
     this.compilePattern();
     var newTabs = this.allTabs;
@@ -385,7 +376,7 @@ this.showCurrentURL = function() {
         this.currentURLField.value = globalMessageManager ? location : location.href;
         this.currentURLField.removeAttribute('class');
     } catch(ex) {
-        this.gTSTreeView.dump("Error in showCurrentURL: "  + ex + "\n");
+        this.dump("Error in showCurrentURL: "  + ex + "\n");
         this.currentURLField.value = this.strbundle.getString("notApplicableLabel");
         this.currentURLField.setAttribute('class', 'nohits');
     }
@@ -484,11 +475,11 @@ this.doAcceptTabByIdx = function(tabIdx) {
     var windowIdx = tabInfo.windowIdx;
     var windowInfo = this.windowInfo[windowIdx];
     if (Debug) {
-       this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: tabIdx: " + tabIdx
+       this.dump("QQQ: doAcceptTabByIdx: tabIdx: " + tabIdx
 			     + ", windowIdx:" + windowIdx);
-       this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: windowInfo: " + windowInfo);
+       this.dump("QQQ: doAcceptTabByIdx: windowInfo: " + windowInfo);
        if (windowInfo) {
-	  this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: windowInfo: " + Object.keys(windowInfo).join(", "));
+	  this.dump("QQQ: doAcceptTabByIdx: windowInfo: " + Object.keys(windowInfo).join(", "));
        }
     }
     this.finishMoveToTab(windowInfo, tabInfo.tabIdx);

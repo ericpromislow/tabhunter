@@ -5,8 +5,6 @@ var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
 //consoleService.logStringMessage("-Loading search-next-tab.js...");
 
 var handleMessage = function(msgData) {
-    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-    .getService(Components.interfaces.nsIConsoleService);
     try {
         //consoleService.logStringMessage("-doStuff(msgData.data: " + Object.keys(msgData.data).join(" ") + ")");
         doStuff(msgData.data);
@@ -21,15 +19,11 @@ function doStuff(data) {
     try {
         doStuff_aux(data);
     } catch(e) {
-    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-    .getService(Components.interfaces.nsIConsoleService);
         consoleService.logStringMessage("Bad happened in doStuff: " + e);
     }
 }
 
 function doStuff_aux(data) {
-    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-    .getService(Components.interfaces.nsIConsoleService);
     var view = content; // For compatibility with the single-process form
     if (!view) {
         //consoleService.logStringMessage("search-next-tab.js: -search-continuation-error");
@@ -133,8 +127,7 @@ addMessageListener("tabhunter@ericpromislow.com:search-next-tab", handleMessage)
 
 addMessageListener("tabhunter@ericpromislow.com:search-next-tab", handleMessage);
 var handleStopListeningMessage = function(msgData) {
-  var consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
-  consoleService.logStringMessage("RRR: Stop listening for search-next-tab");
+  //consoleService.logStringMessage("RRR: Stop listening for search-next-tab");
   removeMessageListener("tabhunter@ericpromislow.com:search-next-tab", handleMessage);
   removeMessageListener("tabhunter@ericpromislow.com:search-next-tab-shutdown", handleMessage);
 }
