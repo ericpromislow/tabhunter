@@ -168,7 +168,7 @@ this.init = function(getTabsCallback) {
     }
 
     this.reactorFunc.call(this.reactor, function(results) {
-            this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
+	 //this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
             try {
             this.allTabs = results.tabs;
             this.allTabs.sort(this.compareByName);

@@ -233,7 +233,7 @@ TabhunterWatchSessionService.prototype = {
             this.dump("Failed to load 1 or more frame scripts: " + ex + "\n" + ex.stack);
         }
     } else {
-        this.dump("**** Don't add frame scripts for panel " + aPanel.id);
+      // this.dump("**** Don't add frame scripts for panel " + aPanel.id);
     }
     aPanel.addEventListener("load", func, true);
      if (!aNoNotification) {
