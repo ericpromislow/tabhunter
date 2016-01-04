@@ -22,6 +22,8 @@ if (typeof(globalMessageManager) == "undefined") {
 var gTabhunter = {};
 (function() {
 
+   const Debug = false;
+
 this.addAddonBarButtonIfNeeded = function() {
     var addonBar = document.getElementById("addon-bar");
     if (addonBar) {
@@ -105,7 +107,7 @@ this.onLoad = function() {
         // This has to be done before calling getTabs() because 
         // tabhunterSession.init loads the frame-scripts.
 	var reactor, reactorFunc;
-        this.dump("onLoad: globalMessageManager:" + globalMessageManager + ", tabCollector: " + tabCollector);
+        //this.dump("onLoad: globalMessageManager:" + globalMessageManager + ", tabCollector: " + tabCollector);
 	if (globalMessageManager && tabCollector) {
 	   tabCollector.init(globalMessageManager);
 	   this.reactor = tabCollector;
@@ -158,11 +160,9 @@ this.onLoad = function() {
 this.init = function(getTabsCallback) {
     var reactor, reactorFunc;
     if (globalMessageManager && tabCollector) {
-       this.mainHunter.dump("QQQ: we have messages & an async tab collector")
         this.reactor = tabCollector;
         this.reactorFunc = tabCollector.collectTabs;
     } else {
-       this.mainHunter.dump("QQQ: !!!! we don't have messages & an async tab collector")
         this.reactor = this.mainHunter;
         this.reactorFunc = this.mainHunter.getTabs;
     }
@@ -179,7 +179,7 @@ this.init = function(getTabsCallback) {
                 getTabsCallback();
             }
             } catch(e) {
-                this.mainHunter.dump("QQQ: >> mainHunter::init: error: " + e + ", stack:" + e.stack);
+                this.mainHunter.dump("mainHunter::init: error: " + e + ", stack:" + e.stack);
             }                
         }.bind(this));
 };
@@ -235,14 +235,11 @@ this._finishListItem = function(listitem, tab) {
 this.loadList = function() {
     this.clearList();
     this.compilePattern();
-    this.tabhunterSession.dump("QQQ: In loadList: this.allTabs : " + this.allTabs.length);
     for (var tab, i = 0; tab = this.allTabs[i]; i++) {
         var s = this.getTabTitleAndURL(tab);
         if (this.pattern_RE.test(s)) {
             var listitem = this.currentTabList.appendItem(s, i);
             this._finishListItem(listitem, tab);
-        } else {
-            this.tabhunterSession.dump("QQQ: In loadList: no match");
         }
     }
     if (this.currentTabList.getRowCount() > 0) {
@@ -276,7 +273,7 @@ this.updateOnPatternChange = function() {
 };
 
 this.updateOnTabChange = function() {
-    this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
+  //this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
     this.reactorFunc.call(this.reactor, function(results) {
             var newTabs = results.tabs;
             newTabs.sort(this.compareByName);
@@ -388,7 +385,7 @@ this.showCurrentURL = function() {
         this.currentURLField.value = globalMessageManager ? location : location.href;
         this.currentURLField.removeAttribute('class');
     } catch(ex) {
-        this.gTSTreeView.dump("!!!!: QQQ: Error in showCurrentURL: "  + ex + "\n");
+        this.gTSTreeView.dump("Error in showCurrentURL: "  + ex + "\n");
         this.currentURLField.value = this.strbundle.getString("notApplicableLabel");
         this.currentURLField.setAttribute('class', 'nohits');
     }
@@ -485,12 +482,14 @@ this.doAcceptTab = function(maybeCloseOnReturn) {
 this.doAcceptTabByIdx = function(tabIdx) {
     var tabInfo = this.allTabs[tabIdx];
     var windowIdx = tabInfo.windowIdx;
-    this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: tabIdx: " + tabIdx
-                          + ", windowIdx:" + windowIdx);
     var windowInfo = this.windowInfo[windowIdx];
-    this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: windowInfo: " + windowInfo);
-    if (windowInfo) {
-        this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: windowInfo: " + Object.keys(windowInfo).join(", "));
+    if (Debug) {
+       this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: tabIdx: " + tabIdx
+			     + ", windowIdx:" + windowIdx);
+       this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: windowInfo: " + windowInfo);
+       if (windowInfo) {
+	  this.gTSTreeView.dump("QQQ: doAcceptTabByIdx: windowInfo: " + Object.keys(windowInfo).join(", "));
+       }
     }
     this.finishMoveToTab(windowInfo, tabInfo.tabIdx);
 };
@@ -544,7 +543,7 @@ this.showListPopupMenu = function(listPopupMenu) {
             goMenuItem.setAttribute('disabled', 'true');
         }
     } catch(ex) {
-        this.dump(ex);
+        this.dump("showListPopupMenu: error: " + ex);
     }
 };
 
@@ -634,66 +633,6 @@ this.copyTabTitle_URL = function(event) {
         return s;
     });
 };
-
-// TextSearch methods
-
-
-this.TextSearchTreeView = function() {
-    this._rows = [];
-}
-
-this.TextSearchTreeView.prototype = {
-    get rowCount() {
-        return this._rows.length;
-    },
-    
-    getCellText : function(row, column) {
-        //this.dump("rows...");
-        try {
-        //this.dump("getCellText("
-        //                 + row
-        //                 + ", "
-        //                 + column.id
-        //                 + ") => ["
-        //                 + this._rows[row][column.id]
-        //                 + "]\n");
-        return this._rows[row][column.id];
-        } catch(ex) {
-            //this.dump("getCellText: " + ex);
-            return "";
-        }
-    },  
-    setTree: function(treebox){ this.treebox = treebox; },  
-    isContainer: function(row){ return false; },  
-    isSeparator: function(row){ return false; },  
-    isSorted: function(){ return false; },  
-    getLevel: function(row){ return 0; },  
-    getImageSrc: function(row,col){ return null; },  
-    getRowProperties: function(row,props){},  
-    getCellProperties: function(row,col,props){},  
-    getColumnProperties: function(colid,col,props){},
-    
-    dump: function(aMessage) {
-        var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-                                       .getService(Components.interfaces.nsIConsoleService);
-        consoleService.logStringMessage("th/textView/tree: " + aMessage);
-    },
-    
-    _EOL_ : function() {}
-};
-
-this.showMessage = function(label, ex) {
-    var msg = "";
-    if (ex.fileName) {
-        msg += ex.fileName;
-    }
-    if (ex.lineNumber) {
-        msg += "#" + ex.lineNumber;
-    }
-    msg += ": " + ex.message;
-    this.dump(label +": " + msg);
-    this.gTSTreeView.dump(label +": " + msg);
-}
 
     this.getTabTitleAndURL = function(tab) {
         var s = tab.label;
