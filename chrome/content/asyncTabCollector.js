@@ -11,6 +11,8 @@ try {
 var tabCollector = {};
 var globalMessageManager;
 (function() {
+   const Debug = false;
+
    var isConnecting = function(s) {
      // Probably a way to look at the tab and figure out if it's connected
      if (!s || s.indexOf("Connecting") != 0) return false;
@@ -35,7 +37,6 @@ var globalMessageManager;
    
    this.onUnload = function() {
      // Called from selectTabDialog.js:onUnload - do this when the tabhunter window is closed.
-     this.dump("!!!!!!!!!!!!!!!! asyncTabCollector.js:onUnload - removing message listeners!!!!!!!!!!!!!!!!");
      globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg);
      globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded);
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
@@ -51,11 +52,11 @@ var globalMessageManager;
 		   tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus-shutdown", {});
 		   tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab-shutdown", {});
 		} catch(ex2) {
-		   self.dump("QQQ !!! Failed to shutdown docType FS: " + ex2);
+		   self.dump("Failed to shutdown docType FS: " + ex2);
 		}
 	     });
 	} catch(ex3) {
-	   self.dump("QQQ !!! Failed to shutdown docType FS: " + ex3);
+	   self.dump("Failed to shutdown docType FS: " + ex3);
 	}
      } while (openWindows.hasMoreElements());
    };
@@ -75,8 +76,10 @@ var globalMessageManager;
        if (!this.tabGetters.every(function(tabGetter) tabGetter.finishedGettingTabs)) {
 	 return false;
        }
-       this.dump("**** all tabs are done at " + this.timestamp + ", loop over " +
-		 this.tabGetters.length + " tabGetters");
+       if (Debug) {
+	 this.dump("**** all tabs are done at " + this.timestamp + ", loop over " +
+		   this.tabGetters.length + " tabGetters");
+       }
        clearTimeout(this.callbackTimeoutId);
        this.dualProcessSetupFinalCallback();
        return true;
@@ -88,20 +91,19 @@ var globalMessageManager;
        let result = { tabs:[], windowInfo:[] }
        this.tabGetters.forEach(function(tabGetter) {
 	    try {
-	       this.dump("QQQ: concat in " + tabGetter.collector.tabs.length + " tabs");
 	       result.tabs = result.tabs.concat(tabGetter.collector.tabs);
-	       this.dump("QQQ: result.windowInfo.push: " + tabGetter.collector.currWindowInfo);
 	       result.windowInfo.push(tabGetter.collector.currWindowInfo);
 	    } catch(e2) {
 	       this.dump("**** this.tabGetters.forEach: bad: " + e2);
 	    }
 	 }.bind(this));
-       this.dump("QQQ: result:tabs: " + result.tabs.length
-		 + ", windowInfo: " + result.windowInfo.length);
-       result.tabs.forEach(function(tab) {
-	    this.dump("QQQ: window/tab " + tab.windowIdx + "-" + tab.tabIdx + "/" + tab.label + " - " + tab.location);
-	 }.bind(this));
-       this.dump("QQQ: getTabs_dualProcessContinuationFinish: this.tabGetterCallback = " + typeof(this.tabGetterCallback));
+       if (Debug) {
+	  this.dump("QQQ: result:tabs: " + result.tabs.length
+		    + ", windowInfo: " + result.windowInfo.length);
+	  result.tabs.forEach(function(tab) {
+	       this.dump("QQQ: window/tab " + tab.windowIdx + "-" + tab.tabIdx + "/" + tab.label + " - " + tab.location);
+	    }.bind(this));
+       }
        this.tabGetterCallback(result);
      };
 
@@ -113,31 +115,32 @@ var globalMessageManager;
 	 var windowTabKey = windowIdx + "-" + tabIdx;
 	 
 	 if (data.timestamp < this.timestamp) {
-	   this.dump("QQQ: got a message from an older request " + ((this.timestamp - data.timestamp) * 1000) + " msec ago");
+	   this.dump("got a message from an older request " + ((this.timestamp - data.timestamp) * 1000) + " msec ago");
 	   return;
 	 }
 	 if (this.processedTabs[windowTabKey]) {
-	   this.dump("QQQ: we've already processed windowTabKey " + windowTabKey);
+	   //this.dump("QQQ: we've already processed windowTabKey " + windowTabKey);
 	   this.dualProcessContinuationFinish();
 	   return;
 	 }
 	 var hasImage = data.hasImage;
 	 var location = data.location;
-	 this.dump("QQQ: getTabs_dualProcessContinuation: tabIdx: " + tabIdx +
-		   ", windowIdx: " + windowIdx +
-		   ", hasImage: " + hasImage +
-		   ", location: " + location);
+	 if (Debug) {
+	    this.dump("QQQ: getTabs_dualProcessContinuation: tabIdx: " + tabIdx +
+		      ", windowIdx: " + windowIdx +
+		      ", hasImage: " + hasImage +
+		      ", location: " + location);
+	 }
                   
 	 var tabGetter = this.tabGetters[windowIdx];
 	 if (!tabGetter) {
-	    this.dump("!!!! Can't get a tabGetter for window " + windowIdx + " (tabIdx " + tabIdx + "), current length: " + this.tabGetters.length);
+	    this.dump("Internal Error: Can't get a tabGetter for window " + windowIdx + " (tabIdx " + tabIdx + "), current length: " + this.tabGetters.length);
 	    return;
 	 }
-	 //RRR this.dump("QQQ: windowIdx: " + windowIdx + ", tabGetter: " + tabGetter);
 	 var tab = tabGetter.tabs[tabIdx];
 	 var label = tab.label;
 	 if (isConnecting(label) && location == "about:blank" && tabGetter.connectAttempt < MAX_NUM_TAB_TRIES) {
-           this.dump("QQQ: Go reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
+	    //this.dump("QQQ: Go reload window -- about:blank tabGetter.connectAttempt: " + tabGetter.connectAttempt);
            tabGetter.connectAttempt += 1;
            setTimeout(function(timestamp) {
                 tabGetter.setImageSetting(tabIdx, timestamp);
@@ -160,8 +163,10 @@ var globalMessageManager;
      };
 
      this.process_docType_has_image_continuation_msg = function(msg) {
-       tabCollector.dump("**** >>> Handling a docType-has-image-continuation notific'n");
-       tabCollector.dump("**** tabCollector.tabGetters: " + (tabCollector.tabGetters.length + " tabGetters")); 
+       if (Debug) {
+	 tabCollector.dump("**** >>> Handling a docType-has-image-continuation notific'n");
+	 tabCollector.dump("**** tabCollector.tabGetters: " + (tabCollector.tabGetters.length + " tabGetters"));
+       }
        tabCollector.getTabs_dualProcessContinuation.call(tabCollector, msg);
      };
          
@@ -181,8 +186,10 @@ var globalMessageManager;
        var self = this;
        var attempt = 0;
        var checkForConnectedTabFunc = function() {
+       if (Debug) {
 	 self.dump("**** go do docType-has-image for windowIdx " +
 		   self.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
+       }
 	 if (isConnecting(tab.label) && attempt < MAX_NUM_TAB_TRIES) {
 	    attempt += 1;
 	    setTimeout(checkForConnectedTabFunc, TAB_LOADING_WAIT_MS);
@@ -221,13 +228,13 @@ var globalMessageManager;
 	     continue;
 	  }
 	  windowIdx += 1;
-	  this.dump("**** setup TabGetter(" + windowIdx + ")");
+	  //this.dump("**** setup TabGetter(" + windowIdx + ")");
 	  this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
 	  for (let i = 0; i < tc.length; i++) {
 	     this.tabGetters[windowIdx].setImageSetting(i, this.timestamp);
 	  }
        } while (openWindows.hasMoreElements());
-       let timeoutTabFactor = 500;
+       let timeoutTabFactor = 10000;  // Yes, allow 10 seconds per tab
        let timeoutWindowFactor = 2000;
        let totalTimeout = timeoutTabFactor * numTabs + timeoutWindowFactor * windowIdx;
        this.callbackTimeoutId = setTimeout(function() {

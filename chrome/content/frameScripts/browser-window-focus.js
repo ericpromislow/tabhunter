@@ -6,9 +6,9 @@ var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
 
 
 var handleMessage = function(message) {
-    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-    .getService(Components.interfaces.nsIConsoleService);
-    consoleService.logStringMessage("Got the message to load");
+  //    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+  //    .getService(Components.interfaces.nsIConsoleService);
+  // consoleService.logStringMessage("Got the message to load");
     try {
         content.focus();
     } catch(e) {
@@ -18,8 +18,7 @@ var handleMessage = function(message) {
 
 addMessageListener("tabhunter@ericpromislow.com:content-focus", handleMessage);
 var handleStopListeningMessage = function(msgData) {
-  var consoleService = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
-  consoleService.logStringMessage("RRR: Stop listening for content-focus");
+  // consoleService.logStringMessage("RRR: Stop listening for content-focus");
   removeMessageListener("tabhunter@ericpromislow.com:content-focus", handleMessage);
   removeMessageListener("tabhunter@ericpromislow.com:content-focus-shutdown", handleMessage);
 }
