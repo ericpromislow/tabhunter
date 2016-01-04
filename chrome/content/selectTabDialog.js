@@ -23,6 +23,8 @@ var gTabhunter = {};
 (function() {
 
    const Debug = false;
+   const NULL_CURRENT_TAB_LIST_LIMIT = 10;
+   const NULL_CURRENT_TAB_LIST_TIMEOUT = 200;
 
 this.addAddonBarButtonIfNeeded = function() {
     var addonBar = document.getElementById("addon-bar");
@@ -265,28 +267,42 @@ this.updateOnPatternChange = function() {
 
 this.updateOnTabChange = function() {
   //this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
+  var self = this;
     this.reactorFunc.call(this.reactor, function(results) {
             var newTabs = results.tabs;
-            newTabs.sort(this.compareByName);
+            newTabs.sort(self.compareByName);
             try {
-                this._updateList(newTabs);
+                self._updateList(newTabs);
             } catch(ex) {
-                this.tabhunterSession.dump("updateOnTabChange exception: " + ex);
+                self.tabhunterSession.dump("updateOnTabChange exception: " + ex + ", " + ex.stack);
             }
-            this.allTabs = newTabs;
-            this.windowInfo = results.windowInfo;
+            self.allTabs = newTabs;
+            self.windowInfo = results.windowInfo;
             // And either update the text-search tab, or invalidate it
-        }.bind(this));
+        });
 };
 
-this._updateList = function(newTabs) {
+ this._updateList = function(newTabs, count) {
     if (this.allTabs == null) {
         // we're shutting down
         return;
     }
-    if (!this.currentTabList.selectedItem) {
-      this.dump("gTabhunter._updateList: this.currentTabList.selectedItem is null");
-      return;
+    if (!this.currentTabList.getRowCount) {
+       if (typeof(count) == "undefined") {
+	  count = 0;
+	  this.dump("this.currentTabList.getRowCount not a func. id: " +
+		    this.currentTabList.id + ",node name:"
+		    + this.currentTabList.nodeName);
+       }
+       if (count < NULL_CURRENT_TAB_LIST_LIMIT) {
+	 if (count > 0) {
+	   this.dump("this.currentTabList.getRowCount still not a func... retry");
+	 }
+	 setTimeout(this._updateList.bind(this), NULL_CURRENT_TAB_LIST_TIMEOUT, newTabs, count + 1);
+       } else {
+	  this.dump("this.currentTabList.getRowCount still not a func... giving up");
+       }
+       return;
     }
     var newLen = newTabs.length;
     var oldLen = this.currentTabList.getRowCount();
@@ -376,7 +392,9 @@ this._showNumMatches = function(newTabs) {
 this.showCurrentURL = function() {
     try {
         if (!this.currentTabList.selectedItem) {
-	    this.dump("gTabhunter.showCurrentURL: this.currentTabList.selectedItem is null");
+	    if (Debug) {
+	        this.dump("gTabhunter.showCurrentURL: this.currentTabList.selectedItem is null");
+	    }
   	    return;
         }
         var tabIdx = this.currentTabList.selectedItem.getAttribute('value');
