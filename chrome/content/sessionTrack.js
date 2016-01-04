@@ -87,7 +87,7 @@ TabhunterWatchSessionService.prototype = {
     // for event listeners
     var _this = this;
 
-    this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
+    //this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
     switch (aTopic) {
     case "domwindowopened": // catch new windows
         try {
@@ -99,7 +99,7 @@ TabhunterWatchSessionService.prototype = {
 			  aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
 			  _this.onLoad(aEvent.currentTarget, false);
 		       } catch(ex) {
-			  this_.dump("**************** Error handling domwindowopened/load event: " + ex);
+			  this_.dump("Error handling domwindowopened/load event: " + ex);
 		       }
 		    }, false);
 	       }, 1);
@@ -119,7 +119,7 @@ TabhunterWatchSessionService.prototype = {
    * Implement nsIDOMEventListener for handling various window and tab events
    */
   handleEvent: function thst_handleEvent(aEvent) {
-     this.dump("**** handleEvent " + aEvent.type);
+     //this.dump("**** handleEvent " + aEvent.type);
     switch (aEvent.type) {
       case "load":
         this.onTabLoad(aEvent.currentTarget.ownerDocument.defaultView,
@@ -151,7 +151,6 @@ TabhunterWatchSessionService.prototype = {
    *        Window reference
    */
   onLoad: function thst_onLoad(aWindow, aNoNotification) {
-        this.dump("QQQ > sessionTrack.js: onLoad")
     if (!aWindow) {
         this.dump("!!! thst_onLoad: aWindow is null", this.log_debug);
         return;
@@ -191,7 +190,7 @@ TabhunterWatchSessionService.prototype = {
 
   onClose: function thst_onClose(aWindow) {
     if (aWindow.browserDOMWindow === null) {
-      this.dump("closing a non-browser-dom window, ignoring the event");
+      //this.dump("closing a non-browser-dom window, ignoring the event");
       return;
     }
     this.reactorFunc.call(this.reactor);
@@ -215,7 +214,7 @@ TabhunterWatchSessionService.prototype = {
   },
 
   onTabAdd: function thst_onTabAdd(aWindow, aPanel, aTab, aNoNotification) {
-     this.dump(">>>>>>>>>>>>>>>> sessionTrack.js:onTabAdd, aNoNotification: " + aNoNotification)
+     // this.dump(">>>>>>>>>>>>>>>> sessionTrack.js:onTabAdd, aNoNotification: " + aNoNotification)
     var self = this;
     var func = function(event) {
         self.handleEvent.call(self, event);
@@ -224,11 +223,11 @@ TabhunterWatchSessionService.prototype = {
         try {
             var mm = aTab.linkedBrowser.messageManager;
             if (mm) {
-                this.dump("-QQQ: loading the linkedBrowser frame scripts...")
+	       //this.dump("-QQQ: loading the linkedBrowser frame scripts...")
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/docType-has-image.js", true);
-                this.dump("+QQQ: loading the linkedBrowser frame scripts...")
+                //this.dump("+QQQ: loading the linkedBrowser frame scripts...")
             }
         } catch(ex) {
             this.dump("Failed to load 1 or more frame scripts: " + ex + "\n" + ex.stack);
@@ -238,9 +237,7 @@ TabhunterWatchSessionService.prototype = {
     }
     aPanel.addEventListener("load", func, true);
      if (!aNoNotification) {
-	this.dump("!!!!!!!!!!!!!!!! onTabAdd before timeout, after frameScripts are loaded");
 	setTimeout(function() {
-	     this.dump("!!!!!!!!!!!!!!!! onTabAdd in timeout, after frameScripts are loaded");
 	     this.reactorFunc.call(this.reactor);
 	  }.bind(this), 3000)
      }
@@ -251,7 +248,7 @@ TabhunterWatchSessionService.prototype = {
     // aPanel.removeEventListener("load", func, true);
     var self = this;
     if (!aNoNotification) {
-        this.dump("About to do tab-remove before setTimeout\n", this.log_debug);
+       //this.dump("About to do tab-remove before setTimeout\n", this.log_debug);
         try {
             var mm = aTab.linkedBrowser.messageManager;
             if (mm) {
@@ -260,7 +257,7 @@ TabhunterWatchSessionService.prototype = {
 	       mm.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab-shutdown", {});
 	    }	   
 	    setTimeout(function(self) {
-		 self.dump("About to do tab-remove in setTimeout\n", self.log_debug);
+		 //self.dump("About to do tab-remove in setTimeout\n", self.log_debug);
 		 try {
 		    self.reactorFunc.call(self.reactor);
 		 } catch(ex) {
@@ -274,7 +271,7 @@ TabhunterWatchSessionService.prototype = {
   },
 
   onTabLoad: function thst_onTabLoad(aWindow, aPanel, aEvent) {
-        this.dump("QQQ > **** sessionTrack.js: >>onTabLoad")
+     // this.dump("QQQ > **** sessionTrack.js: >>onTabLoad")
     var self = this;
         try {
     setTimeout(function(self) {
