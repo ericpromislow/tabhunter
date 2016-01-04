@@ -284,6 +284,10 @@ this._updateList = function(newTabs) {
         // we're shutting down
         return;
     }
+    if (!this.currentTabList.selectedItem) {
+      this.dump("gTabhunter._updateList: this.currentTabList.selectedItem is null");
+      return;
+    }
     var newLen = newTabs.length;
     var oldLen = this.currentTabList.getRowCount();
     var i = 0, j = 0;
@@ -371,6 +375,10 @@ this._showNumMatches = function(newTabs) {
 
 this.showCurrentURL = function() {
     try {
+        if (!this.currentTabList.selectedItem) {
+	    this.dump("gTabhunter.showCurrentURL: this.currentTabList.selectedItem is null");
+  	    return;
+        }
         var tabIdx = this.currentTabList.selectedItem.getAttribute('value');
         var location = this.allTabs[tabIdx].location;
         this.currentURLField.value = globalMessageManager ? location : location.href;
