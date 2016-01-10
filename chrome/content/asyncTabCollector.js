@@ -45,7 +45,6 @@ var globalMessageManager;
    
    this.onUnload = function() {
      // Called from selectTabDialog.js:onUnload - do this when the tabhunter window is closed.
-     this.dump("QQQQ: Removing framescript message-listeners");
      globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
      globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded_bound);
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].

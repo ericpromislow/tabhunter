@@ -81,11 +81,7 @@ TabhunterWatchSessionService.prototype = {
   },
 
   onLoadWrapper: function(aEvent) {
-     this.dump("QQQ: Yobs -- got an onLoadWrapper thing on " + aEvent.type);
-     var currentTarget = aEvent.currentTarget;
-     this.dump("QQQ: currentTarget: nodeName: " + currentTarget.nodeName +
-	       ", id: " + currentTarget.id);
-     return this.onLoad(currentTarget, false);
+     return this.onLoad(aEvent.currentTarget, false);
    },
 
   /**
@@ -95,7 +91,7 @@ TabhunterWatchSessionService.prototype = {
     // for event listeners
     var self = this;
 
-    this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
+    //this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
     switch (aTopic) {
     case "domwindowopened": // catch new windows
         self.onLoad(aSubject, false);
@@ -104,24 +100,6 @@ TabhunterWatchSessionService.prototype = {
         } catch(ex) {
             this.dump("observe:domwindowopened: " + ex)
         }
-	/*
-	   aSubject.addEventListener("load", this.onLoadWrapper_bound, false);
-	     setTimeout(function() {
-		  //self.dump(">> QQQ: domwindowopened in setTimeout");
-		  aSubject.addEventListener("load", function(aEvent) {
-		       try {
-			  //self.dump(">> QQQ: domwindowopened/load event");
-			  aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
-			  self.onLoad(aEvent.currentTarget, false);
-		       } catch(ex) {
-			  this_.dump("Error handling domwindowopened/load event: " + ex);
-		       }
-		    }, false);
-	       }, 1);
-        } catch(ex) {
-            this.dump("observe:domwindowopened: " + ex)
-        }
-	*/
       break;
     case "domwindowclosed": // catch closed windows
       aSubject.removeEventListener("load", this.onLoadWrapper_bound, false);
@@ -136,7 +114,7 @@ TabhunterWatchSessionService.prototype = {
    * Implement nsIDOMEventListener for handling various window and tab events
    */
   handleEvent: function thst_handleEvent(aEvent) {
-     this.dump("QQQ: **** handleEvent " + aEvent.type);
+     //this.dump("**** handleEvent " + aEvent.type);
     switch (aEvent.type) {
       case "load":
         this.onTabLoad(aEvent.currentTarget.ownerDocument.defaultView,
