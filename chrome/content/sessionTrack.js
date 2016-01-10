@@ -56,6 +56,17 @@ TabhunterWatchSessionService.prototype = {
         }
     },
 
+  forAllWindows: function(cb) {
+    // watch the current windows
+    var  wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
+                      getService(Components.interfaces.nsIWindowMediator));
+    
+    var openWindows = wmService.getEnumerator("navigator:browser");
+    while(openWindows.hasMoreElements()) {
+        cb(openWindows.getNext());
+    }
+   },
+
   /**
    * Initialize the component
    */
@@ -67,21 +78,29 @@ TabhunterWatchSessionService.prototype = {
     OBSERVING.forEach(function(aTopic) {
       observerService.addObserver(this, aTopic, false);
     }, this);
-    // watch the current windows
-    var  wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
-                      getService(Components.interfaces.nsIWindowMediator));
-    
-    var openWindows = wmService.getEnumerator("navigator:browser");
-    do {
-        var win = openWindows.getNext();
-        this.onLoad(win, true);
-    } while(openWindows.hasMoreElements());
+    var self = this;
+    this.forAllWindows(function(aWindow) {
+	 self.onLoad(aWindow, true);
+      });
   
     this.onLoadWrapper_bound = this.onLoadWrapper.bind(this);  
   },
 
   onLoadWrapper: function(aEvent) {
      return this.onLoad(aEvent.currentTarget, false);
+   },
+
+  onUnload: function() {
+    var observerService = Cc["@mozilla.org/observer-service;1"].
+                          getService(Ci.nsIObserverService);
+
+    OBSERVING.forEach(function(aTopic) {
+      observerService.removeObserver(this, aTopic, false);
+    }, this);
+    var self = this;
+    this.forAllWindows(function(aWindow) {
+	 self.onClose(aWindow, false);
+      });
    },
 
   /**
@@ -103,7 +122,7 @@ TabhunterWatchSessionService.prototype = {
       break;
     case "domwindowclosed": // catch closed windows
       aSubject.removeEventListener("load", this.onLoadWrapper_bound, false);
-      this.onClose(aSubject);
+      this.onClose(aSubject, true);
       break;
     }
   },
@@ -183,12 +202,17 @@ TabhunterWatchSessionService.prototype = {
     }
   },
 
-  onClose: function thst_onClose(aWindow) {
-    if (aWindow.browserDOMWindow === null) {
-      //this.dump("closing a non-browser-dom window, ignoring the event");
-      return;
-    }
-    this.reactorFunc.call(this.reactor);
+  onClose: function thst_onClose(aWindow, updateTabs) {
+     if (typeof(updateTabs) == "undefined") {
+       updateTabs = true;
+     }
+     if (aWindow.browserDOMWindow === null) {
+       //this.dump("closing a non-browser-dom window, ignoring the event");
+       return;
+     }
+     if (updateTabs) {
+       this.reactorFunc.call(this.reactor);
+     }
     //XXX: Figure out why this doesn't work.
     if (!aWindow || typeof(aWindow.getBrowser) != 'function') return;
     var tabbrowser = aWindow.getBrowser();

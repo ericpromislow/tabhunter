@@ -474,9 +474,12 @@ this.onDoubleClick = function() {
 };
 
 this.onUnload = function() {
-  if (tabCollector) {
-    tabCollector.onUnload();
-  }
+  try {
+    if (tabCollector) {
+      tabCollector.onUnload();
+    }
+  
+    this.tabhunterSession.onUnload();
     this.mainHunter.searchPattern = this.patternField.value;
     ['screenX', 'screenY', 'innerHeight', 'innerWidth'].
     forEach(function(prop) {
@@ -484,6 +487,9 @@ this.onUnload = function() {
       }.bind(this));
     this.gTSTreeView = null;
     this._clearInfo();
+  }catch(ex) {
+    this.dump("Error in selectTabDialog.js:onUnload: " + ex + "::" + ex.stack);
+  }    
 };
 
 this.doAcceptTab = function(maybeCloseOnReturn) {
