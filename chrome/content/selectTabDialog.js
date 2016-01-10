@@ -9,14 +9,13 @@ if (typeof(Cc) === "undefined") {
 }
 
 if (typeof(globalMessageManager) == "undefined") {
-    function getGlobalMessageManager() {
+    globalMessageManager = (function () {
         try {
             return Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
         } catch(ex) {
             return null;
         }
-    }
-    globalMessageManager = getGlobalMessageManager();
+    })();
 }
 
 var gTabhunter = {};

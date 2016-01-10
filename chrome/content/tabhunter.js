@@ -16,7 +16,7 @@ if (typeof(ep_extensions) == "undefined") {
 }
 if (!("tabhunter" in ep_extensions)) {
     ep_extensions.tabhunter = { searchPattern:"" };
-}
+
 (function() {
     this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
                       getService(Components.interfaces.nsIWindowMediator));
@@ -221,7 +221,9 @@ if (!("tabhunter" in ep_extensions)) {
     };
 
     this.onunload = function() {
+      if (this.keypressWrapper) {
         document.removeEventListener('keypress', this.keypressWrapper, false);
+      }
     };
 
     this.doCommand = function(event) {
@@ -244,7 +246,9 @@ if (!("tabhunter" in ep_extensions)) {
     };
     
 }).apply(ep_extensions.tabhunter);
-
+ }
+ ep_extensions.tabhunter.onload();
+ /*
 window.addEventListener("load", 
         function(e) {
 	   window.removeEventListener("load", arguments.callee, false);
@@ -252,6 +256,7 @@ window.addEventListener("load",
         false);
 
  window.onunload = ep_extensions.tabhunter.onunload;
+ */
 }catch(e) {
         var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
                                        .getService(Components.interfaces.nsIConsoleService);

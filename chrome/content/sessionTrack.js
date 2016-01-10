@@ -12,20 +12,19 @@ if (typeof(Cc) === "undefined") {
 }
 
 if (typeof(globalMessageManager) == "undefined") {
-    function getGlobalMessageManager() {
+   globalMessageManager = (function() {
         try {
             return Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
         } catch(ex) {
             return false;
         }
-    }
-    globalMessageManager = getGlobalMessageManager();
+     })();
 }
 
 // global notifications observed
 const OBSERVING = [
-		   //"domwindowopened",
-  "domwindowclosed",
+		   "domwindowopened",
+		   "domwindowclosed",
 ];
 
 function TabhunterWatchSessionService(reactor, func, level) {
@@ -77,27 +76,43 @@ TabhunterWatchSessionService.prototype = {
         var win = openWindows.getNext();
         this.onLoad(win, true);
     } while(openWindows.hasMoreElements());
-    
+  
+    this.onLoadWrapper_bound = this.onLoadWrapper.bind(this);  
   },
+
+  onLoadWrapper: function(aEvent) {
+     this.dump("QQQ: Yobs -- got an onLoadWrapper thing on " + aEvent.type);
+     var currentTarget = aEvent.currentTarget;
+     this.dump("QQQ: currentTarget: nodeName: " + currentTarget.nodeName +
+	       ", id: " + currentTarget.id);
+     return this.onLoad(currentTarget, false);
+   },
 
   /**
    * Handle notifications
    */
   observe: function thst_observe(aSubject, aTopic, aData) {
     // for event listeners
-    var _this = this;
+    var self = this;
 
-    //this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
+    this.dump(">> QQQ: sessionTrack observed topic " + aTopic + ", subject: " + aSubject + ", data: " + aData);
     switch (aTopic) {
     case "domwindowopened": // catch new windows
+        self.onLoad(aSubject, false);
         try {
+	   aSubject.addEventListener("load", self.onLoadWrapper_bound, false);
+        } catch(ex) {
+            this.dump("observe:domwindowopened: " + ex)
+        }
+	/*
+	   aSubject.addEventListener("load", this.onLoadWrapper_bound, false);
 	     setTimeout(function() {
-		  //_this.dump(">> QQQ: domwindowopened in setTimeout");
+		  //self.dump(">> QQQ: domwindowopened in setTimeout");
 		  aSubject.addEventListener("load", function(aEvent) {
 		       try {
-			  //_this.dump(">> QQQ: domwindowopened/load event");
+			  //self.dump(">> QQQ: domwindowopened/load event");
 			  aEvent.currentTarget.removeEventListener("load", arguments.callee, false);
-			  _this.onLoad(aEvent.currentTarget, false);
+			  self.onLoad(aEvent.currentTarget, false);
 		       } catch(ex) {
 			  this_.dump("Error handling domwindowopened/load event: " + ex);
 		       }
@@ -106,8 +121,10 @@ TabhunterWatchSessionService.prototype = {
         } catch(ex) {
             this.dump("observe:domwindowopened: " + ex)
         }
+	*/
       break;
     case "domwindowclosed": // catch closed windows
+      aSubject.removeEventListener("load", this.onLoadWrapper_bound, false);
       this.onClose(aSubject);
       break;
     }
@@ -119,7 +136,7 @@ TabhunterWatchSessionService.prototype = {
    * Implement nsIDOMEventListener for handling various window and tab events
    */
   handleEvent: function thst_handleEvent(aEvent) {
-     //this.dump("**** handleEvent " + aEvent.type);
+     this.dump("QQQ: **** handleEvent " + aEvent.type);
     switch (aEvent.type) {
       case "load":
         this.onTabLoad(aEvent.currentTarget.ownerDocument.defaultView,

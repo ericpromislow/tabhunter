@@ -19,14 +19,20 @@ var globalMessageManager;
      return s.match(/Connecting\s*(?:…|\.\.\.)/) || s == "New Tab";
    };
 
+   this.dump = function(aMessage) {
+       var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+       .getService(Components.interfaces.nsIConsoleService);
+       consoleService.logStringMessage("TH/ATC: " + aMessage);
+   };
+
    this.init = function(_globalMessageManager) {
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
 		       getService(Components.interfaces.nsIWindowMediator));
      if (typeof(globalMessageManager) == "undefined") {
        globalMessageManager = _globalMessageManager;
      }
-     globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg);
-     globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded);
+     globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
+     globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded_bound);
    };
 
    this.process_DOMContentLoaded = function() {
@@ -35,11 +41,13 @@ var globalMessageManager;
      }
 	gTabhunter.updateOnTabChange();
    };
+   this.process_DOMContentLoaded_bound = this.process_DOMContentLoaded.bind(this);
    
    this.onUnload = function() {
      // Called from selectTabDialog.js:onUnload - do this when the tabhunter window is closed.
-     globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg);
-     globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded);
+     this.dump("QQQQ: Removing framescript message-listeners");
+     globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
+     globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded_bound);
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
 		       getService(Components.interfaces.nsIWindowMediator));
      var openWindows = this.wmService.getEnumerator("navigator:browser");
@@ -172,6 +180,7 @@ var globalMessageManager;
        }
        tabCollector.getTabs_dualProcessContinuation.call(tabCollector, msg);
      };
+     this.process_docType_has_image_continuation_msg_bound = this.process_docType_has_image_continuation_msg.bind(this)
          
      this.TabGetter = function(windowIdx, openWindow, tabs) {
        this.windowIdx = windowIdx;
@@ -186,21 +195,11 @@ var globalMessageManager;
      };
      this.TabGetter.prototype.setImageSetting = function(tabIdx, timestamp) {
        var tab = this.tabs[tabIdx];
-       var self = this;
-       var attempt = 0;
-       var checkForConnectedTabFunc = function() {
        if (Debug) {
-	 self.dump("**** go do docType-has-image for windowIdx " +
-		   self.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
+	 this.dump("**** go do docType-has-image for windowIdx " +
+		   this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
        }
-	 if (isConnecting(tab.label) && attempt < MAX_NUM_TAB_TRIES) {
-	    attempt += 1;
-	    setTimeout(checkForConnectedTabFunc, TAB_LOADING_WAIT_MS);
-	 } else {
-	   tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: self.windowIdx, timestamp:timestamp });
-	 }
-       }
-       checkForConnectedTabFunc();
+       tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image", { tabIdx: tabIdx, windowIdx: this.windowIdx, timestamp:timestamp });
      };
 
      this.TabGetter.prototype.dump = function(aMessage) {
@@ -245,13 +244,6 @@ var globalMessageManager;
 	    this.dualProcessSetupFinalCallback();
 	 }.bind(this), totalTimeout);
 
-     };
-
-     
-     this.dump = function(aMessage) {
-       var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-       .getService(Components.interfaces.nsIConsoleService);
-       consoleService.logStringMessage("TH/ATC: " + aMessage);
      };
 
    }).apply(tabCollector);
