@@ -72,6 +72,7 @@ TabhunterWatchSessionService.prototype = {
    */
   init: function thst_init() {
 
+    this.eventHandlerWrapper_bound = this.eventHandlerWrapper.bind(this);
     var observerService = Cc["@mozilla.org/observer-service;1"].
                           getService(Ci.nsIObserverService);
 
@@ -83,7 +84,7 @@ TabhunterWatchSessionService.prototype = {
 	 self.onLoad(aWindow, true);
       });
   
-    this.onLoadWrapper_bound = this.onLoadWrapper.bind(this);  
+    this.onLoadWrapper_bound = this.onLoadWrapper.bind(this);
   },
 
   onLoadWrapper: function(aEvent) {
@@ -159,6 +160,10 @@ TabhunterWatchSessionService.prototype = {
     }
   },
 
+  eventHandlerWrapper: function(aEvent) {
+     this.handleEvent(aEvent);
+   },
+
   /**
    * Set up event listeners for this window's tabs
    * @param aWindow
@@ -188,14 +193,11 @@ TabhunterWatchSessionService.prototype = {
     }
     // notification of tab add/remove/selection
     var self = this;
-    var func = function(event) {
-        self.handleEvent.call(self, event);
-    }
-    setTimeout(function(tabContainer_, func_) {
-            tabContainer_.addEventListener("TabOpen", func_, false);
-            tabContainer_.addEventListener("TabClose", func_, false);
-            tabContainer_.addEventListener("TabMove", func_, false);
-        }, 1, tabContainer, func);
+    setTimeout(function() {
+            tabContainer.addEventListener("TabOpen", self.eventHandlerWrapper_bound, false);
+            tabContainer.addEventListener("TabClose", self.eventHandlerWrapper_bound, false);
+            tabContainer.addEventListener("TabMove", self.eventHandlerWrapper_bound, false);
+        }, 1);
     if (!aNoNotification) {
         this.reactorFunc.call(this.reactor);
     } else {
@@ -221,10 +223,9 @@ TabhunterWatchSessionService.prototype = {
         var tabContainer = tabbrowser.tabContainer;
         var tabpanels = tabbrowser.mPanelContainer;
     
-        //XXX Define a method we can remove 
-        //tabContainer.removeEventListener("TabOpen", func, false);
-        //tabContainer.removeEventListener("TabClose", func, false);
-        //tabContainer.removeEventListener("TabMove", func, false);
+        tabContainer.removeEventListener("TabOpen", this.eventHandlerWrapper_bound, false);
+        tabContainer.removeEventListener("TabClose", this.eventHandlerWrapper_bound, false);
+        tabContainer.removeEventListener("TabMove", this.eventHandlerWrapper_bound, false);
         
         for (var i = 0; i < tabpanels.childNodes.length; i++) {
 	   this.onTabRemove(aWindow, tabpanels.childNodes[i], null, true);
@@ -234,10 +235,10 @@ TabhunterWatchSessionService.prototype = {
 
   onTabAdd: function thst_onTabAdd(aWindow, aPanel, aTab, aNoNotification) {
      // this.dump(">>>>>>>>>>>>>>>> sessionTrack.js:onTabAdd, aNoNotification: " + aNoNotification)
-    var self = this;
-    var func = function(event) {
-        self.handleEvent.call(self, event);
-    }
+     if (!this.eventHandlerWrapper_bound) {
+       this.dump("this.eventHandlerWrapper_bound is null ... quit");
+       return;
+     }
     if (aTab) {
         try {
             var mm = aTab.linkedBrowser.messageManager;
@@ -254,7 +255,7 @@ TabhunterWatchSessionService.prototype = {
     } else {
       // this.dump("**** Don't add frame scripts for panel " + aPanel.id);
     }
-    aPanel.addEventListener("load", func, true);
+    aPanel.addEventListener("load", this.eventHandlerWrapper_bound, true);
      if (!aNoNotification) {
 	setTimeout(function() {
 	     this.reactorFunc.call(this.reactor);
@@ -264,7 +265,7 @@ TabhunterWatchSessionService.prototype = {
 
   onTabRemove: function thst_onTabRemove(aWindow, aPanel, aTab, aNoNotification) {
     //TODO: cache the event-handler, refer to it here, and delete it.  Based on panel ID?
-    // aPanel.removeEventListener("load", func, true);
+    aPanel.removeEventListener("load", this.eventHandlerWrapper_bound, true);
     var self = this;
     if (!aNoNotification) {
        //this.dump("About to do tab-remove before setTimeout\n", this.log_debug);
