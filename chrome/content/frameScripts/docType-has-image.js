@@ -3,7 +3,7 @@
 var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
     .getService(Components.interfaces.nsIConsoleService);
 
- handleMessage = function(msgData) {
+var handleMessage = function(msgData) {
     try {
         doStuff(msgData.data);
     } catch(e) {
@@ -23,9 +23,17 @@ var handleStopListeningMessage = function(msgData) {
   //consoleService.logStringMessage("RRR: Stop listening for docType-has-image and stop-listening");
   removeMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
   removeEventListener("DOMContentLoaded", handleDOMContentLoaded, false);
-}
+  removeEventListener("mozbrowsericonchange", handleMozBrowserIconChange, false);
+};
 
 var handleDOMContentLoaded = function(event) {
+  sendAsyncMessage("tabhunter@ericpromislow.com:DOMContentLoaded");
+};
+
+var handleMozBrowserIconChange = function(event) {
+  var details = event.details;
+  consoleService.logStringMessage("RRR: favicon changed: href: " + details.href +
+				  ", sizes: " + details.sizes + ", rel: " + details.rel);
   sendAsyncMessage("tabhunter@ericpromislow.com:DOMContentLoaded");
 }
 
@@ -33,3 +41,4 @@ addMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessag
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image-shutdown", handleStopListeningMessage);
 
 addEventListener("DOMContentLoaded", handleDOMContentLoaded, false);
+addEventListener("mozbrowsericonchange", handleMozBrowserIconChange, false);
