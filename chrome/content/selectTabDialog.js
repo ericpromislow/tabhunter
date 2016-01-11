@@ -286,23 +286,6 @@ this.updateOnTabChange = function() {
         // we're shutting down
         return;
     }
-    if (!this.currentTabList.getRowCount) {
-       if (typeof(count) == "undefined") {
-	  count = 0;
-	  this.dump("this.currentTabList.getRowCount not a func. id: " +
-		    this.currentTabList.id + ",node name:"
-		    + this.currentTabList.nodeName);
-       }
-       if (count < NULL_CURRENT_TAB_LIST_LIMIT) {
-	 if (count > 0) {
-	   this.dump("this.currentTabList.getRowCount still not a func... retry");
-	 }
-	 setTimeout(this._updateList.bind(this), NULL_CURRENT_TAB_LIST_TIMEOUT, newTabs, count + 1);
-       } else {
-	  this.dump("this.currentTabList.getRowCount still not a func... giving up");
-       }
-       return;
-    }
     var newLen = newTabs.length;
     var oldLen = this.currentTabList.getRowCount();
     var i = 0, j = 0;
