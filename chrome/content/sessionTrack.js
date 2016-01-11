@@ -4,7 +4,7 @@
 /* :::::::: Constants and Helpers ::::::::::::::: */
 
 var globalMessageManager, Cc, Ci;
-const TAB_REMOVE_DELAY_TIME = 500; // ms
+const TAB_REMOVE_DELAY_TIME = 2000; // ms
 
 if (typeof(Cc) === "undefined") {
     var Cc = Components.classes;
@@ -283,7 +283,7 @@ TabhunterWatchSessionService.prototype = {
 		 } catch(ex) {
 		    self.dump("Error in onTabRemove handler:\n" + ex + "\n");
 		 }
-	      }, TAB_REMOVE_DELAY_TIME, self);
+	      }, aNoNotification ? 1 : TAB_REMOVE_DELAY_TIME, self);
         } catch(ex2) {
 	   this.dump("onTabRemove: Caught exception outside setTimeout" + ex2);
         }
