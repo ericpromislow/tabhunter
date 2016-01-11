@@ -22,7 +22,7 @@ menupopup#listPopupMenu > menuitem {
   color: -moz-FieldText;
 }
 
-listitem.listitemTabhunter listcell.listcell-iconic image.listcell-icon {
+#currentTabList .listcell-icon, listitem.listitemTabhunter listcell.listcell-iconic image.listcell-icon {
     height: 16px;
     width: 16px;
     max-height: 16px;
