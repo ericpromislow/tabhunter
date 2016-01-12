@@ -234,8 +234,116 @@ this._finishListItem = function(listitem, tab) {
 };
 
 this.loadList = function() {
-    this.clearList();
+    /*
+     * Try to avoid changing the DOM as much as possible.  If tabs are
+     * added to the end of a row we should be able to do an incremental
+     * change: add one tab.  If a tab is removed anywhere, same.  Otherwise
+     * just rebuild the list.
+     */
     this.compilePattern();
+    let self = this;
+    let newItems = this.allTabs.forEach(function(tab) [i, self.getTabTitleAndURL(tab) ]).
+                       filter(function(pair) self.pattern_RE.test(pair[1]));
+    let currentItems = [];
+    let isz = this.currentTabList.getRowCount();
+    for (let i = 0; i < isz; i++) {
+        let item = this.currentTabList.getItemAtIndex(i);
+        currentItems.push([item.getAttribute('value'),
+                           item.getAttribute('label')]);
+    }
+    if (this.someIndicesChanged(newItems, currentItems)) {
+        this.clearAndReloadList(newItems);
+        return;
+    }
+    let jx = iy = 0;
+    let newx = 0; // Track the changing list
+    let jsz = newItems.length;
+    let ivalue = newItems[0][0];
+    let ilabel = newItems[0][1];
+    let jvalue = currentItems[0][0];
+    let jlabel = currentItems[0][1];
+    let needI = false;
+    let needJ = false;
+    while (ix < isz && yx < jsz) {
+        if (needI) {
+            ivalue = newItems[ix][0];
+            ilabel = newItems[ix][1];
+            needI = false;
+        }
+        if (needJ) {
+            jvalue = newItems[jx][0];
+            jlabel = newItems[jx][1];
+            needJ = false;
+        }
+        if (ilabel < jlabel) {
+            let listitem = this.currentTabList.insertItemAt(newx, ilabel, ivalue);
+            this._finishListItem(listitem, tab);
+            ix += 1;
+            newx += 1;
+            needI = true;
+        } else if (ilabel == jlabel) {
+            //INVARIANT: ivalue == jvalue
+            ix += 1;
+            needI = true;
+            jx += 1;
+            needJ = true;
+            newx += 1;
+        } else {
+            this.currentTabList.removeItemAt(newx);
+            jx += 1;
+            needJ = true;
+        }
+    }
+    while (ix < isz) {
+        ivalue = newItems[ix][0];
+        ilabel = newItems[ix][1];
+        // All new items to insert, no items left in list
+        let listitem = this.currentTabList.insertItemAt(newx, ilabel, ivalue);
+        this._finishListItem(listitem, tab);
+        newx += 1;
+        ix += 1;
+    }
+    while (jx < jsz) {
+        // All old items left to remove
+        this.currentTabList.removeItemAt(newx);
+        jx += 1;
+    }
+     
+    if (this.currentTabList.getRowCount() > 0) {
+        this.currentTabList.selectedIndex = 0;
+    }
+};
+
+this.collectPairsByKey = function(items) {
+    var collection = {};
+    items.forEach(function(pair) {
+            if (!(pair[0] in collection)) {
+                collection[pair[0]] = [pair[1]];
+            } else {
+                collection[pair[0]].push(pair[1]);
+            }
+        });
+    return collection;
+};
+
+this.someIndicesChanged = function(currentItems, newItems) {
+    var oldURLs = this.collectPairsByKey(currentItems);
+    var newURLs = this.collectPairsByKey(newItems);
+    for (var oldURL in oldURLs) {
+        if (oldURL in newURLs) {
+            let oldValues = oldURLs[oldURL];
+            let newValues = newURLs[oldURL];
+            if (oldValues.sort().join("*") != newValues.sort().join("*")) {
+                return true;
+            }
+        }
+    }
+    return false;
+};
+
+this.clearAndReloadList = function(newItems) {
+    this.clearList();
+    // This is called in loadList: this.compilePattern();
     for (var tab, i = 0; tab = this.allTabs[i]; i++) {
         var s = this.getTabTitleAndURL(tab);
         if (this.pattern_RE.test(s)) {
