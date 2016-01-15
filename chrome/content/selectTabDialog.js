@@ -113,6 +113,7 @@ this.onLoad = function() {
 	   tabCollector.init(globalMessageManager);
 	   this.reactor = tabCollector;
 	   this.reactorFunc = tabCollector.collectTabs;
+	   this.pattern_RE = null;
 	} else {
 	   this.reactor = this.mainHunter;
 	   this.reactorFunc = this.mainHunter.getTabs;
@@ -169,14 +170,14 @@ this.init = function(getTabsCallback) {
     }
 
     this.reactorFunc.call(this.reactor, function(results) {
-	 //this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
+	 this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
             try {
             this.allTabs = results.tabs;
             this.allTabs.sort(this.compareByName);
             this.windowInfo = results.windowInfo;
-            //this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
+            this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
             if (getTabsCallback) {
-	       //this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
+	       this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
                 getTabsCallback();
             }
             } catch(e) {
@@ -265,13 +266,23 @@ this.updateOnPatternChange = function() {
 };
 
 this.updateOnTabChange = function() {
-  //this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
+  this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
   var self = this;
     this.reactorFunc.call(this.reactor, function(results) {
+	 self.mainHunter.dump("QQQ: And now in the updateOnTabChange callback");
             var newTabs = results.tabs;
             newTabs.sort(self.compareByName);
             try {
+	       // TODO: Consider always calling loadList and doing a smart update
+	       // against the existing list.  Look at both URIs and indices -- this might
+	       // be why sometimes clicking on a line goes to a tab near it.  The indices
+	       // aren't getting correctly updated.
+	       if (self.pattern_RE === null) {
+		  self.allTabs = newTabs;
+		  self.loadList();
+	       } else {
                 self._updateList(newTabs);
+	       }
             } catch(ex) {
                 self.tabhunterSession.dump("updateOnTabChange exception: " + ex + ", " + ex.stack);
             }
@@ -281,13 +292,15 @@ this.updateOnTabChange = function() {
         });
 };
 
- this._updateList = function(newTabs, count) {
+ this._updateList = function(newTabs) {
     if (this.allTabs == null) {
+      this.mainHunter.dump("QQQ:_updateList: this.allTabs == null -- not adding tabs to the list");
         // we're shutting down
         return;
     }
     var newLen = newTabs.length;
     var oldLen = this.currentTabList.getRowCount();
+    this.mainHunter.dump("QQQ:_updateList: oldLen:" + oldLen + ", newLen:" + newLen);
     var i = 0, j = 0;
     var currentLabel, currentIdx = 0, finalCurrentIdx = -1;
     try {

@@ -1,4 +1,4 @@
-T=tabhunter-1.0.24.xpi
+T=tabhunter-1.0.25.xpi
 rm -f $T
 cat << ZAK | zip $T -@
 ./chrome/content/asyncTabCollector.js

@@ -9,7 +9,7 @@
   <RDF:Description RDF:about="urn:mozilla:install-manifest"
                    em:id="tabhunter@ericpromislow.com"
                    em:name="Tabhunter"
-                   em:version="1.0.24"
+                   em:version="1.0.25"
                    em:description="Find tabs in multiple windows"
                    em:creator="Eric Promislow"
                    em:homepageURL="http://code.google.com/p/tabhunter/"

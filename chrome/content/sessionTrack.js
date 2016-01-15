@@ -178,7 +178,8 @@ TabhunterWatchSessionService.prototype = {
     // ignore non-browser windows and windows opened while shutting down
     if (aWindow.document.documentElement.getAttribute("windowtype") != "navigator:browser")
       return;
-    
+
+    setTimeout(function() {
     var tabbrowser = aWindow.getBrowser();
     var tabContainer = tabbrowser.tabContainer;
     var tabpanels = tabbrowser.mPanelContainer;
@@ -187,7 +188,7 @@ TabhunterWatchSessionService.prototype = {
     var limit = Math.max(tabpanels.childNodes.length,
                          tabContainer.childNodes.length);
     for (var i = 0; i < limit; i++) {
-        //this.dump("QQQ - sessionTrack.js: onTabAdd(" + i + ")");
+        this.dump("QQQ: - sessionTrack.js:onLoad: onTabAdd(" + i + ")");
         this.onTabAdd(aWindow, tabpanels.childNodes[i],
                       tabContainer.childNodes[i], true);
     }
@@ -198,10 +199,11 @@ TabhunterWatchSessionService.prototype = {
             tabContainer.addEventListener("TabClose", self.eventHandlerWrapper_bound, false);
             tabContainer.addEventListener("TabMove", self.eventHandlerWrapper_bound, false);
         }, 1);
-    if (!aNoNotification) {
+    if (!aNoNotification || true) {
         this.reactorFunc.call(this.reactor);
     } else {
     }
+      }.bind(this), 100);
   },
 
   onClose: function thst_onClose(aWindow, updateTabs) {
@@ -243,7 +245,7 @@ TabhunterWatchSessionService.prototype = {
         try {
             var mm = aTab.linkedBrowser.messageManager;
             if (mm) {
-	       //this.dump("-QQQ: loading the linkedBrowser frame scripts...")
+	        this.dump("-QQQ: loading the linkedBrowser frame scripts for tab " + aTab.label);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/docType-has-image.js", true);

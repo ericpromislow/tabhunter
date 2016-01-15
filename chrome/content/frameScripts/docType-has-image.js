@@ -15,7 +15,8 @@ function doStuff(data) {
     // Send all data back, along with the result
     data.hasImage = content.document.contentType.indexOf("image/") >= 0;
     data.location = content.document.location.toString();
-    //    consoleService.logStringMessage("RRR: doc FS got location: " + data.location.substr(0, 40) + ", hasImage:" + data.hasImage);
+    consoleService.logStringMessage("RRR: doc FS: windowIdx:" + data.windowIdx +
+				    ", tabIdx:" + data.tabIdx + ": got location: " + data.location.substr(0, 40));
     sendAsyncMessage("tabhunter@ericpromislow.com:docType-has-image-continuation", data);
 }
 
