@@ -8,6 +8,8 @@ const TAB_LOADING_WAIT_MS = 50;
 const NEXT_TAB_QUERY_DELAY = 100;
 const NEXT_TAB_QUERY_HANDOFF = 10; // Before doing the next tab handoff control.
 
+const GET_TABS_ITERATE_DELAY = 1; // msec
+
 try {
 
 var tabCollector = {};
@@ -241,7 +243,6 @@ var globalMessageManager;
        // together, and send the result back via the callback.
        this.clearTimeouts();
        var openWindows = this.wmService.getEnumerator("navigator:browser");
-       var windowIdx = -1;
        this.tabGetters = [];
        this.tabGetterCallback = callback;
        this.processedTabs = {}; // hash "windowIdx-tabIdx : true"
@@ -249,40 +250,60 @@ var globalMessageManager;
 
        this.tabsToQuery = []; // Array of {windowIdx, tabIdx, openWindow}
        // Get the eligible windows
-       var numTabs = 0;
-       do {
-	  // There must be at least one window for an extension to run in
-	  var openWindow = openWindows.getNext();
-	  try {
-	     var tc = openWindow.getBrowser().tabContainer.childNodes;
-	     numTabs += tc.length;
-	     this.dump("Window #" + (windowIdx + 1) + " has # tabs: " + tc.length);
-	  } catch(ex) {
-	     continue;
-	  }
-	  windowIdx += 1;
-	  this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
-	  for (let i = 0; i < tc.length; i++) {
-	     this.tabsToQuery.push({windowIdx:windowIdx, tabIdx:i, openWindow:openWindow});
-	  }
-       } while (openWindows.hasMoreElements());
-       this.dump("TH: getTabs_dualProcess: #this.tabsToQuery: " + this.tabsToQuery.length);
-       this.processTabsToQuery();
-       let timeoutTabFactor = 10000;  // Yes, allow 10 seconds per tab
-       let timeoutWindowFactor = 2000;
-       let totalTimeout = timeoutTabFactor * numTabs + timeoutWindowFactor * windowIdx;
-       let callbackTimeoutFunc = function() {
-	 this.dump("**** Hit callback timeout (" + (totalTimeout/1000) + " sec. before getting all the tabs -- " + this.tabsToQuery.length + " left to process");
-	 this.clearTimeouts();
-	 this.dualProcessSetupFinalCallback();
-	 // Maybe we'll get more later...
-	 this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout);
-	 if (this.tabsToQuery.length > 0) {
-	    this.processTabsToQuery();
-	 }
-       }.bind(this);
-       setTimeout(callbackTimeoutFunc, totalTimeout);
+       let nextWindow = openWindows.getNext();
+       let tc = nextWindow.getBrowser().tabContainer.childNodes;
+       this.numTabs = tc.length;
+       this.dump("Window #1 has # tabs: " + tc.length);
+       this.getNextTabFuncBound(this.timestamp, openWindows, nextWindow, tc, 0, 0);
      };
+
+     // loops considered harmful in JS: use short-duration timeouts
+     this.getNextTabFunc = function(timestamp, openWindows, openWindow, tc, windowIdx, tabIdx) {
+       if (this.timestamp > timestamp) {
+	 // A new query-loop started, so end this one.
+	 // No need to cancel anything
+	 if (Debug) {
+	   this.dump("**** getNextTabFunc: processing a newer query at windowIdx: " +
+		     this.windowIdx + ", tabIdx: " + tabIdx + " expired " +
+		     (this.timestamp - timestamp) + " msec ago");
+	 }
+	 return;
+       }
+       this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
+       this.tabsToQuery.push({windowIdx:windowIdx, tabIdx:tabIdx, openWindow:openWindow});
+       if (tabIdx < tc.length - 1) {
+	  setTimeout(this.getNextTabFuncBound, GET_TABS_ITERATE_DELAY, timestamp, openWindows, openWindow, tc, windowIdx, tabIdx + 1);
+       } else if (openWindows.hasMoreElements()) {
+	 let nextWindow = openWindows.getNext();
+	 let tc = openWindow.getBrowser().tabContainer.childNodes;
+	 this.numTabs += tc.length;
+	 this.dump("Window #" + (windowIdx + 1) + " has # tabs: " + tc.length);
+	 setTimeout(this.getNextTabFuncBound, GET_TABS_ITERATE_DELAY, timestamp, openWindows, nextWindow, tc, windowIdx + 1, 0);
+       } else {
+	 // We've visited all the tabs, now go start processing each one.
+	 // This function ends by sending a message to a frame script
+	 this.processTabsToQuery();
+
+	 // And set up the timeout to keep processing tabsToQuery if the current
+	 // frame script doesn't respond.
+	 let timeoutTabFactor = 10000;  // Yes, allow 10 seconds per tab
+	 let timeoutWindowFactor = 2000;
+	 let totalTimeout = timeoutTabFactor * this.numTabs + timeoutWindowFactor * windowIdx;
+	 let callbackTimeoutFunc = function() {
+	   this.dump("**** Hit callback timeout (" + (totalTimeout/1000) + " sec. before getting all the tabs -- " + this.tabsToQuery.length + " left to process");
+	   this.clearTimeouts();
+	   this.dualProcessSetupFinalCallback();
+	   // Maybe we'll get more later...
+	   this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout);
+	   if (this.tabsToQuery.length > 0) {
+	      this.processTabsToQuery();
+	   }
+	 }.bind(this);
+	 setTimeout(callbackTimeoutFunc, totalTimeout);
+       }
+     };
+
+     this.getNextTabFuncBound = this.getNextTabFunc.bind(this);
        
      this.processTabsToQuery = function() {
        if (this.tabsToQuery.length == 0) {
