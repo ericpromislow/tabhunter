@@ -37,6 +37,7 @@ var globalMessageManager;
      }
      globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
      globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded_bound);
+     this.lastGoodTabGetters = [];
    };
 
    this.process_DOMContentLoaded = function() {
@@ -119,6 +120,7 @@ var globalMessageManager;
 	       this.dump("QQQ: window/tab " + tab.windowIdx + "-" + tab.tabIdx + "/" + tab.label + " - " + tab.location);
 	    }.bind(this));
        }
+       this.lastGoodTabGetters = this.tabGetters;
        this.tabGetterCallback(result);
      };
 
@@ -243,7 +245,7 @@ var globalMessageManager;
        // together, and send the result back via the callback.
        this.clearTimeouts();
        var openWindows = this.wmService.getEnumerator("navigator:browser");
-       this.tabGetters = [];
+       
        this.tabGetterCallback = callback;
        this.processedTabs = {}; // hash "windowIdx-tabIdx : true"
        this.timestamp = new Date().valueOf();
@@ -254,6 +256,11 @@ var globalMessageManager;
        let tc = nextWindow.getBrowser().tabContainer.childNodes;
        this.numTabs = tc.length;
        this.dump("Window #1 has # tabs: " + tc.length);
+       
+       // tabGetters: array of { tabs:[]"real" tabs, collector: {tabs:[]TabInfo, currWindowInfo: {window:openWindow, tabs:"real" []}  Really Eric -- 3 fields called "tabs"??
+       this.tabGetters = [new this.TabGetter(0, nextWindow, tc)];
+       this.madeRequest = false;
+
        this.getNextTabFuncBound(this.timestamp, openWindows, nextWindow, tc, 0, 0);
      };
 
@@ -269,19 +276,58 @@ var globalMessageManager;
 	 }
 	 return;
        }
-       this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
-       this.tabsToQuery.push({windowIdx:windowIdx, tabIdx:tabIdx, openWindow:openWindow});
+       let makeRequest = true;
+       let lastGoodTabGetter = this.lastGoodTabGetters[windowIdx];
+       if (lastGoodTabGetter) {
+	  let realTab = lastGoodTabGetter.tabs[tabIdx];
+	  if (realTab && realTab.label == tc[tabIdx].label) {
+	     let realCollector = lastGoodTabGetter.collector;
+	     let realTabInfo = realCollector.tabs[tabIdx];
+	     if (realTabInfo) {
+		this.dump("QQQ: No need to update tab " + realTab.label + ", windowIdx" +
+			  windowIdx + ", tabIdx: " + tabIdx);
+		this.dump("QQQ: windowMatch: " + (lastGoodTabGetter.collector.openWindow == openWindow));
+		this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
+		// So update the tab collector directly
+		let data = {tabIdx:tabIdx,
+			    windowIdx:windowIdx,
+			    timestamp:timestamp,
+			    hasImage:false, // not kept
+			    location:realTabInfo.location};
+		this.getTabs_dualProcessContinuation_aux({data: data});
+		makeRequest = false;
+	     } else {
+		this.dump("QQQ: No realTabInfo");
+	     }
+	  } else {
+	     this.dump("QQQ: No real-tab label match");
+	  }
+       } else {
+	 this.dump("QQQ: No last goodTabGetter");
+       }
+       if (makeRequest) {
+	 this.madeRequest = true;
+	 this.tabsToQuery.push({windowIdx:windowIdx, tabIdx:tabIdx, openWindow:openWindow});
+       }
        if (tabIdx < tc.length - 1) {
 	  setTimeout(this.getNextTabFuncBound, GET_TABS_ITERATE_DELAY, timestamp, openWindows, openWindow, tc, windowIdx, tabIdx + 1);
        } else if (openWindows.hasMoreElements()) {
 	 let nextWindow = openWindows.getNext();
-	 let tc = openWindow.getBrowser().tabContainer.childNodes;
+	 let tc = nextWindow.getBrowser().tabContainer.childNodes;
+	 let nextWindowIdx = windowIdx + 1;
+	 this.tabGetters.push(new this.TabGetter(nextWindowIdx, nextWindow, tc));
 	 this.numTabs += tc.length;
-	 this.dump("Window #" + (windowIdx + 1) + " has # tabs: " + tc.length);
-	 setTimeout(this.getNextTabFuncBound, GET_TABS_ITERATE_DELAY, timestamp, openWindows, nextWindow, tc, windowIdx + 1, 0);
+	 this.dump("Window #" + nextWindowIdx + " has # tabs: " + tc.length);
+	 setTimeout(this.getNextTabFuncBound, GET_TABS_ITERATE_DELAY, timestamp, openWindows, nextWindow, tc, nextWindowIdx, 0);
        } else {
 	 // We've visited all the tabs, now go start processing each one.
 	 // This function ends by sending a message to a frame script
+	 if (!this.madeRequest) {
+	   // Call the final processor directly
+	   this.dump("QQQ: No requests were made, so call dualProcessContinuationFinish directly")
+	   this.dualProcessContinuationFinish();
+	   return;
+	 }
 	 this.processTabsToQuery();
 
 	 // And set up the timeout to keep processing tabsToQuery if the current

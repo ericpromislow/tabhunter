@@ -125,6 +125,7 @@ this.onLoad = function() {
         var getTabsCallback = function() {
             try {
                 this.loadList();
+                this.mainHunter.dump("+loadList, -this._showNumMatches(" + this.allTabs.length + " tabs");
                 this._showNumMatches(this.allTabs);
                 this.patternField.focus();
     
@@ -279,12 +280,15 @@ this.updateOnTabChange = function() {
 	       // aren't getting correctly updated.
 	       if (self.pattern_RE === null) {
 		  self.allTabs = newTabs;
+		  self.mainHunter.dump("QQQ: -loadList")
 		  self.loadList();
+		  self._showNumMatches(newTabs);
 	       } else {
-                self._updateList(newTabs);
+		  self.mainHunter.dump("QQQ: -_updateList")
+                  self._updateList(newTabs);
 	       }
             } catch(ex) {
-                self.tabhunterSession.dump("updateOnTabChange exception: " + ex + ", " + ex.stack);
+                self.mainHunter.dump("updateOnTabChange exception: " + ex + ", " + ex.stack);
             }
             self.allTabs = newTabs;
             self.windowInfo = results.windowInfo;
