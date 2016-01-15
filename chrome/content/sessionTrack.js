@@ -188,7 +188,7 @@ TabhunterWatchSessionService.prototype = {
     var limit = Math.max(tabpanels.childNodes.length,
                          tabContainer.childNodes.length);
     for (var i = 0; i < limit; i++) {
-        this.dump("QQQ: - sessionTrack.js:onLoad: onTabAdd(" + i + ")");
+       //this.dump("QQQ: - sessionTrack.js:onLoad: onTabAdd(" + i + ")");
         this.onTabAdd(aWindow, tabpanels.childNodes[i],
                       tabContainer.childNodes[i], true);
     }
@@ -245,7 +245,7 @@ TabhunterWatchSessionService.prototype = {
         try {
             var mm = aTab.linkedBrowser.messageManager;
             if (mm) {
-	        this.dump("-QQQ: loading the linkedBrowser frame scripts for tab " + aTab.label);
+	       //this.dump("-QQQ: loading the linkedBrowser frame scripts for tab " + aTab.label);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/browser-window-focus.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/search-next-tab.js", true);
                 mm.loadFrameScript("chrome://tabhunter/content/frameScripts/docType-has-image.js", true);
@@ -313,4 +313,5 @@ TabhunterWatchSessionService.prototype = {
   },
 
   __NULL__ : null
-};
+}
+;

@@ -171,14 +171,14 @@ this.init = function(getTabsCallback) {
     }
 
     this.reactorFunc.call(this.reactor, function(results) {
-	 this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
+	 //this.mainHunter.dump("QQQ: >> mainHunter::init: in callback")
             try {
             this.allTabs = results.tabs;
             this.allTabs.sort(this.compareByName);
             this.windowInfo = results.windowInfo;
-            this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
+            //this.mainHunter.dump("QQQ: >> mainHunter::init: set this.windowInfo to " + this.windowInfo);
             if (getTabsCallback) {
-	       this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
+	       //this.mainHunter.dump("QQQ: >> mainHunter::init: do getTabsCallback");
                 getTabsCallback();
             }
             } catch(e) {
@@ -267,10 +267,14 @@ this.updateOnPatternChange = function() {
 };
 
 this.updateOnTabChange = function() {
+    if (Debug) {
   this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
+    }
   var self = this;
     this.reactorFunc.call(this.reactor, function(results) {
+    if (Debug) {
 	 self.mainHunter.dump("QQQ: And now in the updateOnTabChange callback");
+    }
             var newTabs = results.tabs;
             newTabs.sort(self.compareByName);
             try {
@@ -280,11 +284,9 @@ this.updateOnTabChange = function() {
 	       // aren't getting correctly updated.
 	       if (self.pattern_RE === null) {
 		  self.allTabs = newTabs;
-		  self.mainHunter.dump("QQQ: -loadList")
 		  self.loadList();
 		  self._showNumMatches(newTabs);
 	       } else {
-		  self.mainHunter.dump("QQQ: -_updateList")
                   self._updateList(newTabs);
 	       }
             } catch(ex) {
@@ -298,13 +300,17 @@ this.updateOnTabChange = function() {
 
  this._updateList = function(newTabs) {
     if (this.allTabs == null) {
+    if (Debug) {
       this.mainHunter.dump("QQQ:_updateList: this.allTabs == null -- not adding tabs to the list");
+    }
         // we're shutting down
         return;
     }
     var newLen = newTabs.length;
     var oldLen = this.currentTabList.getRowCount();
+    if (Debug) {
     this.mainHunter.dump("QQQ:_updateList: oldLen:" + oldLen + ", newLen:" + newLen);
+    }
     var i = 0, j = 0;
     var currentLabel, currentIdx = 0, finalCurrentIdx = -1;
     try {
