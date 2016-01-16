@@ -92,7 +92,8 @@ var globalMessageManager;
 		     this.tabGetters.length + " tabGetters");
 	 }
 	 this.clearTimeouts();
-	 this.dualProcessSetupFinalCallback({completedQuery:true});
+	 this.dualProcessSetupFinalCallback({completedQuery:true,
+		                             numTabs:this.numTabs.length});
 	 return true;
        }
        if (this.tabsToQuery.length > 0) {
@@ -106,7 +107,7 @@ var globalMessageManager;
        // pass it on using the callback
        if (typeof(options) == "undefined") {
 	 this.dump("**** Hey!!! dualProcessSetupFinalCallback: options not set")
-	 options = {};
+	 options = {completedQuery:true};
        }
        let result = { tabs:[], windowInfo:[] }
        this.tabGetters.forEach(function(tabGetter) {
@@ -212,6 +213,9 @@ var globalMessageManager;
 	 }
          return true;
        } catch(e) {
+	 if (data.shortCircuitUpdate) {
+	   throw(e);
+	 }
 	 this.dump("**** dualProcessContinuation: bad happened: " + e + "\n" + e.stack);
 	 return true;
        }
@@ -312,6 +316,7 @@ var globalMessageManager;
 			       windowIdx:windowIdx,
 			       timestamp:timestamp,
 			       hasImage:false, // not kept
+			       shortCircuitUpdate:true,
 			       location:realTabInfo.location};
 		   this.getTabs_dualProcessContinuation_aux({data: data});
 		   makeRequest = false;
@@ -365,22 +370,26 @@ var globalMessageManager;
 
 	 // And set up the timeout to keep processing tabsToQuery if the current
 	 // frame script doesn't respond.
-	 let timeoutTabFactor = 10000;  // Yes, allow 10 seconds per tab
-	 let timeoutWindowFactor = 2000;
-	 let totalTimeout = timeoutTabFactor * this.numTabs + timeoutWindowFactor * windowIdx;
-	 let callbackTimeoutFunc = function() {
+	 let totalTimeout = 5 * 1000; // Update every 5 seconds regardless of # tabs
+	 let callbackTimeoutFunc = function(timestamp) {
 	   if (Debug) {
 	   this.dump("**** Hit callback timeout (" + (totalTimeout/1000) + " sec. before getting all the tabs -- " + this.tabsToQuery.length + " left to process");
 	   }
+	   if (timestamp < this.timestamp) {
+	     if (Debug) {
+	       this.dump("**** main callback timeout handler called too late: " + (this.timestamp - timestamp) + " msec");
+	     }
+	     return;
+	   }
 	   this.clearTimeouts();
-	   this.dualProcessSetupFinalCallback({completedQuery:false});
+	   this.dualProcessSetupFinalCallback({completedQuery:false, numTabs:this.numTabs});
 	   // Maybe we'll get more later...
-	   this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout);
+	   this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout, timestamp);
 	   if (this.tabsToQuery.length > 0) {
 	      this.processTabsToQuery();
 	   }
 	 }.bind(this);
-	 setTimeout(callbackTimeoutFunc, totalTimeout);
+	 this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout, timestamp);
        }
      };
 

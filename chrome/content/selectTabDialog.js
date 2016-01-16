@@ -268,13 +268,16 @@ this.updateOnPatternChange = function() {
 };
 
 this.updateOnTabChangeCallback = function(results, options) {
-  if (typeof(options) == "undefined") {
-    options = {completedQuery:true};
-  }
   if (Debug) {
     this.mainHunter.dump("QQQ: And now in the updateOnTabChange callback");
   }
   var newTabs = results.tabs;
+  if (typeof(options) == "undefined") {
+     options = {completedQuery:true};
+  }
+  if (!("numTabs" in options)) {
+    options.newTabs = newTabs.length;
+  }
   if (!options.completedQuery && newTabs.length < this.allTabs.length) {
      if (Debug) {
 	this.mainHunter.dump("updateOnTabChange incomplete query and new tab list < old tab: old: " + this.allTabs.length + ", num new tabs: " + newTabs.length);
@@ -293,14 +296,14 @@ this.updateOnTabChangeCallback = function(results, options) {
      if (this.pattern_RE === null) {
 	this.allTabs = newTabs;
 	this.loadList();
-	this._showNumMatches(newTabs);
+	this._showNumMatches(newTabs, options);
 	action = "load list";
      } else {
 	this._updateList(newTabs, options);
 	action = "update list";
      }
      let endTime = new Date().valueOf();
-     if (Debug) {
+     if (1 || Debug) {
 	this.mainHunter.dump("QQQ: updateOnTabChange update: action: " + action + ", took: " + (endTime - startTime) + " msec, num old tabs: " + this.allTabs.length + ", num new tabs: " + newTabs.length + ", options.completedQuery: " + options.completedQuery);
      }
   } catch(ex) {
@@ -320,7 +323,7 @@ this.updateOnTabChange = function() {
   this.reactorFunc.call(this.reactor, this.updateOnTabChangeCallbackBound);
 };
 
- this._updateList = function(newTabs) {
+this._updateList = function(newTabs, options) {
     if (this.allTabs == null) {
     if (Debug) {
       this.mainHunter.dump("QQQ:_updateList: this.allTabs == null -- not adding tabs to the list");
@@ -395,14 +398,14 @@ this.updateOnTabChange = function() {
         this.currentTabList.selectedIndex = finalCurrentIdx;
         this.currentTabList.ensureIndexIsVisible(finalCurrentIdx);
     }
-    this._showNumMatches(newTabs);
+    this._showNumMatches(newTabs, options);
 };
 
-this._showNumMatches = function(newTabs) {
+this._showNumMatches = function(newTabs, options) {
     var totalSize = newTabs.length;
     var currSize = this.currentTabList.getRowCount();
     // matchedTabsTemplate
-    this.statusField.value =
+    var msg =
         (this.patternField.value.length == 0
          ? this.strbundle.getFormattedString("showingTabsTemplate",
                         [ totalSize,
@@ -414,6 +417,10 @@ this._showNumMatches = function(newTabs) {
                          this.strbundle.getString(totalSize == 1
                                                  ? 'tabSingular'
                                                  : 'tabPlural')]));
+    if (options && ("numTabs" in options) && options.numTabs > newTabs.length) {
+       msg += this.strbundle.getFormattedString("stillToProcessTemplate", [options.numTabs - newTabs.length]);
+    }
+    this.statusField.value = msg;
 };
 
 this.showCurrentURL = function() {
