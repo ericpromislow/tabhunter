@@ -302,22 +302,22 @@ var globalMessageManager;
 		}
 		// So update the tab collector directly
 		try {
-		let data = {tabIdx:tabIdx,
-			    windowIdx:windowIdx,
-			    timestamp:timestamp,
-			    hasImage:false, // not kept
-			    location:realTabInfo.location};
+		   let data = {tabIdx:tabIdx,
+			       windowIdx:windowIdx,
+			       timestamp:timestamp,
+			       hasImage:false, // not kept
+			       location:realTabInfo.location};
 		   this.getTabs_dualProcessContinuation_aux({data: data});
 		   makeRequest = false;
 		} catch(ex) {
 		   //@@@@
 		   this.dump("QQQ: Problem trying to update known tab: windowIdx:" + windowIdx +
 			     " tabIdx: " + tabIdx + "ex: " + ex + "ex.stack:" + ex.stack);
-		this.dump("QQQ: No need to update tab " + realTab.label + ", windowIdx" +
-			  windowIdx + ", tabIdx: " + tabIdx);
-		this.dump("QQQ: windowMatch: " + (lastGoodTabGetter.collector.openWindow == openWindow));
-		this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
-		this.dump("QQQ: tabGetter tab: <" + this.tabGetters[windowIdx].tabs[tabIdx] + ">");
+		   this.dump("QQQ: No need to update tab " + realTab.label + ", windowIdx" +
+			     windowIdx + ", tabIdx: " + tabIdx);
+		   this.dump("QQQ: windowMatch: " + (lastGoodTabGetter.collector.openWindow == openWindow));
+		   this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
+		   this.dump("QQQ: tabGetter tab: <" + this.tabGetters[windowIdx].tabs[tabIdx] + ">");
 		}
 	     } else {
 		//this.dump("QQQ: No realTabInfo");
