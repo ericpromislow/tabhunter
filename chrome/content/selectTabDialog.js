@@ -97,6 +97,7 @@ this.onLoad = function() {
                                              }, true);
         // window.addEventListener('focus', this.windowFocusCheckSetup, false);
         this.lastGoodPattern = /./;
+	this.allTabs = [];
     
         this.observerService = Components.classes["@mozilla.org/observer-service;1"].
         getService(Components.interfaces.nsIObserverService);
@@ -266,36 +267,57 @@ this.updateOnPatternChange = function() {
     }
 };
 
+this.updateOnTabChangeCallback = function(results, options) {
+  if (typeof(options) == "undefined") {
+    options = {completedQuery:true};
+  }
+  if (Debug) {
+    this.mainHunter.dump("QQQ: And now in the updateOnTabChange callback");
+  }
+  var newTabs = results.tabs;
+  if (!options.completedQuery && newTabs.length < this.allTabs.length) {
+     if (Debug) {
+	this.mainHunter.dump("updateOnTabChange incomplete query and new tab list < old tab: old: " + this.allTabs.length + ", num new tabs: " + newTabs.length);
+     }
+     // Don't show fewer tabs during an interim update.
+     return;
+  }	
+  newTabs.sort(this.compareByName);
+  try {
+     // TODO: Consider always calling loadList and doing a smart update
+     // against the existing list.  Look at both URIs and indices -- this might
+     // be why sometimes clicking on a line goes to a tab near it.  The indices
+     // aren't getting correctly updated.
+     let startTime = new Date().valueOf();
+     let action = null;
+     if (this.pattern_RE === null) {
+	this.allTabs = newTabs;
+	this.loadList();
+	this._showNumMatches(newTabs);
+	action = "load list";
+     } else {
+	this._updateList(newTabs, options);
+	action = "update list";
+     }
+     let endTime = new Date().valueOf();
+     if (Debug) {
+	this.mainHunter.dump("QQQ: updateOnTabChange update: action: " + action + ", took: " + (endTime - startTime) + " msec, num old tabs: " + this.allTabs.length + ", num new tabs: " + newTabs.length + ", options.completedQuery: " + options.completedQuery);
+     }
+  } catch(ex) {
+    this.mainHunter.dump("updateOnTabChange exception: " + ex + ", " + ex.stack);
+  }
+  this.allTabs = newTabs;
+  this.windowInfo = results.windowInfo;
+  // And either update the text-search tab, or invalidate it
+};
+
+this.updateOnTabChangeCallbackBound = this.updateOnTabChangeCallback.bind(this)
+
 this.updateOnTabChange = function() {
-    if (Debug) {
-  this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
-    }
-  var self = this;
-    this.reactorFunc.call(this.reactor, function(results) {
-    if (Debug) {
-	 self.mainHunter.dump("QQQ: And now in the updateOnTabChange callback");
-    }
-            var newTabs = results.tabs;
-            newTabs.sort(self.compareByName);
-            try {
-	       // TODO: Consider always calling loadList and doing a smart update
-	       // against the existing list.  Look at both URIs and indices -- this might
-	       // be why sometimes clicking on a line goes to a tab near it.  The indices
-	       // aren't getting correctly updated.
-	       if (self.pattern_RE === null) {
-		  self.allTabs = newTabs;
-		  self.loadList();
-		  self._showNumMatches(newTabs);
-	       } else {
-                  self._updateList(newTabs);
-	       }
-            } catch(ex) {
-                self.mainHunter.dump("updateOnTabChange exception: " + ex + ", " + ex.stack);
-            }
-            self.allTabs = newTabs;
-            self.windowInfo = results.windowInfo;
-            // And either update the text-search tab, or invalidate it
-        });
+  if (Debug) {
+    this.mainHunter.dump("QQQ: >> this.mainHunter.updateOnTabChange via reactor...")
+  }
+  this.reactorFunc.call(this.reactor, this.updateOnTabChangeCallbackBound);
 };
 
  this._updateList = function(newTabs) {

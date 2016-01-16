@@ -92,7 +92,7 @@ var globalMessageManager;
 		     this.tabGetters.length + " tabGetters");
 	 }
 	 this.clearTimeouts();
-	 this.dualProcessSetupFinalCallback();
+	 this.dualProcessSetupFinalCallback({completedQuery:true});
 	 return true;
        }
        if (this.tabsToQuery.length > 0) {
@@ -101,9 +101,13 @@ var globalMessageManager;
        return false;
      };
 
-     this.dualProcessSetupFinalCallback = function() {
+     this.dualProcessSetupFinalCallback = function(options) {
        // pour everything into the return obj and
        // pass it on using the callback
+       if (typeof(options) == "undefined") {
+	 this.dump("**** Hey!!! dualProcessSetupFinalCallback: options not set")
+	 options = {};
+       }
        let result = { tabs:[], windowInfo:[] }
        this.tabGetters.forEach(function(tabGetter) {
 	    try {
@@ -120,8 +124,10 @@ var globalMessageManager;
 	       this.dump("QQQ: window/tab " + tab.windowIdx + "-" + tab.tabIdx + "/" + tab.label + " - " + tab.location);
 	    }.bind(this));
        }
-       this.lastGoodTabGetters = this.tabGetters;
-       this.tabGetterCallback(result);
+       if (options.completedQuery) {
+	 this.lastGoodTabGetters = this.tabGetters;
+       }
+       this.tabGetterCallback(result, options);
      };
 
      this.clearNextTabQuery = function() {
@@ -367,7 +373,7 @@ var globalMessageManager;
 	   this.dump("**** Hit callback timeout (" + (totalTimeout/1000) + " sec. before getting all the tabs -- " + this.tabsToQuery.length + " left to process");
 	   }
 	   this.clearTimeouts();
-	   this.dualProcessSetupFinalCallback();
+	   this.dualProcessSetupFinalCallback({completedQuery:false});
 	   // Maybe we'll get more later...
 	   this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout);
 	   if (this.tabsToQuery.length > 0) {
