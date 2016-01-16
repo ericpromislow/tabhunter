@@ -303,7 +303,7 @@ this.updateOnTabChangeCallback = function(results, options) {
 	action = "update list";
      }
      let endTime = new Date().valueOf();
-     if (1 || Debug) {
+     if (Debug) {
 	this.mainHunter.dump("QQQ: updateOnTabChange update: action: " + action + ", took: " + (endTime - startTime) + " msec, num old tabs: " + this.allTabs.length + ", num new tabs: " + newTabs.length + ", options.completedQuery: " + options.completedQuery);
      }
   } catch(ex) {
