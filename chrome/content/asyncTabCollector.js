@@ -301,13 +301,14 @@ var globalMessageManager;
 		//this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
 		}
 		// So update the tab collector directly
+		try {
 		let data = {tabIdx:tabIdx,
 			    windowIdx:windowIdx,
 			    timestamp:timestamp,
 			    hasImage:false, // not kept
 			    location:realTabInfo.location};
-		try {
 		   this.getTabs_dualProcessContinuation_aux({data: data});
+		   makeRequest = false;
 		} catch(ex) {
 		   //@@@@
 		   this.dump("QQQ: Problem trying to update known tab: windowIdx:" + windowIdx +
@@ -318,7 +319,6 @@ var globalMessageManager;
 		this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
 		this.dump("QQQ: tabGetter tab: <" + this.tabGetters[windowIdx].tabs[tabIdx] + ">");
 		}
-		makeRequest = false;
 	     } else {
 		//this.dump("QQQ: No realTabInfo");
 	     }
