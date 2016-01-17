@@ -103,7 +103,7 @@ this.onLoad = function() {
         getService(Components.interfaces.nsIObserverService);
                         
         this.statusField = document.getElementById("matchStatus");
-        this.strbundle = document.getElementById("strings");
+        this.strbundle = document.getElementById("tabhunter_strings");
         this.tabBox = document.getElementById("th.tabbox");
 
         // This has to be done before calling getTabs() because 

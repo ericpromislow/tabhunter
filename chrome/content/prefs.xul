@@ -19,9 +19,9 @@
     
   <script type="application/x-javascript" src="chrome://tabhunter/content/prefs.js"/>
   <stringbundleset>
-    <stringbundle id="strings" src="chrome://tabhunter/locale/strings.properties"/>
-    <stringbundle id="platformKeys" src="chrome://global-platform/locale/platformKeys.properties"/>
-    <stringbundle id="localeKeys" src="chrome://global/locale/keys.properties"/>
+    <stringbundle id="tabhunter_strings" src="chrome://tabhunter/locale/strings.properties"/>
+    <stringbundle id="tabhunter_platformKeys" src="chrome://global-platform/locale/platformKeys.properties"/>
+    <stringbundle id="tabhunter_localeKeys" src="chrome://global/locale/keys.properties"/>
   </stringbundleset>
   <groupbox>
     <caption label="&th.prefs.tabhunterPrefs.groupBox.label;"/>

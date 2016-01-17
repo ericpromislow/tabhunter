@@ -113,9 +113,9 @@ this.initKeyConfigPopup = function() {
     }
     // Init the platform keys (code from twitterfox)
     
-    this.localeKeys = document.getElementById("localeKeys");
+    this.localeKeys = document.getElementById("tabhunter_localeKeys");
 
-    var platformKeys = document.getElementById("platformKeys");
+    var platformKeys = document.getElementById("tabhunter_platformKeys");
     this.platformKeys = {};
     this.platformKeys.shift   = platformKeys.getString("VK_SHIFT");
     this.platformKeys.meta    = platformKeys.getString("VK_META");
