@@ -275,9 +275,6 @@ this.updateOnTabChangeCallback = function(results, options) {
   if (typeof(options) == "undefined") {
      options = {completedQuery:true};
   }
-  if (!("numTabs" in options)) {
-    options.newTabs = newTabs.length;
-  }
   if (!options.completedQuery && newTabs.length < this.allTabs.length) {
      if (Debug) {
 	this.mainHunter.dump("updateOnTabChange incomplete query and new tab list < old tab: old: " + this.allTabs.length + ", num new tabs: " + newTabs.length);
