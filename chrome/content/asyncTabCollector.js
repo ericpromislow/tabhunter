@@ -8,7 +8,7 @@ const TAB_LOADING_WAIT_MS = 50;
 const NEXT_TAB_QUERY_DELAY = 100;
 const NEXT_TAB_QUERY_HANDOFF = 10; // Before doing the next tab handoff control.
 
-const GET_TABS_ITERATE_DELAY = 1; // msec
+const GET_TABS_ITERATE_DELAY = 0; // msec
 
 try {
 
@@ -16,6 +16,8 @@ var tabCollector = {};
 var globalMessageManager;
 (function() {
    const Debug = false;
+   const ShowMetrics = false;
+   const VisitWindowsIteratively = true;
 
    var isConnecting = function(s) {
      // Probably a way to look at the tab and figure out if it's connected
@@ -38,6 +40,8 @@ var globalMessageManager;
      globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
      globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded_bound);
      this.lastGoodTabGetters = [];
+     this.singleQueryTimes = [];
+     this.singleQueryTimesCollector = {}; // timestamp:windowIdx:tabIdx: startTime
    };
 
    this.process_DOMContentLoaded = function() {
@@ -90,6 +94,13 @@ var globalMessageManager;
 	 if (Debug) {
 	   this.dump("**** all tabs are done at " + this.timestamp + ", loop over " +
 		     this.tabGetters.length + " tabGetters");
+	 }
+	 if (ShowMetrics && this.singleQueryTimes.length > 0) {
+	   this.ShowMetricsProcessTabsEndTime = new Date().valueOf();
+	   this.dump("Non-loop Time to process all queries: " + (this.ShowMetricsProcessTabsEndTime - this.ShowMetricsProcessTabsStartTime) + " msec");
+	   let sum = this.singleQueryTimes.reduce(function(pv, cv) pv + cv, 0);
+	   this.dump("Avg time for " + this.singleQueryTimes.length + " (total tabs:" + this.numTabs + "): " + ((sum * 1.0) / this.singleQueryTimes.length) + " msec");
+	   this.singleQueryTimes.splice(0);
 	 }
 	 this.clearTimeouts();
 	 this.dualProcessSetupFinalCallback({completedQuery:true,
@@ -175,7 +186,19 @@ var globalMessageManager;
 	   }
 	   return true;
 	 }
-                  
+
+	 if (ShowMetrics && !data.shortCircuitUpdate) {
+	   let key = data.timestamp + ":" + windowIdx + ":" + tabIdx;
+	   if (key in this.singleQueryTimesCollector) {
+	      let endTime = new Date().valueOf();
+	      let et = endTime - this.singleQueryTimesCollector[key];
+	      this.singleQueryTimes.push(et);
+	      delete this.singleQueryTimesCollector[key];
+	      this.dump("QQQ: Time to process query " + windowIdx + ":" + tabIdx + ": " + et + " msec");
+	   } else {
+	     //this.dump("QQQ: No singleQueryTimesCollector for key: " + windowIdx + ":" + tabIdx);
+	   }
+       }                  
 	 var tabGetter = this.tabGetters[windowIdx];
 	 if (!tabGetter) {
 	    this.dump("Internal Error: Can't get a tabGetter for window " + windowIdx + " (tabIdx " + tabIdx + "), current length: " + this.tabGetters.length);
@@ -267,6 +290,13 @@ var globalMessageManager;
        this.timestamp = new Date().valueOf();
 
        this.tabsToQuery = []; // Array of {windowIdx, tabIdx, openWindow}
+       if (ShowMetrics) {
+	  this.ShowMetricsStartTime = new Date().valueOf();
+       }
+       if (VisitWindowsIteratively) {
+	  this.visitAllTabs(openWindows);
+	  return;
+       }
        // Get the eligible windows
        let nextWindow = openWindows.getNext();
        let tc = nextWindow.getBrowser().tabContainer.childNodes;
@@ -278,8 +308,129 @@ var globalMessageManager;
        // tabGetters: array of { tabs:[]"real" tabs, collector: {tabs:[]TabInfo, currWindowInfo: {window:openWindow, tabs:"real" []}  Really Eric -- 3 fields called "tabs"??
        this.tabGetters = [new this.TabGetter(0, nextWindow, tc)];
        this.madeRequest = false;
-
        this.getNextTabFuncBound(this.timestamp, openWindows, nextWindow, tc, 0, 0);
+     };
+
+     this.haveTabInfo = function(windowIdx, tabIdx, tc) {
+       let lastGoodTabGetter = this.lastGoodTabGetters[windowIdx];
+       if (!lastGoodTabGetter) {
+	  return false;
+       }
+       let realTab = lastGoodTabGetter.tabs[tabIdx];
+       if (realTab && realTab.label == tc[tabIdx].label) {
+	  // Can't check for location match (because we have to send the frame script
+	  // a message, so assume if the label hasn't changed on the tab, it's good.
+	  let realCollector = lastGoodTabGetter.collector;
+	  let realTabInfo = realCollector.tabs[tabIdx];
+	  if (!realTabInfo) {
+	     return false;
+	  }
+	  if (Debug) {
+	     this.dump("QQQ: No need to update tab " + realTab.label + ", windowIdx" +
+		       windowIdx + ", tabIdx: " + tabIdx);
+	     //this.dump("QQQ: windowMatch: " + (lastGoodTabGetter.collector.openWindow == openWindow));
+	     //this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
+	  }
+	  // So update the tab collector directly
+	  try {
+	     let data = {tabIdx:tabIdx,
+			 windowIdx:windowIdx,
+			 timestamp:timestamp,
+			 hasImage:false, // not kept
+			 shortCircuitUpdate:true,
+			 location:realTabInfo.location};
+	     this.getTabs_dualProcessContinuation_aux({data: data});
+	     return true;
+	  } catch(ex) {
+	     //@@@@
+	     if (Debug) {
+		this.dump("QQQ: Problem trying to update known tab: windowIdx:" + windowIdx +
+			  " tabIdx: " + tabIdx + ", ex: " + ex + "ex.stack:" + ex.stack);
+		this.dump("QQQ: No need to update tab " + realTab.label + ", windowIdx" +
+			  windowIdx + ", tabIdx: " + tabIdx);
+		this.dump("QQQ: windowMatch: " + (lastGoodTabGetter.collector.openWindow == openWindow));
+		this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
+		this.dump("QQQ: tabGetter tab: <" + this.tabGetters[windowIdx].tabs[tabIdx] + ">");
+	     }
+	  }
+       }
+       return false;
+     };
+
+     this.getTabs_doneVisitingWindows = function() {
+       if (ShowMetrics) {
+	 this.ShowMetricsEndTime = new Date().valueOf();
+	 this.dump("Time to visit all windows: " + (this.ShowMetricsEndTime - this.ShowMetricsStartTime) + " msec");
+       }
+       // We've visited all the tabs, now go start processing each one.
+       // This function ends by sending a message to a frame script
+       if (!this.madeRequest) {
+	 // Call the final processor directly
+	 if (Debug) {
+	   this.dump("QQQ: No requests were made, so call dualProcessContinuationFinish directly")
+	 }
+	 this.dualProcessContinuationFinish();
+	 return;
+       }
+       if (ShowMetrics) {
+	 this.ShowMetricsProcessTabsStartTime = new Date().valueOf();
+       }
+       this.processTabsToQuery();
+
+       // And set up the timeout to keep processing tabsToQuery if the current
+       // frame script doesn't respond.
+       let totalTimeout = 5 * 1000; // Update every 5 seconds regardless of # tabs
+       let callbackTimeoutFunc = function(timestamp) {
+	 if (Debug) {
+	   this.dump("**** Hit callback timeout (" + (totalTimeout/1000) + " sec. before getting all the tabs -- " + this.tabsToQuery.length + " left to process");
+	 }
+	 if (timestamp < this.timestamp) {
+	   if (Debug) {
+	     this.dump("**** main callback timeout handler called too late: " + (this.timestamp - timestamp) + " msec");
+	   }
+	   return;
+	 }
+	 this.clearTimeouts();
+	 this.dualProcessSetupFinalCallback({completedQuery:false, numTabs:this.numTabs});
+	 // Maybe we'll get more later...
+	 this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout, timestamp);
+	 if (this.tabsToQuery.length > 0) {
+	    this.processTabsToQuery();
+	 }
+       }.bind(this);
+       this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout, this.timestamp);
+     };
+
+     // Visiting all the tabs this way: 60 tabs in 4 windows takes 1 msec,
+     // vs. about 500 msec with 0-second setTimeout's.  So let's hog the CPU for
+     // a short time, and just find all the info we need and get it done.
+     this.visitAllTabs = function(openWindows) {
+       var windowIdx = -1,
+           openWindow, tabIdx, tc;
+       this.numTabs = 0;
+       this.madeRequest = false;
+       this.tabGetters = [];
+       while (openWindows.hasMoreElements()) {
+	 if (!openWindows.hasMoreElements()) {
+	   break;
+	 }
+	 openWindow = openWindows.getNext();
+	 windowIdx += 1;
+	 tc = openWindow.getBrowser().tabContainer.childNodes;
+	 this.numTabs += tc.length;
+	 this.tabGetters.push(new this.TabGetter(windowIdx, openWindow, tc));
+	 for (tabIdx = 0; tabIdx < tc.length; tabIdx++) {
+	    if (this.haveTabInfo(windowIdx, tabIdx, tc)) {
+	       continue;
+	    }
+	    this.madeRequest = true;
+	    this.tabsToQuery.push({windowIdx:windowIdx, tabIdx:tabIdx, openWindow:openWindow});
+	 }
+       }
+       if (Debug) {
+       this.dump("QQQ: Looper: picked up " + this.numTabs + " tabs in " + (windowIdx + 1) + " widows, queries: " + this.tabGetters.length);
+       }
+       this.getTabs_doneVisitingWindows();
      };
 
      // loops considered harmful in JS: use short-duration timeouts
@@ -294,51 +445,7 @@ var globalMessageManager;
 	 }
 	 return;
        }
-       let makeRequest = true;
-       let lastGoodTabGetter = this.lastGoodTabGetters[windowIdx];
-       if (lastGoodTabGetter) {
-	  let realTab = lastGoodTabGetter.tabs[tabIdx];
-	  if (realTab && realTab.label == tc[tabIdx].label) {
-	     // Can't check for location match (because we have to send the frame script
-	     // a message, so assume if the label hasn't changed on the tab, it's good.
-	     let realCollector = lastGoodTabGetter.collector;
-	     let realTabInfo = realCollector.tabs[tabIdx];
-	     if (realTabInfo) {
-		if (Debug) {
-		this.dump("QQQ: No need to update tab " + realTab.label + ", windowIdx" +
-			  windowIdx + ", tabIdx: " + tabIdx);
-		//this.dump("QQQ: windowMatch: " + (lastGoodTabGetter.collector.openWindow == openWindow));
-		//this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
-		}
-		// So update the tab collector directly
-		try {
-		   let data = {tabIdx:tabIdx,
-			       windowIdx:windowIdx,
-			       timestamp:timestamp,
-			       hasImage:false, // not kept
-			       shortCircuitUpdate:true,
-			       location:realTabInfo.location};
-		   this.getTabs_dualProcessContinuation_aux({data: data});
-		   makeRequest = false;
-		} catch(ex) {
-		   //@@@@
-		   this.dump("QQQ: Problem trying to update known tab: windowIdx:" + windowIdx +
-			     " tabIdx: " + tabIdx + "ex: " + ex + "ex.stack:" + ex.stack);
-		   this.dump("QQQ: No need to update tab " + realTab.label + ", windowIdx" +
-			     windowIdx + ", tabIdx: " + tabIdx);
-		   this.dump("QQQ: windowMatch: " + (lastGoodTabGetter.collector.openWindow == openWindow));
-		   this.dump("QQQ: tabMatch: " + (realTab == tc[tabIdx]));
-		   this.dump("QQQ: tabGetter tab: <" + this.tabGetters[windowIdx].tabs[tabIdx] + ">");
-		}
-	     } else {
-		//this.dump("QQQ: No realTabInfo");
-	     }
-	  } else {
-	     //this.dump("QQQ: No real-tab label match");
-	  }
-       } else {
-	 //this.dump("QQQ: No last goodTabGetter");
-       }
+       makeRequest = !this.haveTabInfo(windowIdx, tabIdx, tc);
        if (makeRequest) {
 	 this.madeRequest = true;
 	 this.tabsToQuery.push({windowIdx:windowIdx, tabIdx:tabIdx, openWindow:openWindow});
@@ -356,40 +463,7 @@ var globalMessageManager;
 	 }
 	 setTimeout(this.getNextTabFuncBound, GET_TABS_ITERATE_DELAY, timestamp, openWindows, nextWindow, tc, nextWindowIdx, 0);
        } else {
-	 // We've visited all the tabs, now go start processing each one.
-	 // This function ends by sending a message to a frame script
-	 if (!this.madeRequest) {
-	   // Call the final processor directly
-	   if (Debug) {
-	   this.dump("QQQ: No requests were made, so call dualProcessContinuationFinish directly")
-	   }
-	   this.dualProcessContinuationFinish();
-	   return;
-	 }
-	 this.processTabsToQuery();
-
-	 // And set up the timeout to keep processing tabsToQuery if the current
-	 // frame script doesn't respond.
-	 let totalTimeout = 5 * 1000; // Update every 5 seconds regardless of # tabs
-	 let callbackTimeoutFunc = function(timestamp) {
-	   if (Debug) {
-	   this.dump("**** Hit callback timeout (" + (totalTimeout/1000) + " sec. before getting all the tabs -- " + this.tabsToQuery.length + " left to process");
-	   }
-	   if (timestamp < this.timestamp) {
-	     if (Debug) {
-	       this.dump("**** main callback timeout handler called too late: " + (this.timestamp - timestamp) + " msec");
-	     }
-	     return;
-	   }
-	   this.clearTimeouts();
-	   this.dualProcessSetupFinalCallback({completedQuery:false, numTabs:this.numTabs});
-	   // Maybe we'll get more later...
-	   this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout, timestamp);
-	   if (this.tabsToQuery.length > 0) {
-	      this.processTabsToQuery();
-	   }
-	 }.bind(this);
-	 this.callbackTimeoutId = setTimeout(callbackTimeoutFunc, totalTimeout, timestamp);
+	 this.getTabs_doneVisitingWindows();
        }
      };
 
@@ -397,7 +471,9 @@ var globalMessageManager;
        
      this.processTabsToQuery = function() {
        if (this.tabsToQuery.length == 0) {
+	 if (Debug) {
 	 this.dump("TH: processTabsToQuery: this.tabsToQuery is empty");
+	 }
 	 return;
        }
        if (Debug) {
@@ -406,6 +482,9 @@ var globalMessageManager;
        var workItem = this.tabsToQuery.shift();
        //this.dump("QQQ: processTabsToQuery: workItem: " + (workItem && Object.keys(workItem).join(", ")))
        //this.dump("QQQ: processTabsToQuery: workItem: " + (workItem && Object.keys(workItem).join(", ")))
+       if (ShowMetrics) {
+	  this.singleQueryTimesCollector[this.timestamp + ":" + workItem.windowIdx + ":" + workItem.tabIdx] = new Date().valueOf();
+       }
        this.tabGetters[workItem.windowIdx].setImageSetting(workItem.tabIdx, this.timestamp);
      };
 
