@@ -25,12 +25,12 @@ function doStuff(data) {
 var handleStopListeningMessage = function(msgData) {
   //consoleService.logStringMessage("RRR: Stop listening for docType-has-image and stop-listening");
   removeMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
-  removeEventListener("DOMContentLoaded", handleDOMContentLoaded, false);
+  removeEventListener("DOMTitleChanged", handleDOMTitleChanged, false);
   removeEventListener("mozbrowsericonchange", handleMozBrowserIconChange, false);
 };
 
-var handleDOMContentLoaded = function(event) {
-  sendAsyncMessage("tabhunter@ericpromislow.com:DOMContentLoaded");
+var handleDOMTitleChanged = function(event) {
+  sendAsyncMessage("tabhunter@ericpromislow.com:DOMTitleChanged");
 };
 
 var handleMozBrowserIconChange = function(event) {
@@ -38,11 +38,11 @@ var handleMozBrowserIconChange = function(event) {
     if (false) {
        consoleService.logStringMessage("RRR: favicon changed: href: " + details.href + ", sizes: " + details.sizes + ", rel: " + details.rel);
     }
-  sendAsyncMessage("tabhunter@ericpromislow.com:DOMContentLoaded");
+  sendAsyncMessage("tabhunter@ericpromislow.com:DOMTitleChanged");
 }
 
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image", handleMessage);
 addMessageListener("tabhunter@ericpromislow.com:docType-has-image-shutdown", handleStopListeningMessage);
 
-addEventListener("DOMContentLoaded", handleDOMContentLoaded, false);
+addEventListener("DOMTitleChanged", handleDOMTitleChanged, false);
 addEventListener("mozbrowsericonchange", handleMozBrowserIconChange, false);

@@ -38,24 +38,24 @@ var globalMessageManager;
        globalMessageManager = _globalMessageManager;
      }
      globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
-     globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded_bound);
+     globalMessageManager.addMessageListener("tabhunter@ericpromislow.com:DOMTitleChanged", this.process_DOMTitleChanged_bound);
      this.lastGoodTabGetters = [];
      this.singleQueryTimes = [];
      this.singleQueryTimesCollector = {}; // timestamp:windowIdx:tabIdx: startTime
    };
 
-   this.process_DOMContentLoaded = function() {
+   this.process_DOMTitleChanged = function() {
      if (Debug) {
-       this.dump("**************** sessionTrack -- got a DOMContentLoaded msg from a frame script!");
+       this.dump("**************** sessionTrack -- got a DOMTitleChanged msg from a frame script!");
      }
 	gTabhunter.updateOnTabChange();
    };
-   this.process_DOMContentLoaded_bound = this.process_DOMContentLoaded.bind(this);
+   this.process_DOMTitleChanged_bound = this.process_DOMTitleChanged.bind(this);
    
    this.onUnload = function() {
      // Called from selectTabDialog.js:onUnload - do this when the tabhunter window is closed.
      globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:docType-has-image-continuation", this.process_docType_has_image_continuation_msg_bound);
-     globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:DOMContentLoaded", this.process_DOMContentLoaded_bound);
+     globalMessageManager.removeMessageListener("tabhunter@ericpromislow.com:DOMTitleChanged", this.process_DOMTitleChanged_bound);
      this.wmService = (Components.classes["@mozilla.org/appshell/window-mediator;1"].
 		       getService(Components.interfaces.nsIWindowMediator));
      var openWindows = this.wmService.getEnumerator("navigator:browser");
