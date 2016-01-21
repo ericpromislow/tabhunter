@@ -1,3 +1,4 @@
+<% $stderr.puts "In js.erb file: @thDebug:#{@thDebug}" %>
 /*
 ** asyncTabCollector.js -- singleton object owned by selectTabDialog.js that gets tabs via frameScript messages
 */
@@ -15,10 +16,6 @@ try {
 var tabCollector = {};
 var globalMessageManager;
 (function() {
-   const Debug = false;
-   const ShowMetrics = false;
-   const VisitWindowsIteratively = true;
-
    var isConnecting = function(s) {
      // Probably a way to look at the tab and figure out if it's connected
      if (!s || s.indexOf("Connecting") != 0) return false;
@@ -45,9 +42,9 @@ var globalMessageManager;
    };
 
    this.process_DOMTitleChanged = function() {
-     if (Debug) {
+     <% if @thDebug %>
        this.dump("**************** sessionTrack -- got a DOMTitleChanged msg from a frame script!");
-     }
+     <% end %>
 	gTabhunter.updateOnTabChange();
    };
    this.process_DOMTitleChanged_bound = this.process_DOMTitleChanged.bind(this);
@@ -69,11 +66,15 @@ var globalMessageManager;
 		   tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:content-focus-shutdown", {});
 		   tab.linkedBrowser.messageManager.sendAsyncMessage("tabhunter@ericpromislow.com:search-next-tab-shutdown", {});
 		} catch(ex2) {
+		   <% if @thLogErrors %>
 		   self.dump("Failed to shutdown docType FS: " + ex2);
+		   <% end %>
 		}
 	     });
 	} catch(ex3) {
+	   <% if @thLogErrors %>
 	   self.dump("Failed to shutdown docType FS: " + ex3);
+	   <% end %>
 	}
      } while (openWindows.hasMoreElements());
    };
@@ -85,23 +86,28 @@ var globalMessageManager;
        try {
 	  this.getTabs_dualProcess(callback);
        } catch(ex) {
+	 <% if @thLogErrors %>
 	 this.dump('asyncTabCollector.js - collectTabs - ' + ex + "\n" + ex.stack);
+         <% end %>
        }
      };
 
      this.dualProcessContinuationFinish = function() {
        if (this.tabGetters.every(function(tabGetter) tabGetter.finishedGettingTabs)) {
-	 if (Debug) {
+           <% if @thDebug %>
 	   this.dump("**** all tabs are done at " + this.timestamp + ", loop over " +
 		     this.tabGetters.length + " tabGetters");
+           <% end %>
 	 }
-	 if (ShowMetrics && this.singleQueryTimes.length > 0) {
+         <% if @thMetrics %>
+	 if (this.singleQueryTimes.length > 0) {
 	   this.ShowMetricsProcessTabsEndTime = new Date().valueOf();
 	   this.dump("Non-loop Time to process all queries: " + (this.ShowMetricsProcessTabsEndTime - this.ShowMetricsProcessTabsStartTime) + " msec");
 	   let sum = this.singleQueryTimes.reduce(function(pv, cv) pv + cv, 0);
 	   this.dump("Avg time for " + this.singleQueryTimes.length + " (total tabs:" + this.numTabs + "): " + ((sum * 1.0) / this.singleQueryTimes.length) + " msec");
 	   this.singleQueryTimes.splice(0);
 	 }
+         <% end %>
 	 this.clearTimeouts();
 	 this.dualProcessSetupFinalCallback({completedQuery:true,
 		                             numTabs:this.numTabs.length});
@@ -117,7 +123,9 @@ var globalMessageManager;
        // pour everything into the return obj and
        // pass it on using the callback
        if (typeof(options) == "undefined") {
+         <% if @thDebug %>
 	 this.dump("**** Hey!!! dualProcessSetupFinalCallback: options not set")
+         <% end %>
 	 options = {completedQuery:true};
        }
        let result = { tabs:[], windowInfo:[] }
@@ -126,16 +134,18 @@ var globalMessageManager;
 	       result.tabs = result.tabs.concat(tabGetter.collector.tabs);
 	       result.windowInfo.push(tabGetter.collector.currWindowInfo);
 	    } catch(e2) {
+    	       <% if @thLogErrors %>
 	       this.dump("**** this.tabGetters.forEach: bad: " + e2);
+               <% end %>
 	    }
 	 }.bind(this));
-       if (Debug) {
+         <% if @thDebug %>
 	  this.dump("QQQ: result:tabs: " + result.tabs.length
 		    + ", windowInfo: " + result.windowInfo.length);
 	  result.tabs.forEach(function(tab) {
 	       this.dump("QQQ: window/tab " + tab.windowIdx + "-" + tab.tabIdx + "/" + tab.label + " - " + tab.location);
 	    }.bind(this));
-       }
+               <% end %>
        if (options.completedQuery) {
 	 this.lastGoodTabGetters = this.tabGetters;
        }
@@ -175,19 +185,20 @@ var globalMessageManager;
 	 var windowTabKey = windowIdx + "-" + tabIdx;
 
 	 if (data.timestamp < this.timestamp) {
-	    if (Debug) {
+               <% if @thDebug %>
 	       this.dump("got a message from an older request " + ((this.timestamp - data.timestamp)) + " msec ago");
-	    }
+               <% end %>
 	    return true;
 	 }
 	 if (this.processedTabs[windowTabKey]) {
-	   if (Debug) {
+               <% if @thDebug %>
 	   this.dump("QQQ: we've already processed windowTabKey " + windowTabKey);
-	   }
+               <% end %>
 	   return true;
 	 }
 
-	 if (ShowMetrics && !data.shortCircuitUpdate) {
+         <% if @thMetrics %>
+	 if (!data.shortCircuitUpdate) {
 	   let key = data.timestamp + ":" + windowIdx + ":" + tabIdx;
 	   if (key in this.singleQueryTimesCollector) {
 	      let endTime = new Date().valueOf();
@@ -198,24 +209,26 @@ var globalMessageManager;
 	   } else {
 	     //this.dump("QQQ: No singleQueryTimesCollector for key: " + windowIdx + ":" + tabIdx);
 	   }
-       }                  
+       }
+       <% end %>
 	 var tabGetter = this.tabGetters[windowIdx];
 	 if (!tabGetter) {
+            <% if @thLogErrors %>
 	    this.dump("Internal Error: Can't get a tabGetter for window " + windowIdx + " (tabIdx " + tabIdx + "), current length: " + this.tabGetters.length);
+           <% end %>
 	    return false;
 	 }
 	 
 	 var hasImage = data.hasImage;
 	 var location = data.location;
-	 if (Debug) {
+	 <% if @thDebug %>
 	    this.dump("QQQ: getTabs_dualProcessContinuation: " +
 		      "windowIdx: " + windowIdx +
 		      ", tabIdx: " + tabIdx +
 		      ", hasImage: " + hasImage +
 		      ", location: " + location +
 		      ", this.tabsToQuery.length: " + this.tabsToQuery.length);
-		      
-	 }
+         <% end %>
 	 var tab = tabGetter.tabs[tabIdx];
 	 var label = tab.label;
 
@@ -225,29 +238,33 @@ var globalMessageManager;
 	 tabGetter.collector.tabs.push(new ep_extensions.tabhunter.TabInfo(windowIdx, tabIdx, label, image, location));
 	 tabGetter.gotTabArray[tabIdx] = true;
 	 if (tabGetter.gotTabArray.every(function(x) x)) {
-	   if (Debug) {
+	   <% if @thDebug %>
 	    this.dump("QQQ: Finished getting tabs for window " + windowIdx);
-	   }
+	   <% end %>
 	    tabGetter.finishedGettingTabs = true;
 	 } else {
-	   if (Debug) {
+	   <% if @thDebug %>
 	    this.dump("QQQ: Still more tabs for window " + windowIdx);
-	   }
+	   <% end %>
 	 }
          return true;
        } catch(e) {
 	 if (data.shortCircuitUpdate) {
 	   throw(e);
 	 }
+         <% if @thLogErrors %>
 	 this.dump("**** dualProcessContinuation: bad happened: " + e + "\n" + e.stack);
+	 <% end %>
 	 return true;
        }
      };
 
      this.process_docType_has_image_continuation_msg = function(msg) {
        if (Debug) {
+	   <% if @thDebug %>
 	 tabCollector.dump("**** >>> Handling a docType-has-image-continuation notific'n");
 	 //tabCollector.dump("**** tabCollector.tabGetters: " + (tabCollector.tabGetters.length + " tabGetters"));
+   	   <% end %>
        }
        tabCollector.getTabs_dualProcessContinuation.call(tabCollector, msg);
      };
@@ -265,6 +282,7 @@ var globalMessageManager;
      };
      this.TabGetter.prototype.setImageSetting = function(tabIdx, timestamp) {
        var tab = this.tabs[tabIdx];
+       //@@@@
        if (Debug) {
 	 this.dump("**** go do docType-has-image for windowIdx " +
 		   this.windowIdx + ", tabIdx: " + tabIdx + " <" + tab.label + ">");
