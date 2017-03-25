@@ -16,6 +16,7 @@
                    em:type="2"
                    em:iconURL="chrome://tabhunter/skin/tabhunter-install.png"
                    em:optionsURL="chrome://tabhunter/content/prefs.xul">
+    <em:multiprocessCompatible>true</em:multiprocessCompatible>
     <em:targetApplication RDF:resource="rdf:#Firefox"/>
   </RDF:Description>
 </RDF:RDF>
