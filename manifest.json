@@ -1,0 +1,36 @@
+{
+    "applications": {
+	"gecko": {
+	    "id": "tabhunter-ex@ericpromislow.com",
+	    "strict_min_version": "51"
+	}
+    },
+    "browser_action": {
+	"browser_style": true,
+	"default_icon": "icons/martini-24x24.png",
+	"default_title": "Tabhunter",
+	"default_popup": "popup/tabhunter.html"
+    },
+    "default_locale": "en",
+    "description": "Wade through all your tabs fast",
+    "homepage_url": "https://github.com/ericpromislow/tabhunterwebx",
+    "manifest_version": 2,
+    "name": "Tabhunter",
+    "permissions": [
+	"clipboardWrite",
+	"storage",
+	"tabs",
+	"<all_urls>"
+    ],
+    "default_locale": "en",
+    
+    "commands": {
+	"_execute_browser_action": {
+	    "suggested_key": {
+		"mac": "MacCtrl+Shift+T",
+		"default": "Alt+Shift+T"
+	    }
+	}
+    },
+    "version": "2.0.0"
+}

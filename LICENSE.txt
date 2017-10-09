@@ -10,7 +10,7 @@
  * License for the specific language governing rights and limitations
  * under the License.
  * 
- * Portions created by Eric Promislow are Copyright (C) 2008-2015.
+ * Portions created by Eric Promislow are Copyright (C) 2008-2017.
  * All Rights Reserved.
  * 
  * Initial Contributor(s):

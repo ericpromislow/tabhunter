@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!-- tabhunter.html -:- See LICENSE.txt for copyright and license details. -->
+<html lang="en">
+  <head>
+    <link href="tabhunter.css" rel="stylesheet" type="text/css" />
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <script src="jquery.js"></script>
+  <script src="tabhunter.js"></script>
+<body>
+  <div id="form">
+    <div class="row">
+      <label for="pattern">Pattern:</label>
+      <input type="text" id="pattern" />
+    </div>
+    <div class="row">
+      <label for="url">URL:</label>
+      <input type="text" id="url" readonly="true" />
+    </div>
+    <div id="main">
+      <ul id="list">
+      </ul>
+    </div>
+    <span id="activity"></span>
+    <div id="buttons">
+      <button type="button" class="button" id="done">Done</button>
+      <button type="button" class="button" id="go">Go</button>
+      <button type="button" class="button" id="closeTabs">Close Tab</button>
+      <button type="button" class="button" id="copyURL">Copy URL</button>
+      <button type="button" class="button" id="copyTitle">Copy Title</button>
+      <button type="button" class="button" id="copyURLTitle">Copy URL+Title</button>
+    </div>
+    <textarea id="textarea"></textarea>
+  </div>
+</body>
