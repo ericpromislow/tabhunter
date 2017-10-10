@@ -62,7 +62,7 @@ input:focus {
   padding-left: 70px;
 }
 
-button.button {
+.button {
   margin-left: .5em;
   border: 1px solid rgb(218,218,218);
   padding: 4px;
@@ -70,11 +70,11 @@ button.button {
   border-radius: 3px;
 }
 
-button.highlighted {
+.button.highlighted {
     border-color: rgb(109, 109, 109);
 }
 
-button.pressed {
+.button.pressed {
     background-color: #ddd;
 }
 

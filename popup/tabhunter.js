@@ -12,6 +12,8 @@ var showElapsedTimes = false; // Need a way to enable this.
 var t1, t2;
 var closeTabsButton;
 var matchCloseTabs;
+var showAudioButton;
+var g_showAudio;
 
 // select/option items take only text.
 // lists take an image as well, so let's try it.
@@ -33,6 +35,9 @@ function init() {
     document.getElementById("copyURL").addEventListener("mouseup", doCopyURLButton, false);
     document.getElementById("copyTitle").addEventListener("mouseup", doCopyTitleButton, false);
     document.getElementById("copyURLTitle").addEventListener("mouseup", doCopyURLTitleButton, false);
+    showAudioButton = document.getElementById("showAudio");
+    showAudioButton.addEventListener("click", doHandleAudioCheckbox, false);
+    g_showAudio = showAudioButton.checked;
 
     matchCloseTabs = /^(.*?)(s?)$/;
 
@@ -45,13 +50,39 @@ function init() {
         if ('pattern' in item) {
             mainPattern.value = item.pattern;
         }
-        populateTabList();
+        restoreAudioSetting();
     };
     var gotPatternErr = function(err) {
-        populateTabList();
+        restoreAudioSetting();
     };
 
     browser.storage.local.get("pattern").then(gotPatternOK, gotPatternErr);
+}
+
+function restoreAudioSetting() {
+    var gotSettingOK = function(item) {
+        if ('showAudio' in item) {
+            g_showAudio = item.showAudio;
+            showAudioButton.checked = g_showAudio;
+        }
+        populateTabList();
+    };
+    var gotSettingErr = function(err) {
+        populateTabList();
+    };
+    browser.storage.local.get("showAudio").then(gotSettingOK, gotSettingErr);
+}
+
+// Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl, tab#audible] 
+function makeTabItem(id, tab) {
+    return {
+	title: tab.title,
+	url: tab.url,
+	windowID: id,
+	tabID: tab.id,
+	favIconUrl: tab.favIconUrl,
+	audible: tab.audible
+    };
 }
 
 function populateTabList() {
@@ -70,10 +101,10 @@ function populateTabList() {
         console.log(err);
     }
     const compareByName = function(tab1, tab2) {
-        let title1 = tab1[0].toLowerCase();
-        let title2 = tab2[0].toLowerCase();
-        let url1 = tab1[1].toLowerCase();
-        let url2 = tab2[1].toLowerCase();
+        let title1 = tab1.title.toLowerCase();
+        let title2 = tab2.title.toLowerCase();
+        let url1 = tab1.url.toLowerCase();
+        let url2 = tab2.url.toLowerCase();
         return (title1 < title2 ? -1 :
                 (title1 > title2 ? 1 :
                  (url1 < url2 ? -1 :
@@ -93,7 +124,7 @@ function populateTabList() {
             var tabs = windowInfo.tabs;
             for (var tab of tabs) {
                 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl
-                items.push([tab.title, tab.url, id, tab.id, tab.index, tab.favIconUrl]);
+                items.push(makeTabItem(id, tab));
             }
         }
         if (showElapsedTimes) {
@@ -158,8 +189,8 @@ function doVisitSelectedURL() {
     }
     var target = items[matchedItems[selectedIndex]];
     // target: tab.title, tab.url, window.id, tab.id, tab.index
-    var windowId = target[2];
-    var tabId = target[3];
+    var windowId = target.windowID;
+    var tabId = target.tabID;
 
     const getCurrentErr = function(err) {
         console.log("Error getting current window: " + err);
@@ -173,7 +204,7 @@ function doVisitSelectedURL() {
                 console.log("Should be showing window: " + windowInfo.title);
             }
             const updateInfo = { focused: true, drawAttention: true, state: "normal" };
-            browser.windows.update(target[2], updateInfo).then(showWindowCont, showWindowErr);
+            browser.windows.update(target.windowID, updateInfo).then(showWindowCont, showWindowErr);
         }
     };
 
@@ -246,7 +277,7 @@ function processArrowKey_aux(event) {
     }
     selectedIndex = newSelectedIndex;
     var url = document.getElementById("url");
-    url.value = items[matchedItems[selectedIndex]][1];
+    url.value = items[matchedItems[selectedIndex]].url;
 }
 
 function onListItemClick(event) {
@@ -263,7 +294,7 @@ function onListItemClick(event) {
     }
     selectedIndex = i;
     lastClickedIndex = (mask & (SHIFT_KEY|CTRL_KEY)) == 0 ? i : -1;
-    document.getElementById("url").value = items[matchedItems[i]][1];
+    document.getElementById("url").value = items[matchedItems[i]].url;
     updateButtons();
 }
 
@@ -301,19 +332,22 @@ function onPatternChanged() {
                 ptn = new RegExp(pattern, "i");
             }
             fn = function matchPtn(item) {
-                return ptn.test(item[0]) || ptn.test(item[1]);
+                return ptn.test(item.title) || ptn.test(item.url);
             }
         } catch(ex) {
             console.log("not a valid javascript pattern: " + ex);
             // just do a case-insensitive substring search
             ptn = pattern.toLowerCase();
             fn = function matchText(item) {
-                return (item[0].toLowerCase().indexOf(ptn) >= 0
-                        || item[1].toLowerCase().indexOf(ptn) >= 0);
+                return (item.title.toLowerCase().indexOf(ptn) >= 0
+                        || item.url.toLowerCase().indexOf(ptn) >= 0);
             }
         }
     }
     for (var i = 0; i < items.length; i++) {
+        if (g_showAudio && !items[i].audible) {
+            continue;
+        }
         if (fn(items[i])) {
             matchedItems.push(i);
         }
@@ -331,12 +365,13 @@ function makeListFromMatchedItems() {
     lastClickedIndex = -1;
     for (var i = 0; i < matchedItems.length; i++) {
         var idx = matchedItems[i];
+        var item = items[idx];
         var el = document.createElement("li");
-        el.textContent = items[idx][0] + " - " + items[idx][1];
+        el.textContent = item.title + " - " + item.url;
         el.visibleIndex = i;
         el.actualIndex = idx;
-        if (items[idx][5]) {
-            el.style.backgroundImage = "url(" + items[idx][5] + ")";
+        if (item.favIconUrl) {
+            el.style.backgroundImage = "url(" + item.favIconUrl + ")";
         }
         if (idx == selectedActualIndex) {
             $(el).addClass("selected");
@@ -390,11 +425,11 @@ function updateURL() {
     var selectedItems = getSelectedItemsJQ();
     if (selectedItems.length >= 1) {
         var index = selectedItems[0].actualIndex;
-        URL.value = items[index][1];
+        URL.value = items[index].url;
         return;
     }
     if (matchedItems.length == 1) {
-        url.value = items[matchedItems[0]][1];
+        url.value = items[matchedItems[0]].url;
     } else {
         url.value = "";
     }
@@ -403,7 +438,7 @@ function updateURL() {
 function updateActivity() {
     var pattern = mainPattern.value;
     var text;
-    if (pattern.length == 0) {
+    if (pattern.length == 0 || g_showAudio) {
         text = "Hunting through " + items.length + " tabs";
     } else {
         text = "Matched " + matchedItems.length + "/" + items.length + " tabs";
@@ -457,31 +492,31 @@ function setClipboard(text) {
 }
 
 function doCopyURLButton() {
-    var text = gatherText(function(item) { return item[1]; });
+    var text = gatherText(function(item) { return item.url; });
     setClipboard(text);
 }
 
 function doCopyTitleButton() {
-    var text = gatherText(function(item) { return item[0]; });
+    var text = gatherText(function(item) { return item.title; });
     setClipboard(text);
 }
 
 function doCopyURLTitleButton() {
-    var text = gatherText(function(item) { return item[1] + '-' + item[0]; });
+    var text = gatherText(function(item) { return item.url + '-' + item.title; });
     setClipboard(text);
+}
+
+function doHandleAudioCheckbox() {
+    g_showAudio = showAudioButton.checked;
+    browser.storage.local.set({"showAudio": g_showAudio});
+    onPatternChanged();
 }
 
 function doGoButton() {
     var selItems = getSelectedItemsJQ();
-    var value = null;
-    if (selItems.length == 1) {
-        value = items[matchedItems[selectedIndex]];
-    } else if (matchedItems.length == 1) {
-        value = items[matchedItems[0]];
-    } else {
-        return;
+    if (selItems.length == 1 || matchedItems.length == 1) {
+        doVisitSelectedURL();
     }
-    doVisitSelectedURL();
 }
 
 function getModifierMask(event) {

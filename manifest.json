@@ -1,7 +1,7 @@
 {
     "applications": {
 	"gecko": {
-	    "id": "tabhunter-ex@ericpromislow.com",
+	    "id": "tabhunter@ericpromislow.com",
 	    "strict_min_version": "51"
 	}
     },
