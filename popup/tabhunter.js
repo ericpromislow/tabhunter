@@ -438,7 +438,7 @@ function updateURL() {
 function updateActivity() {
     var pattern = mainPattern.value;
     var text;
-    if (pattern.length == 0 || g_showAudio) {
+    if (pattern.length == 0 && !g_showAudio) {
         text = "Hunting through " + items.length + " tabs";
     } else {
         text = "Matched " + matchedItems.length + "/" + items.length + " tabs";
