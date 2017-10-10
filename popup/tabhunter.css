@@ -120,11 +120,12 @@ span#activity {
 
 div#buttons {
     margin-top: 3pt;
+    font-size: smaller;
 }
 
 #closeTabs {
-    margin-left: 3em;
-    margin-right: 3em;
+    margin-left: 1em;
+    margin-right: 1em;
 }
 
 #textarea {
