@@ -458,7 +458,7 @@ function doCloseTabsButton() {
         return;
     }
     var tabIds = selectedItems.map(function(selectedItem) {
-        return items[selectedItem.actualIndex][3];
+        return items[selectedItem.actualIndex].tabID;
     });
     var removeTabError = function(err) {
         console.log("Error removing tab: " + err);
