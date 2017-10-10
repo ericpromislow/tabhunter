@@ -76,12 +76,12 @@ function restoreAudioSetting() {
 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl, tab#audible] 
 function makeTabItem(id, tab) {
     return {
-	title: tab.title,
-	url: tab.url,
-	windowID: id,
-	tabID: tab.id,
-	favIconUrl: tab.favIconUrl,
-	audible: tab.audible
+      title: tab.title,
+      url: tab.url,
+      windowID: id,
+      tabID: tab.id,
+      favIconUrl: tab.favIconUrl,
+      audible: tab.audible
     };
 }
 
@@ -418,6 +418,7 @@ function updateButtons() {
     if (newCloseTabsContent != "") {
         closeTabsButton.textContent = newCloseTabsContent;
     }
+    // showAudioButton is always enabled
 }
 
 function updateURL() {
