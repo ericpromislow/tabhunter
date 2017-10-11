@@ -4,7 +4,7 @@
 
 ## Based on the much-loved, classic Firefox extension
 
-This extension lets you easily juggledozens of tabs at any time. Enter a
+This extension lets you easily juggle dozens of tabs at any time. Enter a
 search string (actually a standard JavaScript regex), highlight
 the URL you want to bring up, and press return or double-click it.
 Tabhunter will even bring up minimized windows containing the desiredu
