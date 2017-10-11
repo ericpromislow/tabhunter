@@ -356,11 +356,13 @@ function onPatternChanged() {
 }
 
 function makeListFromMatchedItems() {
+    var selectedItems = getSelectedItemsJQ();
+    var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
+    var lastClickedActualIndex = matchedItems[lastClickedIndex];
+    var selectedActualIndex = matchedItems[selectedIndex];
     $("#list").empty();
     $("ul li").off("dblclick", onListItemDoubleClick);
     $("ul li").off("click", onListItemClick);
-    var lastClickedActualIndex = matchedItems[lastClickedIndex];
-    var selectedActualIndex = matchedItems[selectedIndex];
     selectedIndex = 0;
     lastClickedIndex = -1;
     for (var i = 0; i < matchedItems.length; i++) {
@@ -373,9 +375,11 @@ function makeListFromMatchedItems() {
         if (item.favIconUrl) {
             el.style.backgroundImage = "url(" + item.favIconUrl + ")";
         }
-        if (idx == selectedActualIndex) {
+        if (selectedActualIndices.indexOf(idx) >= 0) {
             $(el).addClass("selected");
-            selectedIndex = i;
+            if (idx == selectedActualIndex) {
+                selectedIndex = i;
+            }
         }
         if (lastClickedIndex > -1 && idx == lastClickedActualIndex) {
             lastClickedIndex = i;
