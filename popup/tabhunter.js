@@ -465,7 +465,13 @@ function doCloseTabsButton() {
         return items[selectedItem.actualIndex].tabID;
     });
     var removeTabError = function(err) {
-        console.log("Error removing tab: " + err);
+        var msg = "Error removing tab: ";
+        if (typeof(err) == "string") {
+            msg += err;;
+        } else {
+            msg += err.message;
+        }
+        alert("Error removing tab: " + msg);
     }
     var removeTabOK = function() {
         setTimeout(populateTabList, 10);
