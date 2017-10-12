@@ -7,8 +7,7 @@
 This extension lets you easily juggle dozens of tabs at any time. Enter a
 search string (actually a standard JavaScript regex), highlight
 the URL you want to bring up, and press return or double-click it.
-Tabhunter will even bring up minimized windows containing the desiredu
-tab.
+Tabhunter will even bring up minimized windows containing the desired tab.
 
 Inspired by Davide Ficano's tab selector extension for ActiveState's
 Komodo IDE, and my own need for some assistance in managing my
