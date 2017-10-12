@@ -468,7 +468,7 @@ function doCloseTabsButton() {
         console.log("Error removing tab: " + err);
     }
     var removeTabOK = function() {
-        populateTabList();
+        setTimeout(populateTabList, 10);
     }
     browser.tabs.remove(tabIds).then(removeTabOK, removeTabError);
 }
