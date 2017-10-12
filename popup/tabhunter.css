@@ -32,7 +32,7 @@ div#form div + div {
     margin-top: 6px;
 }
 
-label {
+label.text {
     font-size: 9pt;
     display: inline-block;
     width: 70px;
@@ -56,6 +56,21 @@ input.input-text {
 
 input.input-text:focus {
     border-color: #000;
+}
+
+div#buttons {
+    margin-top: 3pt;
+    font-size: smaller;
+}
+
+input.xbutton {
+    border: 1px solid red;
+    margin-left: 6px;
+    margin-right: 0px;
+}
+
+label.checkbox {
+    font-size: 8pt;
 }
 
 .button {
@@ -118,10 +133,6 @@ span#activity {
     font-size: 10pt;
 }
 
-div#buttons {
-    margin-top: 3pt;
-    font-size: smaller;
-}
 
 #closeTabs {
     margin-left: 1em;
