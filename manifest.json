@@ -1,19 +1,35 @@
 {
-    "applications": {
-	"gecko": {
-	    "id": "tabhunter@ericpromislow.com",
-	    "strict_min_version": "51"
-	}
-    },
+    "author": "Eric Promislow",
     "browser_action": {
 	"browser_style": true,
-	"default_icon": "icons/martini-24x24.png",
+	"default_icon": {
+	    "16": "icons/martini-16x16",
+	    "24": "icons/martini-24x24.png",
+	    "32": "icons/martini-32x32.png"
+	},
 	"default_title": "Tabhunter",
 	"default_popup": "popup/tabhunter.html"
     },
+    "commands": {
+	"_execute_browser_action": {
+	    "suggested_key": {
+		"mac": "MacCtrl+Shift+T",
+		"default": "Alt+Shift+T"
+	    }
+	}
+    },
     "default_locale": "en",
     "description": "Wade through all your tabs fast",
-    "homepage_url": "https://github.com/ericpromislow/tabhunterwebx",
+    "developer": {
+	"name": "Eric Promislow",
+	"url": "https://github.com/ericpromislow/tabhunter"
+    },
+    "homepage_url": "https://github.com/ericpromislow/tabhunter",
+    "icons": {
+	"48": "icons/th-48x48.png",
+	"96": "icons/th-96x96.png",
+	"128": "icons/th-128x128.png"
+    },
     "manifest_version": 2,
     "name": "Tabhunter",
     "permissions": [
@@ -22,15 +38,6 @@
 	"tabs",
 	"<all_urls>"
     ],
-    "default_locale": "en",
-    
-    "commands": {
-	"_execute_browser_action": {
-	    "suggested_key": {
-		"mac": "MacCtrl+Shift+T",
-		"default": "Ctrl+Shift+5"
-	    }
-	}
-    },
+    "short_name": "Tabhunter",
     "version": "2.0.0"
 }
