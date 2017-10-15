@@ -137,7 +137,7 @@ function populateTabList() {
             endTime("sorting tabs");
             t1 = (new Date()).valueOf();
         }
-        onPatternChanged();
+        onPatternChanged(null, true);
         
         if (showElapsedTimes) {
             endTime("setting matched tabs");
@@ -315,7 +315,8 @@ function allowAll() {
     return true;
 }
 
-function onPatternChanged() {
+function onPatternChanged(event, calledFromInit) {
+    if (typeof(calledFromInit) == undefined) calledFromInit = false;
     matchedItems = [];
     var pattern = mainPattern.value;
     var ptn;
@@ -351,6 +352,13 @@ function onPatternChanged() {
         if (fn(items[i])) {
             matchedItems.push(i);
         }
+    }
+    if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
+        // This can only be called once this way
+        showAudioButton.checked = g_showAudio = false;
+        // setTimeout to allow the button to get checked before the code continues.
+        setTimeout(onPatternChanged, 10, null, false);
+        return;
     }
     makeListFromMatchedItems();
 }
@@ -520,7 +528,7 @@ function doCopyURLTitleButton() {
 function doHandleAudioCheckbox() {
     g_showAudio = showAudioButton.checked;
     browser.storage.local.set({"showAudio": g_showAudio});
-    onPatternChanged();
+    onPatternChanged(null, false);
 }
 
 function doGoButton() {
