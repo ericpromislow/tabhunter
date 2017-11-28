@@ -1,0 +1,27 @@
+
+body {
+    height: 16em;
+    border: red solid 1px;
+}
+
+div#key_stuff.hide {
+    display: none;
+    visibility: hidden;
+}
+
+div#key_stuff.show {
+    display: block;
+    visibility: visible;
+}
+
+span#command_key_span {
+    display: inline-block;
+}
+
+span#close_on_return {
+    display: inline-block;
+}
+
+
+    
+    

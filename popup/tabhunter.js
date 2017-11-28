@@ -15,10 +15,23 @@ var matchCloseTabs;
 var showAudioButton;
 var g_showAudio;
 
+// console.log("QQQ: start loading");
+
+try {
+
 // select/option items take only text.
 // lists take an image as well, so let's try it.
-function init() {
 
+    function dumpTree(prefix, node) {
+        if (!node) {
+            console.log("QQQ: no node");
+            return;
+        }
+        console.log("QQQ: " + prefix + "node: " + node.nodeName);
+        node.childNodes.forEach(function(child) { dumpTree(prefix + "", child); });
+    }
+
+function init() {
     var list = document.getElementById("list");
     mainPattern = document.getElementById("pattern");
     mainPatternJS = $("#pattern");
@@ -547,4 +560,8 @@ function getModifierMask(event) {
             (event.commandKey ? CTRL_KEY : 0 ));
 }
 
+//console.log("QQQ: done loading");
+} catch(ex) {
+    alert("error loading: " + ex);
+}
 $(document).ready(init);
