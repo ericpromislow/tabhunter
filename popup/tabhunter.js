@@ -63,6 +63,7 @@ function init() {
         if ('pattern' in item) {
             mainPattern.value = item.pattern;
         }
+        mainPattern.select();
         restoreAudioSetting();
     };
     var gotPatternErr = function(err) {
