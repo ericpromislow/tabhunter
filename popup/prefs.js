@@ -1,10 +1,14 @@
 // prefs.html -:- See LICENSE.txt for copyright and license details.
 
-try {
+console.log("QQQ: **************** >> prefs.js");
 
-var commandKeyInput, closeOnGoCheckbox;
+
+var commandKeyInput, closeOnGoCheckbox, thWidthField, thHeightField;
 var originalCommandKey;
 var isMac;
+var prefFields, prefSettings, origPrefSettings;
+var okButton, restoreButton;
+var prefs;
 
 const CTRL_USER = "ctrl";
 const ALT_USER = "alt";
@@ -31,12 +35,28 @@ const API_NAMES_FROM_KEYS = {
 const FUNCTION_KEY_NAMES = ["Home", "End", "PageUp", "PageDown", "Insert", "Delete",
                             "Up", "Down", "Left", "Right"];
 
+const PREF_FIELD_NAMES = ["command_key", "closeOnGo", "th-width", "th-height"];
+
 function initPrefs() {
+    console.log("QQQ: >> initPrefs");
     FUNCTION_KEY_NAMES.forEach(function(name) {
 	USER_NAMES_FROM_KEYS[name] = name.toLowerCase();
 	API_NAMES_FROM_KEYS[name] = name;
     });
 
+    prefFields = {};
+    origPrefSettings = {};
+    prefSettings = {};
+    for (prefName of PREF_FIELD_NAMES) {
+	prefFields[prefName] = document.getElementById(prefName);
+	if (!prefFields[prefName]) {
+	    throw new Error(`Awp: no field for pref ${prefName}`);
+	}
+    }
+    okButton = document.getElementById("submit");
+    restoreButton = document.getElementById("restore");
+    okButton.addEventListener("click", submitChanges);
+    restoreButton.addEventListener("click", restoreChanges);
 
     $("button").mouseover(doMouseOver);
     $("button").mouseout(doMouseOut);
@@ -44,6 +64,8 @@ function initPrefs() {
     $("button").mouseup(doMouseUp);
     // $("#command_key").click(select);
     $("#command_key").keypress(handleConfigKeyPress);
+
+    
     $("#closeOnReturn").change(doSetCloseOnGo);
     originalCommandKey = "";
     if (browser.commands.update) {
@@ -68,13 +90,18 @@ function dumpError(err, msg) {
 function initFields() {
     commandKeyInput = document.getElementById("command_key");
     closeOnGoCheckbox = document.getElementById("closeOnGo");
+    thWidthField = document.getElementById("th-width");
+    thHeightField = document.getElementById("th-height");
     closeOnGoCheckbox.checked = true;
     
     var gotCommandsOK = function(commands) {
         if (commands[0].name == "_execute_browser_action") {
-            commandKeyInput.value = userStringFromInternalString(commands[0].shortcut);
+            commandKeyInput.value =
+		prefSettings["_execute_browser_action"] =
+		origPrefSettings["_execute_browser_action"] =
+		userStringFromInternalString(commands[0].shortcut);
         }
-        getCloseOnGo();
+	getPrefs();
     };
     var gotCommandsErr = function(err) {
         var msg = "Error getting add-on commmands: ";
@@ -84,23 +111,31 @@ function initFields() {
             msg += err.message;
         }
         console.log(msg);
-        getCloseOnGo();
+	getPrefs();
     };
     browser.commands.getAll().then(gotCommandsOK, gotCommandsErr);
 }
 
-function getCloseOnGo() {
-    var gotCloseOnGoOK = function(item) {
-        if ("closeOnGo" in item) {
-            closeOnGoCheckbox.checked = item["closeOnGo"];
-        }
+function getPrefs() {
+    let gotPrefsOK = function(prefs) {
+	console.log(`QQQ: loaded prefs ${JSON.stringify(prefs)}`);
+	if ('prefs' in prefs) {
+	    let innerPrefs = prefs['prefs'];
+	    for (var p in innerPrefs) {
+		origPrefSettings[p] = innerPrefs[p];
+	    }
+	}
+	initFieldsWithPrefs();
         getIsMac();
     };
-    var gotCloseOnGoErr = function(err) {
-        dumpError(err, "Error getting close-on-go pref: ");
+    let gotPrefsErr = function(err) {
+        dumpError(err, `Error getting prefs`);
+	prefs = {};
+	initFieldsWithPrefs();
         getIsMac();
     };
-    browser.storage.local.get("closeOnGo").then(gotCloseOnGoOK, gotCloseOnGoErr);
+    console.log(`QQQ: -- browser.storage.local.get("prefs")`);
+    browser.storage.local.get().then(gotPrefsOK, gotPrefsErr);
 }
 
 function getIsMac() {
@@ -141,11 +176,11 @@ function verifyShortcutFromEvent(event) {
     let count = validKeys.reduce(function(acc, name) {
         return acc + (event[name] ? 1 : 0) }, 0);
     if (count == 0 && FUNCTION_KEY_NAMES.indexOf(event.key) == -1) {
-	alert(`${event.key} must have exactly one of the ${modifiers.join(", ")} modifier keys`);
+	console.log(`${event.key} must have exactly one of the ${modifiers.join(", ")} modifier keys`);
         throw new Error("bad modifiers");
     } else if (count > 1) {
 	//XXX: What about the media keys?
-        alert("The startup keybinding must have exactly one of the <" + modifiers.join(", ") + "> modifier keys");
+        console.log("The startup keybinding must have exactly one of the <" + modifiers.join(", ") + "> modifier keys");
         throw new Error("bad modifiers");
     }
 }
@@ -240,19 +275,83 @@ function propertiesToUserAndAPIString(props) {
         s_api += props.key;
     } else {
 	s_user += "+" + props.key;
-        alert("Can't support a key sequence of '" + s_user + "'");
+        console.log("Can't support a key sequence of '" + s_user + "'");
         throw new Error("bad key sequence: " + s_user);
     }
     return [s_user, s_api];
 }
 
+function initFieldsWithPrefs() {
+    if ("_execute_browser_action" in origPrefSettings) {
+	commandKeyInput.value = origPrefSettings["_execute_browser_action"];
+    } else {
+	commandKeyInput.value = "";
+    }
+    if ("closeOnGo" in origPrefSettings) {
+	console.log(`QQQ: Loaded closeOnGo pref ${origPrefSettings["closeOnGo"]}`);
+	closeOnGoCheckbox.checked = !!origPrefSettings["closeOnGo"];
+    } else {
+	console.log(`QQQ: Didn\'t load closeOnGo pref`);
+	closeOnGoCheckbox.checked = true;
+	origPrefSettings["closeOnGo"] = true;
+    }
+    /*
+    if ("th-width" in origPrefSettings) {
+	thWidthField.value = desiredWidth = origPrefSettings["th-width"];
+    } else {
+	thWidthField.value = origPrefSettings["th-width"] = "";
+    }
+    if ("th-height" in origPrefSettings) {
+	thHeightField.value = origPrefSettings["th-height"];
+    } else {
+	thHeightField.value = origPrefSettings["th-height"] = 10;
+    }
+*/
+}
+
+function restoreChanges() {
+    if ("_execute_browser_action" in origPrefSettings) {
+	commandKeyInput.value = origPrefSettings["_execute_browser_action"];
+    } else {
+	commandKeyInput.value = "";
+    }
+    closeOnGoCheckbox.checked = origPrefSettings["closeOnGo"];
+    thWidthField.value = origPrefSettings["th-width"]
+    thHeightField.value = origPrefSettings["th-height"];
+}
+
+function submitChanges() {
+    console.log(`QQQ: >> submitChanges`);
+    var innerPrefs = {};
+    var prefs = {"prefs": innerPrefs};
+    innerPrefs["closeOnGo"] = closeOnGoCheckbox.checked;
+    let updatePrefErr = function(err) {
+        dumpError(err, `Error updating prefs`);
+    };
+    console.log(`QQQ - storage.local.set ${JSON.stringify(prefs)}`);
+    browser.storage.local.set(prefs).catch(
+	function(err) {
+            dumpError(err, "Error updating _execute_browser_action: ");
+	});
+    
+	
+    console.log(`QQQ - test ${prefSettings["_execute_browser_action"]} vs ${origPrefSettings["_execute_browser_action"]}`);
+    if (prefSettings["_execute_browser_action"] !== origPrefSettings["_execute_browser_action"]) {
+        browser.commands.update([{ name: "_execute_browser_action",
+				   shortcut: propertyStrings[1] }]).catch(updatePrefErr);
+    }
+}
+
 function handleConfigKeyPress(event) {
+    console.log(`QQQ: handleConfigKeyPress: ${event.key}`);
     var target = event.target;
     try {
 	verifyShortcutFromEvent(event);
         let props = eventToInternalProperties(event);
 	let propertyStrings = propertiesToUserAndAPIString(props);
         target.value = propertyStrings[0];
+	// Save the value now, use it later if we need it
+	prefSettings["_execute_browser_action"] = propertyStrings[1];
 	//XXX: Invoke browser.commands.update in an update-command.
         //event.cancelDefault();
 	
@@ -271,6 +370,7 @@ function doSetCloseOnGo(event) {
 
 $(document).ready(initPrefs);
 
+try {
 } catch(ex) {
     console.log("bad prefs.js -- " + ex);
 }

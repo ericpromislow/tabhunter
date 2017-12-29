@@ -2,7 +2,6 @@
 <!-- prefs.html -:- See LICENSE.txt for copyright and license details. -->
 <html lang="en">
   <head>
-    <link href="tabhunter.css" rel="stylesheet" type="text/css" />
     <link href="prefs.css" rel="stylesheet" type="text/css" />
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -10,30 +9,45 @@
   <script src="jquery-3.2.1.min.js"></script>
   <script src="browser-polyfill.min.js"></script>
   <script src="prefs.js"></script>
+</head>
 <body>
+  <article>
   <h1>Tabhunter Preferences</h1>
   <div>
-    <div id="key_stuff" class="hide">
-    <span id="command_key_span">
-      <label class="input-text" for="command_key">Startup Key Sequence: </label>
-      <input id="command_key" type="text" class="text"
-             rows="1"
-	     columns="6"
-	     />
-    </span>
-    <div>
-    <span id="close_on_return">
-      <input type="checkbox" class="xbutton" name="closeOnGo" id="closeOnGo"
-      value="true"
-       >
-      <label class="checkbox" for="closeOnGo">Close On Go</label>
-    </span>
-    <!--
-             onclick="this.select()" onkeypress="handleConfigKeyPress(event)"
-       onclick="doRevertCommandKey(event)"
-       onchange="doSetCloseOnGo(event)"
-       -->
+      <div id="change-shortcut-div" class="hide">
+	<fieldset>
+	  <legend>Keyboard Shortcut</legend>
+	  <label class="input-text" for="command_key">Startup Key Sequence: </label>
+	  <input id="command_key" type="text" class="text"
+		 rows="1"
+		 columns="12"
+		 />
+	</fieldset>
+      </div>
+      <div id="close-on-return-div">
+	<fieldset>
+	  <legend>Close When Changing Tabs</legend>
+	  <input type="checkbox" class="xbutton" name="closeOnGo" id="closeOnGo"
+		 value="true"
+		 />
+	  <label for="closeOnGo">Close On Go</label>
+	</fieldset>
+      </div>
+      <div id="size-div">
+	<fieldset>
+	  <legend>Change Box Size</legend>
+	  <input type="input" class="xbutton" name="th-width" id="th-width" />
+	  <label for="th-width">Width (in pixels)</label>
+	  <input type="input" class="xbutton" name="th-height" id="th-height" />
+	  <label for="th-height"># Rows</label>
+	</fieldset>
+      </div>
+      
+      <div>
+      <button type="submit" id="submit">Submit</button>
+      <button type="restore" id="restore">Cancel</button>
     </div>
   </div>
+  </article>
 </html>
 

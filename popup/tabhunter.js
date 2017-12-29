@@ -6,7 +6,6 @@ var lastClickedIndex; // visible
 var matchedItems;
 var tablist;
 var mainPattern;
-var mainPatternJS;
 var textarea;
 var showElapsedTimes = false; // Need a way to enable this.
 var t1, t2;
@@ -14,6 +13,7 @@ var closeTabsButton;
 var matchCloseTabs;
 var showAudioButton;
 var g_showAudio;
+var closeOnGo = true;
 
 // console.log("QQQ: start loading");
 
@@ -31,10 +31,10 @@ try {
         node.childNodes.forEach(function(child) { dumpTree(prefix + "", child); });
     }
 
-function init() {
+    function init() {
+	console.log(`QQQ: title:${window.title || window.document.title}, widht: ${window.outerWidth}, outerheight: ${window.outerHeight}`);
     var list = document.getElementById("list");
     mainPattern = document.getElementById("pattern");
-    mainPatternJS = $("#pattern");
     textarea = document.getElementById("textarea");
 
     tablist = list;
@@ -62,8 +62,10 @@ function init() {
     var gotPatternOK = function(item) {
         if ('pattern' in item) {
             mainPattern.value = item.pattern;
-        }
-        mainPattern.select();
+            mainPattern.select();
+        } else {
+            mainPattern.focus();
+	}
         restoreAudioSetting();
     };
     var gotPatternErr = function(err) {
@@ -79,12 +81,50 @@ function restoreAudioSetting() {
             g_showAudio = item.showAudio;
             showAudioButton.checked = g_showAudio;
         }
-        populateTabList();
+	getCloseOnGoPref();
     };
     var gotSettingErr = function(err) {
         populateTabList();
     };
     browser.storage.local.get("showAudio").then(gotSettingOK, gotSettingErr);
+}
+
+function getCloseOnGoPref() {
+	
+    let gotPrefOK = function(item) {
+	console.log(`QQQ: getCloseOnGoPref.gotPrefOK: item: ${JSON.stringify(item)}`)
+	populateTabList();
+	let prefs = item["prefs"];
+	
+	if ("closeOnGo" in prefs) {
+	    closeOnGo = prefs["closeOnGo"];
+	    console.log(`QQQ: getCloseOnGoPref.gotPrefOK: closeOnGo: ${closeOnGo}`);
+	} else {
+	    closeOnGo = null;
+	}
+	if (closeOnGo !== true && closeOnGo !== false) {
+	    closeOnGo = true;
+	    let continueFuncOK = function() {
+		console.log(`QQQ: getCloseOnGoPref.update-pref: ok`);
+		populateTabList();
+	    };
+	    let continueFuncErr = function(err) {
+		console.log(`QQQ: getCloseOnGoPref.update-pref: err: ${err}`);
+		populateTabList();
+	    };
+	    
+	    browser.storage.local.set({"closeOnGo": closeOnGo}).then(continueFuncOK, continueFuncErr);
+	} else {
+            populateTabList();
+	}
+    };
+    let gotPrefErr = function(err) {
+	console.log(`QQQ: getCloseOnGoPref.gotPrefErr: err: ${err}`);
+        console.log(err);
+        populateTabList();
+    };
+    console.log(`QQQ: getCloseOnGoPref ... get pref...`);
+    browser.storage.local.get().then(gotPrefOK, gotPrefErr);
 }
 
 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl, tab#audible] 
@@ -163,7 +203,7 @@ function populateTabList() {
                     mainPattern.focus();
                     mainPattern.select();
                 } catch(e) {
-                    console.log("* mainPatternJS.focus(): " + e);
+                    console.log("* mainPattern.focus(): " + e);
                 }
             }, 100);
         }
@@ -216,10 +256,18 @@ function doVisitSelectedURL() {
             };
             const showWindowCont = function(windowInfo) {
                 console.log("Should be showing window: " + windowInfo.title);
+		if (closeOnGo) {
+		    close();
+		}
             }
             const updateInfo = { focused: true, drawAttention: true, state: "normal" };
             browser.windows.update(target.windowID, updateInfo).then(showWindowCont, showWindowErr);
-        }
+        } else {
+	    console.log(`QQQ: closeOnGo: ${closeOnGo}`);
+	    if (closeOnGo) {
+		close();
+	    }
+	}
     };
 
     const showTabErr = function(err) {
