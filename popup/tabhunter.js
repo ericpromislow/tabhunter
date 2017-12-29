@@ -15,6 +15,8 @@ var showAudioButton;
 var g_showAudio;
 var closeOnGo = true;
 
+var moreRowsButton, fewerRowsButton, moreColsButton, fewerColsButton;
+
 // console.log("QQQ: start loading");
 
 try {
@@ -32,7 +34,7 @@ try {
     }
 
     function init() {
-	console.log(`QQQ: title:${window.title || window.document.title}, widht: ${window.outerWidth}, outerheight: ${window.outerHeight}`);
+	console.log(`QQQ: title:${window.title || window.document.title}, outerWidth: ${window.outerWidth}, outerheight: ${window.outerHeight}`);
     var list = document.getElementById("list");
     mainPattern = document.getElementById("pattern");
     textarea = document.getElementById("textarea");
@@ -51,6 +53,16 @@ try {
     showAudioButton = document.getElementById("showAudio");
     showAudioButton.addEventListener("click", doHandleAudioCheckbox, false);
     g_showAudio = showAudioButton.checked;
+
+	moreRowsButton = document.getElementById("moreRows");
+	fewerRowsButton = document.getElementById("fewerRows");
+	moreColsButton = document.getElementById("moreCols");
+	fewerColsButton = document.getElementById("fewerCols");
+
+	moreRowsButton.addEventListener("mouseup", doMoreRows);
+	fewerRowsButton.addEventListener("mouseup", doFewerRows);
+	moreColsButton.addEventListener("mouseup", doMoreCols);
+	fewerColsButton.addEventListener("mouseup", doFewerCols);
 
     matchCloseTabs = /^(.*?)(s?)$/;
 
@@ -74,6 +86,37 @@ try {
 
     browser.storage.local.get("pattern").then(gotPatternOK, gotPatternErr);
 }
+
+    function doMoreRows() {
+	var style = list.style;
+	var props = [];
+	console.log(`QQQ: outerWidth: ${window.outerWidth}`);
+	window.outerWidth += 100;
+	console.log(`QQQ: after, outerWidth: ${window.outerWidth}`);
+	/*
+	console.log(`QQQ: doMoreRows: style: ${style}`);
+	try {
+	    console.log(`QQQ: doMoreRows: width: ${list.width}, height: ${list.height}`);
+	} catch(ex) {
+	    console.log(`QQQ: awp: ${ex}`);
+	}
+*/
+/*
+	for (var s in style) {
+	    console.log(s);
+	}
+*/
+/*
+	console.log(`QQQ: doMoreRows: style.columnCount: ${style.columnCount}`);
+	console.log(`QQQ: doMoreRows: style.columns: ${style.columns}`);
+	console.log(`QQQ: doMoreRows: style.height: ${style.height}`);
+	console.log(`QQQ: doMoreRows: style.width: ${style.width}`);
+*/
+    }
+    
+    function doFewerRows() { }
+    function doMoreCols() { }
+    function doFewerCols() { }
 
 function restoreAudioSetting() {
     var gotSettingOK = function(item) {
@@ -241,6 +284,7 @@ function doVisitSelectedURL() {
     if (selectedIndex < 0 || selectedIndex >= matchedItems.length) {
         return;
     }
+    console.log(`QQQ: closeOnGo: ${closeOnGo}`);
     var target = items[matchedItems[selectedIndex]];
     // target: tab.title, tab.url, window.id, tab.id, tab.index
     var windowId = target.windowID;

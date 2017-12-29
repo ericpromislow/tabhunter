@@ -74,7 +74,8 @@ function initPrefs() {
     } else {
         console.log("QQQ: Should not show the set-key\n");
     }
-        
+ 
+    console.log("QQQ: ... initFields");
     initFields();
 }
 
