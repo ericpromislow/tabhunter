@@ -1,7 +1,7 @@
 
 body {
     height: auto; /* 24em; */
-    border: red solid 1px;
+    border: solid 1px;
 }
 
 div#key_stuff.hide {

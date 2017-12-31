@@ -1,9 +1,6 @@
 // prefs.html -:- See LICENSE.txt for copyright and license details.
 
-console.log("QQQ: **************** >> prefs.js");
-
-
-var commandKeyInput, closeOnGoCheckbox, thWidthField, thHeightField;
+var commandKeyInput, closeOnGoCheckbox;
 var originalCommandKey;
 var isMac;
 var prefFields, prefSettings, origPrefSettings;
@@ -35,10 +32,9 @@ const API_NAMES_FROM_KEYS = {
 const FUNCTION_KEY_NAMES = ["Home", "End", "PageUp", "PageDown", "Insert", "Delete",
                             "Up", "Down", "Left", "Right"];
 
-const PREF_FIELD_NAMES = ["command_key", "closeOnGo", "th-width", "th-height"];
+const PREF_FIELD_NAMES = ["command_key", "closeOnGo"];
 
 function initPrefs() {
-    console.log("QQQ: >> initPrefs");
     FUNCTION_KEY_NAMES.forEach(function(name) {
 	USER_NAMES_FROM_KEYS[name] = name.toLowerCase();
 	API_NAMES_FROM_KEYS[name] = name;
@@ -65,14 +61,11 @@ function initPrefs() {
     // $("#command_key").click(select);
     $("#command_key").keypress(handleConfigKeyPress);
 
-    
-    $("#closeOnReturn").change(doSetCloseOnGo);
     originalCommandKey = "";
     if (browser.commands.update) {
-        console.log("QQQ: Should show the set-key\n");
         $("div#key_stuff").removeClass("hide").addClass("show");
     } else {
-        console.log("QQQ: Should not show the set-key\n");
+        //console.log("QQQ: Should not show the set-key\n");
     }
         
     initFields();
@@ -90,8 +83,6 @@ function dumpError(err, msg) {
 function initFields() {
     commandKeyInput = document.getElementById("command_key");
     closeOnGoCheckbox = document.getElementById("closeOnGo");
-    thWidthField = document.getElementById("th-width");
-    thHeightField = document.getElementById("th-height");
     closeOnGoCheckbox.checked = true;
     
     var gotCommandsOK = function(commands) {
@@ -118,7 +109,6 @@ function initFields() {
 
 function getPrefs() {
     let gotPrefsOK = function(prefs) {
-	console.log(`QQQ: loaded prefs ${JSON.stringify(prefs)}`);
 	if ('prefs' in prefs) {
 	    let innerPrefs = prefs['prefs'];
 	    for (var p in innerPrefs) {
@@ -134,13 +124,11 @@ function getPrefs() {
 	initFieldsWithPrefs();
         getIsMac();
     };
-    console.log(`QQQ: -- browser.storage.local.get("prefs")`);
     browser.storage.local.get().then(gotPrefsOK, gotPrefsErr);
 }
 
 function getIsMac() {
     var gotPlatformInfoOK = function(info) {
-        //console.log("QQQ: info.os: " + info.os);
         isMac = info.os == "mac";
     };
     var gotPlatformInfoError = function(err) {
@@ -288,25 +276,11 @@ function initFieldsWithPrefs() {
 	commandKeyInput.value = "";
     }
     if ("closeOnGo" in origPrefSettings) {
-	console.log(`QQQ: Loaded closeOnGo pref ${origPrefSettings["closeOnGo"]}`);
 	closeOnGoCheckbox.checked = !!origPrefSettings["closeOnGo"];
     } else {
-	console.log(`QQQ: Didn\'t load closeOnGo pref`);
 	closeOnGoCheckbox.checked = true;
 	origPrefSettings["closeOnGo"] = true;
     }
-    /*
-    if ("th-width" in origPrefSettings) {
-	thWidthField.value = desiredWidth = origPrefSettings["th-width"];
-    } else {
-	thWidthField.value = origPrefSettings["th-width"] = "";
-    }
-    if ("th-height" in origPrefSettings) {
-	thHeightField.value = origPrefSettings["th-height"];
-    } else {
-	thHeightField.value = origPrefSettings["th-height"] = 10;
-    }
-*/
 }
 
 function restoreChanges() {
@@ -316,26 +290,21 @@ function restoreChanges() {
 	commandKeyInput.value = "";
     }
     closeOnGoCheckbox.checked = origPrefSettings["closeOnGo"];
-    thWidthField.value = origPrefSettings["th-width"]
-    thHeightField.value = origPrefSettings["th-height"];
 }
 
 function submitChanges() {
-    console.log(`QQQ: >> submitChanges`);
     var innerPrefs = {};
     var prefs = {"prefs": innerPrefs};
     innerPrefs["closeOnGo"] = closeOnGoCheckbox.checked;
     let updatePrefErr = function(err) {
         dumpError(err, `Error updating prefs`);
     };
-    console.log(`QQQ - storage.local.set ${JSON.stringify(prefs)}`);
     browser.storage.local.set(prefs).catch(
 	function(err) {
             dumpError(err, "Error updating _execute_browser_action: ");
 	});
     
 	
-    console.log(`QQQ - test ${prefSettings["_execute_browser_action"]} vs ${origPrefSettings["_execute_browser_action"]}`);
     if (prefSettings["_execute_browser_action"] !== origPrefSettings["_execute_browser_action"]) {
         browser.commands.update([{ name: "_execute_browser_action",
 				   shortcut: propertyStrings[1] }]).catch(updatePrefErr);
@@ -343,7 +312,6 @@ function submitChanges() {
 }
 
 function handleConfigKeyPress(event) {
-    console.log(`QQQ: handleConfigKeyPress: ${event.key}`);
     var target = event.target;
     try {
 	verifyShortcutFromEvent(event);
@@ -358,20 +326,10 @@ function handleConfigKeyPress(event) {
         browser.commands.update([{ name: "_execute_browser_action",
 				   shortcut: propertyStrings[1] }]);
     } catch(ex) {
-        console.log(`QQQ: Error: ${ex} \n ${ex}`);
+        console.log(`tabhunter prefs: Error: ${ex} \n ${ex}`);
     }
     event.stopPropagation();
     event.preventDefault();
 }
 
-function doSetCloseOnGo(event) {
-    //console.log("QQQ: Doing doSetCloseOnGo(event), checked: " + this.checked);
-}
-
 $(document).ready(initPrefs);
-
-try {
-} catch(ex) {
-    console.log("bad prefs.js -- " + ex);
-}
-

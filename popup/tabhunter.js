@@ -15,24 +15,10 @@ var showAudioButton;
 var g_showAudio;
 var closeOnGo = true;
 
-// console.log("QQQ: start loading");
-
-try {
-
 // select/option items take only text.
 // lists take an image as well, so let's try it.
 
-    function dumpTree(prefix, node) {
-        if (!node) {
-            console.log("QQQ: no node");
-            return;
-        }
-        console.log("QQQ: " + prefix + "node: " + node.nodeName);
-        node.childNodes.forEach(function(child) { dumpTree(prefix + "", child); });
-    }
-
-    function init() {
-	console.log(`QQQ: title:${window.title || window.document.title}, widht: ${window.outerWidth}, outerheight: ${window.outerHeight}`);
+function init() {
     var list = document.getElementById("list");
     mainPattern = document.getElementById("pattern");
     textarea = document.getElementById("textarea");
@@ -92,24 +78,20 @@ function restoreAudioSetting() {
 function getCloseOnGoPref() {
 	
     let gotPrefOK = function(item) {
-	console.log(`QQQ: getCloseOnGoPref.gotPrefOK: item: ${JSON.stringify(item)}`)
 	populateTabList();
 	let prefs = item["prefs"];
 	
 	if ("closeOnGo" in prefs) {
 	    closeOnGo = prefs["closeOnGo"];
-	    console.log(`QQQ: getCloseOnGoPref.gotPrefOK: closeOnGo: ${closeOnGo}`);
 	} else {
 	    closeOnGo = null;
 	}
 	if (closeOnGo !== true && closeOnGo !== false) {
 	    closeOnGo = true;
 	    let continueFuncOK = function() {
-		console.log(`QQQ: getCloseOnGoPref.update-pref: ok`);
 		populateTabList();
 	    };
 	    let continueFuncErr = function(err) {
-		console.log(`QQQ: getCloseOnGoPref.update-pref: err: ${err}`);
 		populateTabList();
 	    };
 	    
@@ -119,11 +101,10 @@ function getCloseOnGoPref() {
 	}
     };
     let gotPrefErr = function(err) {
-	console.log(`QQQ: getCloseOnGoPref.gotPrefErr: err: ${err}`);
+	console.log(`tabhunter: getCloseOnGoPref.gotPrefErr: err: ${err}`);
         console.log(err);
         populateTabList();
     };
-    console.log(`QQQ: getCloseOnGoPref ... get pref...`);
     browser.storage.local.get().then(gotPrefOK, gotPrefErr);
 }
 
@@ -255,7 +236,6 @@ function doVisitSelectedURL() {
                 console.log("Error showing current window: " + err);
             };
             const showWindowCont = function(windowInfo) {
-                console.log("Should be showing window: " + windowInfo.title);
 		if (closeOnGo) {
 		    close();
 		}
@@ -263,7 +243,6 @@ function doVisitSelectedURL() {
             const updateInfo = { focused: true, drawAttention: true, state: "normal" };
             browser.windows.update(target.windowID, updateInfo).then(showWindowCont, showWindowErr);
         } else {
-	    console.log(`QQQ: closeOnGo: ${closeOnGo}`);
 	    if (closeOnGo) {
 		close();
 	    }
@@ -609,8 +588,4 @@ function getModifierMask(event) {
             (event.commandKey ? CTRL_KEY : 0 ));
 }
 
-//console.log("QQQ: done loading");
-} catch(ex) {
-    alert("error loading: " + ex);
-}
 $(document).ready(init);
