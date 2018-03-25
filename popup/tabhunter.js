@@ -81,7 +81,7 @@ function getCloseOnGoPref() {
 	populateTabList();
 	let prefs = item["prefs"];
 	
-	if ("closeOnGo" in prefs) {
+	if (prefs && "closeOnGo" in prefs) {
 	    closeOnGo = prefs["closeOnGo"];
 	} else {
 	    closeOnGo = null;
@@ -118,6 +118,10 @@ function makeTabItem(id, tab) {
       favIconUrl: tab.favIconUrl,
       audible: tab.audible
     };
+}
+
+function isForbiddenFavIconUrl(url) {
+    return ['chrome://mozapps/skin/extensions/extensionGeneric-16.svg'].indexOf(url) >= 0;
 }
 
 function populateTabList() {
@@ -421,7 +425,7 @@ function makeListFromMatchedItems() {
         el.textContent = item.title + " - " + item.url;
         el.visibleIndex = i;
         el.actualIndex = idx;
-        if (item.favIconUrl) {
+        if (item.favIconUrl && !isForbiddenFavIconUrl(item.favIconUrl)) {
             el.style.backgroundImage = "url(" + item.favIconUrl + ")";
         }
         if (selectedActualIndices.indexOf(idx) >= 0) {
