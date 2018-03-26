@@ -36,18 +36,18 @@ const PREF_FIELD_NAMES = ["command_key", "closeOnGo"];
 
 function initPrefs() {
     FUNCTION_KEY_NAMES.forEach(function(name) {
-	USER_NAMES_FROM_KEYS[name] = name.toLowerCase();
-	API_NAMES_FROM_KEYS[name] = name;
-    });
+            USER_NAMES_FROM_KEYS[name] = name.toLowerCase();
+            API_NAMES_FROM_KEYS[name] = name;
+        });
 
     prefFields = {};
     origPrefSettings = {};
     prefSettings = {};
     for (prefName of PREF_FIELD_NAMES) {
-	prefFields[prefName] = document.getElementById(prefName);
-	if (!prefFields[prefName]) {
-	    throw new Error(`Awp: no field for pref ${prefName}`);
-	}
+        prefFields[prefName] = document.getElementById(prefName);
+        if (!prefFields[prefName]) {
+            throw new Error(`Awp: no field for pref ${prefName}`);
+        }
     }
     okButton = document.getElementById("submit");
     restoreButton = document.getElementById("restore");
@@ -89,15 +89,15 @@ function initFields() {
     var gotCommandsOK = function(commands) {
         if (commands[0].name == "_execute_browser_action") {
             commandKeyInput.value =
-		prefSettings["_execute_browser_action"] =
-		origPrefSettings["_execute_browser_action"] =
-		userStringFromInternalString(commands[0].shortcut);
-	    commandDescriptionInput.description =
-		prefSettings["_execute_browser_action__description"] =
-		origPrefSettings["_execute_browser_action__description"] =
-		(commands[0].description || "");
+                prefSettings["_execute_browser_action"] =
+                origPrefSettings["_execute_browser_action"] =
+                userStringFromInternalString(commands[0].shortcut);
+            commandDescriptionInput.description =
+                prefSettings["_execute_browser_action__description"] =
+                origPrefSettings["_execute_browser_action__description"] =
+                (commands[0].description || "");
         }
-	getPrefs();
+        getPrefs();
     };
     var gotCommandsErr = function(err) {
         var msg = "Error getting add-on commmands: ";
@@ -107,26 +107,26 @@ function initFields() {
             msg += err.message;
         }
         console.log(msg);
-	getPrefs();
+        getPrefs();
     };
     browser.commands.getAll().then(gotCommandsOK, gotCommandsErr);
 }
 
 function getPrefs() {
     let gotPrefsOK = function(prefs) {
-	if ('prefs' in prefs) {
-	    let innerPrefs = prefs['prefs'];
-	    for (var p in innerPrefs) {
-		origPrefSettings[p] = innerPrefs[p];
-	    }
-	}
-	initFieldsWithPrefs();
+    if ('prefs' in prefs) {
+        let innerPrefs = prefs['prefs'];
+        for (var p in innerPrefs) {
+        origPrefSettings[p] = innerPrefs[p];
+        }
+    }
+    initFieldsWithPrefs();
         getIsMac();
     };
     let gotPrefsErr = function(err) {
         dumpError(err, `Error getting prefs`);
-	prefs = {};
-	initFieldsWithPrefs();
+        prefs = {};
+        initFieldsWithPrefs();
         getIsMac();
     };
     browser.storage.local.get().then(gotPrefsOK, gotPrefsErr);
@@ -169,10 +169,10 @@ function verifyShortcutFromEvent(event) {
     let count = validKeys.reduce(function(acc, name) {
         return acc + (event[name] ? 1 : 0) }, 0);
     if (count == 0 && FUNCTION_KEY_NAMES.indexOf(event.key) == -1) {
-	console.log(`${event.key} must have exactly one of the ${modifiers.join(", ")} modifier keys`);
+        console.log(`${event.key} must have exactly one of the ${modifiers.join(", ")} modifier keys`);
         throw new Error("bad modifiers");
     } else if (count > 1) {
-	//XXX: What about the media keys?
+        //XXX: What about the media keys?
         console.log("The startup keybinding must have exactly one of the <" + modifiers.join(", ") + "> modifier keys");
         throw new Error("bad modifiers");
     }
@@ -203,22 +203,22 @@ function eventToInternalProperties(event) {
 function userStringFromInternalString(internalCommand) {
     let parts = internalCommand.split("+");
     let newParts = parts.map(function(internalCommandName) {
-	switch (internalCommandName) {
-	case ALT_API:
-	    return ALT_USER;
-	case SHIFT_API:
-	    return SHIFT_USER;
-	case CTRL_API:
-	    return isMac ? COMMAND_USER : CTRL_USER;
-	case MAC_CTRL_API:
-	    return CTRL_USER;
-	default:
-	    if (USER_NAMES_FROM_KEYS[internalCommandName]) {
-		return USER_NAMES_FROM_KEYS[internalCommandName];
-	    } else {
-		return internalCommandName;
-	    }
-	}
+    switch (internalCommandName) {
+    case ALT_API:
+        return ALT_USER;
+    case SHIFT_API:
+        return SHIFT_USER;
+    case CTRL_API:
+        return isMac ? COMMAND_USER : CTRL_USER;
+    case MAC_CTRL_API:
+        return CTRL_USER;
+    default:
+        if (USER_NAMES_FROM_KEYS[internalCommandName]) {
+        return USER_NAMES_FROM_KEYS[internalCommandName];
+        } else {
+        return internalCommandName;
+        }
+    }
     });
     return newParts.join("+");
 }
@@ -233,13 +233,13 @@ function propertiesToUserAndAPIString(props) {
         s_user = ALT_USER + "+";
         s_api = ALT_API + "+";
     } else if (props.ctrlKey) {
-	if (isMac) {
-	    s_user = COMMAND_USER + "+";
-	    s_api = CTRL_API + "+";
-	} else {
-	    s_user = CTRL_USER + "+";
-	    s_api = CTRL_API + "+";
-	}
+        if (isMac) {
+            s_user = COMMAND_USER + "+";
+            s_api = CTRL_API + "+";
+        } else {
+            s_user = CTRL_USER + "+";
+            s_api = CTRL_API + "+";
+        }
     } else if (props.macCtrlKey) {
         s_user = CTRL_USER + "+";
         s_api = MAC_CTRL_API + "+";
@@ -276,27 +276,27 @@ function propertiesToUserAndAPIString(props) {
 
 function initFieldsWithPrefs() {
     if ("_execute_browser_action" in origPrefSettings) {
-	commandKeyInput.value = origPrefSettings["_execute_browser_action"];
-	commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"];
+        commandKeyInput.value = origPrefSettings["_execute_browser_action"];
+        commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"];
     } else {
-	commandKeyInput.value = "";
-	commandDescriptionInput.value = "";
+        commandKeyInput.value = "";
+        commandDescriptionInput.value = "";
     }
     if ("closeOnGo" in origPrefSettings) {
-	closeOnGoCheckbox.checked = !!origPrefSettings["closeOnGo"];
+        closeOnGoCheckbox.checked = !!origPrefSettings["closeOnGo"];
     } else {
-	closeOnGoCheckbox.checked = true;
-	origPrefSettings["closeOnGo"] = true;
+        closeOnGoCheckbox.checked = true;
+        origPrefSettings["closeOnGo"] = true;
     }
 }
 
 function restoreChanges() {
     if ("_execute_browser_action" in origPrefSettings) {
-	commandKeyInput.value = origPrefSettings["_execute_browser_action"];
-	commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"] || "";
+        commandKeyInput.value = origPrefSettings["_execute_browser_action"];
+        commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"] || "";
     } else {
-	commandKeyInput.value = "";
-	commandDescriptionInput.value = "";
+        commandKeyInput.value = "";
+        commandDescriptionInput.value = "";
     }
     closeOnGoCheckbox.checked = origPrefSettings["closeOnGo"];
 }
@@ -309,34 +309,36 @@ function submitChanges() {
         dumpError(err, `Error updating prefs`);
     };
     browser.storage.local.set(prefs).catch(
-	function(err) {
+    function(err) {
             dumpError(err, "Error updating _execute_browser_action: ");
-	});
-	
+    });
+    
     if (prefSettings["_execute_browser_action"] !== origPrefSettings["_execute_browser_action"]
-	|| commandDescriptionInput.value !== origPrefSettings["_execute_browser_action__description"]) {
-	let updateCommandOK = function() {
-	};
-	let updateCommandErr = function(err) {
+    || commandDescriptionInput.value !== origPrefSettings["_execute_browser_action__description"]) {
+    let updateCommandOK = function() {
+        alert("shortcut changed");
+    };
+    let updateCommandErr = function(err) {
             dumpError(err, `Error updating command: ${err}`);
-	};
-	// console.log(`QQQ: shortcut: '${prefSettings["_execute_browser_action"]}', description: '${commandDescriptionInput.value}'`);
+            alert(`Error updating command: ${err}`);
+    };
+    // console.log(`QQQ: shortcut: '${prefSettings["_execute_browser_action"]}', description: '${commandDescriptionInput.value}'`);
         browser.commands.update({ name: "_execute_browser_action",
-				   shortcut: prefSettings["_execute_browser_action"],
-				   description: commandDescriptionInput.value
-				 }).then(updateCommandOK, updateCommandErr);
+                   shortcut: prefSettings["_execute_browser_action"],
+                   description: commandDescriptionInput.value
+                 }).then(updateCommandOK, updateCommandErr);
     }
 }
 
 function handleConfigKeyPress(event) {
     var target = event.target;
     try {
-	verifyShortcutFromEvent(event);
+        verifyShortcutFromEvent(event);
         let props = eventToInternalProperties(event);
-	let propertyStrings = propertiesToUserAndAPIString(props);
+        let propertyStrings = propertiesToUserAndAPIString(props);
         target.value = propertyStrings[0];
-	// Save the value now, use it later when we submit it.
-	prefSettings["_execute_browser_action"] = propertyStrings[1];
+        // Save the value now, use it later when we submit it.
+        prefSettings["_execute_browser_action"] = propertyStrings[1];
     } catch(ex) {
         console.log(`tabhunter prefs: Error: ${ex} \n ${ex}`);
     }
