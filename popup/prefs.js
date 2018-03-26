@@ -1,6 +1,6 @@
 // prefs.html -:- See LICENSE.txt for copyright and license details.
 
-var commandKeyInput, closeOnGoCheckbox;
+var commandKeyInput, commandDescriptionInput, closeOnGoCheckbox;
 var originalCommandKey;
 var isMac;
 var prefFields, prefSettings, origPrefSettings;
@@ -82,6 +82,7 @@ function dumpError(err, msg) {
 
 function initFields() {
     commandKeyInput = document.getElementById("command_key");
+    commandDescriptionInput = document.getElementById("command_description");
     closeOnGoCheckbox = document.getElementById("closeOnGo");
     closeOnGoCheckbox.checked = true;
     
@@ -91,6 +92,10 @@ function initFields() {
 		prefSettings["_execute_browser_action"] =
 		origPrefSettings["_execute_browser_action"] =
 		userStringFromInternalString(commands[0].shortcut);
+	    commandDescriptionInput.description =
+		prefSettings["_execute_browser_action__description"] =
+		origPrefSettings["_execute_browser_action__description"] =
+		(commands[0].description || "");
         }
 	getPrefs();
     };
@@ -272,8 +277,10 @@ function propertiesToUserAndAPIString(props) {
 function initFieldsWithPrefs() {
     if ("_execute_browser_action" in origPrefSettings) {
 	commandKeyInput.value = origPrefSettings["_execute_browser_action"];
+	commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"];
     } else {
 	commandKeyInput.value = "";
+	commandDescriptionInput.value = "";
     }
     if ("closeOnGo" in origPrefSettings) {
 	closeOnGoCheckbox.checked = !!origPrefSettings["closeOnGo"];
@@ -286,8 +293,10 @@ function initFieldsWithPrefs() {
 function restoreChanges() {
     if ("_execute_browser_action" in origPrefSettings) {
 	commandKeyInput.value = origPrefSettings["_execute_browser_action"];
+	commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"] || "";
     } else {
 	commandKeyInput.value = "";
+	commandDescriptionInput.value = "";
     }
     closeOnGoCheckbox.checked = origPrefSettings["closeOnGo"];
 }
@@ -303,11 +312,19 @@ function submitChanges() {
 	function(err) {
             dumpError(err, "Error updating _execute_browser_action: ");
 	});
-    
 	
-    if (prefSettings["_execute_browser_action"] !== origPrefSettings["_execute_browser_action"]) {
-        browser.commands.update([{ name: "_execute_browser_action",
-				   shortcut: propertyStrings[1] }]).catch(updatePrefErr);
+    if (prefSettings["_execute_browser_action"] !== origPrefSettings["_execute_browser_action"]
+	|| commandDescriptionInput.value !== origPrefSettings["_execute_browser_action__description"]) {
+	let updateCommandOK = function() {
+	};
+	let updateCommandErr = function(err) {
+            dumpError(err, `Error updating command: ${err}`);
+	};
+	// console.log(`QQQ: shortcut: '${prefSettings["_execute_browser_action"]}', description: '${commandDescriptionInput.value}'`);
+        browser.commands.update({ name: "_execute_browser_action",
+				   shortcut: prefSettings["_execute_browser_action"],
+				   description: commandDescriptionInput.value
+				 }).then(updateCommandOK, updateCommandErr);
     }
 }
 
@@ -318,13 +335,8 @@ function handleConfigKeyPress(event) {
         let props = eventToInternalProperties(event);
 	let propertyStrings = propertiesToUserAndAPIString(props);
         target.value = propertyStrings[0];
-	// Save the value now, use it later if we need it
+	// Save the value now, use it later when we submit it.
 	prefSettings["_execute_browser_action"] = propertyStrings[1];
-	//XXX: Invoke browser.commands.update in an update-command.
-        //event.cancelDefault();
-	
-        browser.commands.update([{ name: "_execute_browser_action",
-				   shortcut: propertyStrings[1] }]);
     } catch(ex) {
         console.log(`tabhunter prefs: Error: ${ex} \n ${ex}`);
     }

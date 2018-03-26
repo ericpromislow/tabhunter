@@ -1,6 +1,6 @@
 #!/bin/sh
 
-version=${1:-2.0.4}
+version=${1:-2.0.5}
 zip -r tabhunter-${version}.zip LICENSE.txt  README.md \
    _locales/ icons/ manifest.json \
    popup/{tabhunter,prefs}.{css,html,js} \
