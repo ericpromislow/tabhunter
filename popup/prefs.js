@@ -267,8 +267,9 @@ function propertiesToUserAndAPIString(props) {
         s_user += USER_NAMES_FROM_KEYS[props.key];
         s_api += props.key;
     } else {
-	s_user += "+" + props.key;
+        s_user += props.key;
         console.log("Can't support a key sequence of '" + s_user + "'");
+        alert("Can't support a key sequence of '" + s_user + "'");
         throw new Error("bad key sequence: " + s_user);
     }
     return [s_user, s_api];
