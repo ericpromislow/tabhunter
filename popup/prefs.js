@@ -88,25 +88,25 @@ function dumpError(err, msg) {
 function checkFontSizeInput(event) {
     let value = event.target.value;
     if (value === '') {
-	alert("size must be a number only");
-	event.preventDefault();
-	event.stopPropagation();
-	return false;
+        alert("size must be a number only");
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
     }
     let m = /.*[^\d]/.test(value);
     if (m) {
-	alert("size must be a number");
-	event.preventDefault();
-	event.stopPropagation();
-	return false;
+        alert("size must be a number");
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
     }
     let numval = parseInt(value);
     if (numval < 6) {
-	alert('sorry, min size of 6');
-	event.target.value = 6;
+        alert('sorry, min size of 6');
+        event.target.value = 6;
     } else if (numval > 36) {
-	alert('sorry, max size of 36');
-	event.target.value = 36;
+        alert('sorry, max size of 36');
+        event.target.value = 36;
     }
     return true;
 }
@@ -323,7 +323,7 @@ function initFieldsWithPrefs() {
         origPrefSettings["closeOnGo"] = true;
     }
     fontSizeInput.value = (('fontSize' in origPrefSettings) ?
-			   origPrefSettings['fontSize'] : DEFAULT_BASE_FONT_SIZE);
+                           origPrefSettings['fontSize'] : DEFAULT_BASE_FONT_SIZE);
 }
 
 function resetFontSizeToFactory() {

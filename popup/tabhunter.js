@@ -53,7 +53,7 @@ function init() {
             mainPattern.select();
         } else {
             mainPattern.focus();
-	}
+        }
         restoreAudioSetting();
     };
     var gotPatternErr = function(err) {
@@ -69,7 +69,7 @@ function restoreAudioSetting() {
             g_showAudio = item.showAudio;
             showAudioButton.checked = g_showAudio;
         }
-	getCloseOnGoPref();
+        getCloseOnGoPref();
     };
     var gotSettingErr = function(err) {
         populateTabList();
@@ -81,7 +81,7 @@ function depx(pref) {
     let p = /^(\d+).*/;
     let m = p.exec(pref);
     if (m) {
-	return parseInt(m[1]);
+        return parseInt(m[1]);
     }
     return parseInt(pref);
 }
@@ -91,42 +91,42 @@ function px(size) {
 }
 
 function getCloseOnGoPref() {
-	
+        
     let gotPrefOK = function(item) {
-	populateTabList();
-	let prefs = item["prefs"];
-	
-	if (prefs && "closeOnGo" in prefs) {
-	    closeOnGo = prefs["closeOnGo"];
-	} else {
-	    closeOnGo = null;
-	}
-	if (closeOnGo !== true && closeOnGo !== false) {
-	    closeOnGo = true;
-	    let continueFuncOK = function() {
-		populateTabList();
-	    };
-	    let continueFuncErr = function(err) {
-		populateTabList();
-	    };
-	    
-	    browser.storage.local.set({"closeOnGo": closeOnGo}).then(continueFuncOK, continueFuncErr);
-	} else {
+        populateTabList();
+        let prefs = item["prefs"];
+        
+        if (prefs && "closeOnGo" in prefs) {
+            closeOnGo = prefs["closeOnGo"];
+        } else {
+            closeOnGo = null;
+        }
+        if (closeOnGo !== true && closeOnGo !== false) {
+            closeOnGo = true;
+            let continueFuncOK = function() {
+                populateTabList();
+            };
+            let continueFuncErr = function(err) {
+                populateTabList();
+            };
+            
+            browser.storage.local.set({"closeOnGo": closeOnGo}).then(continueFuncOK, continueFuncErr);
+        } else {
             populateTabList();
-	}
-	if (prefs && 'fontSize' in prefs) {
-	    let baseFontSize = depx(prefs['fontSize']) || DEFAULT_BASE_FONT_SIZE;
-	    list.style.fontSize = px(baseFontSize);
-	    $('body').css('font-size', px(baseFontSize + 1));
-	    $('label.text').css('font-size', px(baseFontSize));
-	    $('label.checkbox').css('font-size', px(baseFontSize - 1));
-	    $('div#buttons.button').css('font-size', px(baseFontSize - 1));
-	    $('ul#list').css('font-size', px(baseFontSize));
-	    $('span#activity').css('font-size', px(baseFontSize + 1));
-	}
+        }
+        if (prefs && 'fontSize' in prefs) {
+            let baseFontSize = depx(prefs['fontSize']) || DEFAULT_BASE_FONT_SIZE;
+            list.style.fontSize = px(baseFontSize);
+            $('body').css('font-size', px(baseFontSize + 1));
+            $('label.text').css('font-size', px(baseFontSize));
+            $('label.checkbox').css('font-size', px(baseFontSize - 1));
+            $('div#buttons.button').css('font-size', px(baseFontSize - 1));
+            $('ul#list').css('font-size', px(baseFontSize));
+            $('span#activity').css('font-size', px(baseFontSize + 1));
+        }
     };
     let gotPrefErr = function(err) {
-	console.log(`tabhunter: getCloseOnGoPref.gotPrefErr: err: ${err}`);
+        console.log(`tabhunter: getCloseOnGoPref.gotPrefErr: err: ${err}`);
         console.log(err);
         populateTabList();
     };
@@ -147,7 +147,7 @@ function makeTabItem(id, tab) {
 
 function isForbiddenFavIconUrl(url) {
     return ['chrome://mozapps/skin/extensions/extensionGeneric-16.svg',
-	   'chrome://mozapps/skin/extensions/extensionGeneric-16.png'].indexOf(url) >= 0;
+           'chrome://mozapps/skin/extensions/extensionGeneric-16.png'].indexOf(url) >= 0;
 }
 
 function populateTabList() {
@@ -266,17 +266,17 @@ function doVisitSelectedURL() {
                 console.log("Error showing current window: " + err);
             };
             const showWindowCont = function(windowInfo) {
-		if (closeOnGo) {
-		    close();
-		}
+                if (closeOnGo) {
+                    close();
+                }
             }
             const updateInfo = { focused: true, drawAttention: true, state: "normal" };
             browser.windows.update(target.windowID, updateInfo).then(showWindowCont, showWindowErr);
         } else {
-	    if (closeOnGo) {
-		close();
-	    }
-	}
+            if (closeOnGo) {
+                close();
+            }
+        }
     };
 
     const showTabErr = function(err) {
