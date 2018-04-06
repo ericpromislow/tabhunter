@@ -50,17 +50,23 @@ function init() {
     var gotPatternOK = function(item) {
         if ('pattern' in item) {
             mainPattern.value = item.pattern;
-            mainPattern.select();
         } else {
-            mainPattern.focus();
+            mainPattern.value = '';
         }
+	selectPattern();
         restoreAudioSetting();
     };
     var gotPatternErr = function(err) {
         restoreAudioSetting();
     };
-
     browser.storage.local.get("pattern").then(gotPatternOK, gotPatternErr);
+}
+
+function selectPattern() {
+    mainPattern.focus();
+    if (mainPattern.value) {
+        mainPattern.select();
+    }
 }
 
 function restoreAudioSetting() {
@@ -207,17 +213,14 @@ function populateTabList() {
         if (showElapsedTimes) {
             endTime("setting matched tabs");
         }
-        if (matchedItems.length > 0) {
-            // Need to do this in a setTimeout of 100 msec for reasons unknown
-            setTimeout(function() {
-                try {
-                    mainPattern.focus();
-                    mainPattern.select();
-                } catch(e) {
-                    console.log("* mainPattern.focus(): " + e);
-                }
-            }, 100);
-        }
+        // Need to do this in a setTimeout of 100 msec for reasons unknown
+        setTimeout(function() {
+            try {
+		selectPattern();
+            } catch(e) {
+                console.log("* mainPattern.focus(): " + e);
+            }
+        }, 100);
     };
     t1 = (new Date()).valueOf();
     // Load all the tabs each time we show the popup.
