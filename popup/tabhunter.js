@@ -146,7 +146,8 @@ function makeTabItem(id, tab) {
 }
 
 function isForbiddenFavIconUrl(url) {
-    return ['chrome://mozapps/skin/extensions/extensionGeneric-16.svg'].indexOf(url) >= 0;
+    return ['chrome://mozapps/skin/extensions/extensionGeneric-16.svg',
+	   'chrome://mozapps/skin/extensions/extensionGeneric-16.png'].indexOf(url) >= 0;
 }
 
 function populateTabList() {
