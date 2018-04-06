@@ -15,6 +15,8 @@ var showAudioButton;
 var g_showAudio;
 var closeOnGo = true;
 
+const DEFAULT_BASE_FONT_SIZE = 12;
+
 // select/option items take only text.
 // lists take an image as well, so let's try it.
 
@@ -75,6 +77,19 @@ function restoreAudioSetting() {
     browser.storage.local.get("showAudio").then(gotSettingOK, gotSettingErr);
 }
 
+function depx(pref) {
+    let p = /^(\d+).*/;
+    let m = p.exec(pref);
+    if (m) {
+	return parseInt(m[1]);
+    }
+    return parseInt(pref);
+}
+
+function px(size) {
+    return `${size}px`;
+}
+
 function getCloseOnGoPref() {
 	
     let gotPrefOK = function(item) {
@@ -98,6 +113,16 @@ function getCloseOnGoPref() {
 	    browser.storage.local.set({"closeOnGo": closeOnGo}).then(continueFuncOK, continueFuncErr);
 	} else {
             populateTabList();
+	}
+	if (prefs && 'fontSize' in prefs) {
+	    let baseFontSize = depx(prefs['fontSize']) || DEFAULT_BASE_FONT_SIZE;
+	    list.style.fontSize = px(baseFontSize);
+	    $('body').css('font-size', px(baseFontSize + 1));
+	    $('label.text').css('font-size', px(baseFontSize));
+	    $('label.checkbox').css('font-size', px(baseFontSize - 1));
+	    $('div#buttons.button').css('font-size', px(baseFontSize - 1));
+	    $('ul#list').css('font-size', px(baseFontSize));
+	    $('span#activity').css('font-size', px(baseFontSize + 1));
 	}
     };
     let gotPrefErr = function(err) {

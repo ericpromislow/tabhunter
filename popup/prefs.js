@@ -1,11 +1,14 @@
 // prefs.html -:- See LICENSE.txt for copyright and license details.
 
 var commandKeyInput, commandDescriptionInput, closeOnGoCheckbox;
+var fontSizeInput, resetFontSizeButton;
 var originalCommandKey;
 var isMac;
 var prefFields, prefSettings, origPrefSettings;
 var okButton, restoreButton;
 var prefs;
+
+const DEFAULT_BASE_FONT_SIZE = 12;
 
 const CTRL_USER = "ctrl";
 const ALT_USER = "alt";
@@ -53,6 +56,8 @@ function initPrefs() {
     restoreButton = document.getElementById("restore");
     okButton.addEventListener("click", submitChanges);
     restoreButton.addEventListener("click", restoreChanges);
+    resetFontSizeButton = document.getElementById("resetFontSize");
+    resetFontSizeButton.addEventListener("click", resetFontSizeToFactory);
 
     $("button").mouseover(doMouseOver);
     $("button").mouseout(doMouseOut);
@@ -80,11 +85,39 @@ function dumpError(err, msg) {
     console.log(msg);
 }
 
+function checkFontSizeInput(event) {
+    let value = event.target.value;
+    if (value === '') {
+	alert("size must be a number only");
+	event.preventDefault();
+	event.stopPropagation();
+	return false;
+    }
+    let m = /.*[^\d]/.test(value);
+    if (m) {
+	alert("size must be a number");
+	event.preventDefault();
+	event.stopPropagation();
+	return false;
+    }
+    let numval = parseInt(value);
+    if (numval < 6) {
+	alert('sorry, min size of 6');
+	event.target.value = 6;
+    } else if (numval > 36) {
+	alert('sorry, max size of 36');
+	event.target.value = 36;
+    }
+    return true;
+}
+
 function initFields() {
     commandKeyInput = document.getElementById("command_key");
     commandDescriptionInput = document.getElementById("command_description");
     closeOnGoCheckbox = document.getElementById("closeOnGo");
     closeOnGoCheckbox.checked = true;
+    fontSizeInput = document.getElementById("fontSize");
+    fontSizeInput.addEventListener('change', checkFontSizeInput);
     
     var gotCommandsOK = function(commands) {
         if (commands[0].name == "_execute_browser_action") {
@@ -289,6 +322,12 @@ function initFieldsWithPrefs() {
         closeOnGoCheckbox.checked = true;
         origPrefSettings["closeOnGo"] = true;
     }
+    fontSizeInput.value = (('fontSize' in origPrefSettings) ?
+			   origPrefSettings['fontSize'] : DEFAULT_BASE_FONT_SIZE);
+}
+
+function resetFontSizeToFactory() {
+    fontSizeInput.value = DEFAULT_BASE_FONT_SIZE;
 }
 
 function restoreChanges() {
@@ -306,6 +345,7 @@ function submitChanges() {
     var innerPrefs = {};
     var prefs = {"prefs": innerPrefs};
     innerPrefs["closeOnGo"] = closeOnGoCheckbox.checked;
+    innerPrefs["fontSize"] = fontSizeInput.value;
     let updatePrefErr = function(err) {
         dumpError(err, `Error updating prefs`);
     };
