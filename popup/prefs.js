@@ -67,8 +67,8 @@ function initPrefs() {
     $("#command_key").keypress(handleConfigKeyPress);
 
     originalCommandKey = "";
-    if (browser.commands.update) {
-        $("div#key_stuff").removeClass("hide").addClass("show");
+    if (browser.commands.update && typeof(browser.commands.update) == 'function') {
+        $("div#change-shortcut-div").removeClass("hide").addClass("show");
     } else {
         //console.log("QQQ: Should not show the set-key\n");
     }
@@ -357,17 +357,17 @@ function submitChanges() {
     if (prefSettings["_execute_browser_action"] !== origPrefSettings["_execute_browser_action"]
     || commandDescriptionInput.value !== origPrefSettings["_execute_browser_action__description"]) {
     let updateCommandOK = function() {
-        alert("shortcut changed");
+        console.log(`tabhunter: shortcut changed`);
+        //alert("shortcut changed");
     };
     let updateCommandErr = function(err) {
             dumpError(err, `Error updating command: ${err}`);
             alert(`Error updating command: ${err}`);
     };
-    // console.log(`QQQ: shortcut: '${prefSettings["_execute_browser_action"]}', description: '${commandDescriptionInput.value}'`);
         browser.commands.update({ name: "_execute_browser_action",
                    shortcut: prefSettings["_execute_browser_action"],
                    description: commandDescriptionInput.value
-                 }).then(updateCommandOK, updateCommandErr);
+                                }).then(updateCommandOK, updateCommandErr);
     }
 }
 

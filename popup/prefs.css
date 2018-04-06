@@ -4,12 +4,12 @@ body {
     border: solid 1px;
 }
 
-div#key_stuff.hide {
+div#change-shortcut-div.hide {
     display: none;
     visibility: hidden;
 }
 
-div#key_stuff.show {
+div#change-shortcut-div.show {
     display: block;
     visibility: visible;
 }
