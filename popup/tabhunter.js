@@ -466,6 +466,14 @@ function makeListFromMatchedItems() {
         if (lastClickedIndex > -1 && idx == lastClickedActualIndex) {
             lastClickedIndex = i;
         }
+	if (i > 0) {
+	    let prevIdx = matchedItems[i - 1];
+	    let prevItem = items[prevIdx];
+	    if (prevItem.url == item.url) {
+		$(el).addClass("duplicate");
+		el.textContent = el.textContent + " [DUP]";
+	    }
+	}
         list.appendChild(el);
     }
     $("ul li:eq(" + selectedIndex + ")").select();

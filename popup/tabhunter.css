@@ -123,9 +123,16 @@ ul#list li {
     
 }
 
+ul#list li.duplicate li.selected {
+    background-color: #faa;
+}
+
+ul#list li.duplicate {
+    background-color: orange;
+}
+
 ul#list li.selected {
     background-color: #ccc;
-    /* border: 1px dashed; */
 }
 
 span#activity {
