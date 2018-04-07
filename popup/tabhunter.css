@@ -123,12 +123,8 @@ ul#list li {
     
 }
 
-ul#list li.duplicate li.selected {
-    background-color: #faa;
-}
-
 ul#list li.duplicate {
-    background-color: orange;
+    color: orange;
 }
 
 ul#list li.selected {
