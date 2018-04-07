@@ -2,6 +2,9 @@
 
 var commandKeyInput, commandDescriptionInput, closeOnGoCheckbox;
 var fontSizeInput, resetFontSizeButton;
+var sortByTitleButton;
+var sortByURLButton;
+var sortByPositionButton;
 var originalCommandKey;
 var isMac;
 var prefFields, prefSettings, origPrefSettings;
@@ -111,6 +114,24 @@ function checkFontSizeInput(event) {
     return true;
 }
 
+
+function getCheckSortByGroup() {
+    if (sortByTitleButton.checked) {
+        return 'Title';
+    } else if (sortByURLButton.checked) {
+        return 'URL';
+    } else if (sortByPositionButton.checked) {
+        return 'Position';
+    } else {
+        alert("Hey -- no sort button checked");
+        return 'Title';
+    }
+}
+
+function checkSortByGroup(event) {
+    prefSettings['sortBy'] = getCheckSortByGroup();
+}
+
 function initFields() {
     commandKeyInput = document.getElementById("command_key");
     commandDescriptionInput = document.getElementById("command_description");
@@ -118,6 +139,13 @@ function initFields() {
     closeOnGoCheckbox.checked = true;
     fontSizeInput = document.getElementById("fontSize");
     fontSizeInput.addEventListener('change', checkFontSizeInput);
+    
+    sortByTitleButton = document.getElementById("sortByTitle");
+    sortByURLButton = document.getElementById("sortByURL");
+    sortByPositionButton = document.getElementById("sortByPosition");
+    [sortByTitleButton, sortByURLButton, sortByPositionButton].forEach(function(e) {
+       e.addEventListener('change', checkSortByGroup);
+    });
     
     var gotCommandsOK = function(commands) {
         if (commands[0].name == "_execute_browser_action") {
@@ -324,6 +352,25 @@ function initFieldsWithPrefs() {
     }
     fontSizeInput.value = (('fontSize' in origPrefSettings) ?
                            origPrefSettings['fontSize'] : DEFAULT_BASE_FONT_SIZE);
+    if ('sortBy' in origPrefSettings) {
+        let sortByValue = origPrefSettings['sortBy'];
+        switch(sortByValue) {
+        case 'Title':
+            sortByTitleButton.checked = true;
+            break;
+        case 'URL':
+            sortByURLButton.checked = true;
+            break;
+        case 'Position':
+            sortByPositionButton.checked = true;
+            break;
+        default:
+            console.log(`tabhunter prefs: ignoring sortBy pref ${sortByValue}`);
+            sortByTitleButton.checked = true;
+        }
+    } else {
+        sortByTitleButton.checked = true;
+    }
 }
 
 function resetFontSizeToFactory() {
@@ -346,6 +393,8 @@ function submitChanges() {
     var prefs = {"prefs": innerPrefs};
     innerPrefs["closeOnGo"] = closeOnGoCheckbox.checked;
     innerPrefs["fontSize"] = fontSizeInput.value;
+    innerPrefs["sortBy"] = prefSettings['sortBy'];
+    
     let updatePrefErr = function(err) {
         dumpError(err, `Error updating prefs`);
     };
@@ -355,18 +404,18 @@ function submitChanges() {
     });
     
     if (prefSettings["_execute_browser_action"] !== origPrefSettings["_execute_browser_action"]
-    || commandDescriptionInput.value !== origPrefSettings["_execute_browser_action__description"]) {
-    let updateCommandOK = function() {
-        console.log(`tabhunter: shortcut changed`);
-        //alert("shortcut changed");
-    };
-    let updateCommandErr = function(err) {
+        || commandDescriptionInput.value !== origPrefSettings["_execute_browser_action__description"]) {
+        let updateCommandOK = function() {
+            console.log(`tabhunter: shortcut changed`);
+            //alert("shortcut changed");
+        };
+        let updateCommandErr = function(err) {
             dumpError(err, `Error updating command: ${err}`);
             alert(`Error updating command: ${err}`);
-    };
+        };
         browser.commands.update({ name: "_execute_browser_action",
-                   shortcut: prefSettings["_execute_browser_action"],
-                   description: commandDescriptionInput.value
+                                  shortcut: prefSettings["_execute_browser_action"],
+                                  description: commandDescriptionInput.value
                                 }).then(updateCommandOK, updateCommandErr);
     }
 }

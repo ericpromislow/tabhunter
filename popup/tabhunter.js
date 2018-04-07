@@ -14,6 +14,7 @@ var matchCloseTabs;
 var showAudioButton;
 var g_showAudio;
 var closeOnGo = true;
+var sortBy = null;
 
 const DEFAULT_BASE_FONT_SIZE = 12;
 
@@ -53,7 +54,7 @@ function init() {
         } else {
             mainPattern.value = '';
         }
-	selectPattern();
+        selectPattern();
         restoreAudioSetting();
     };
     var gotPatternErr = function(err) {
@@ -99,9 +100,24 @@ function px(size) {
 function getCloseOnGoPref() {
         
     let gotPrefOK = function(item) {
-        populateTabList();
         let prefs = item["prefs"];
-        
+
+        if (prefs && 'sortBy' in prefs) {
+            sortBy = comparisonFunctions[prefs['sortBy']];
+        }
+        if (!sortBy) {
+            sortBy = comparisonFunctions['Title'];
+        }
+        if (prefs && 'fontSize' in prefs) {
+            let baseFontSize = depx(prefs['fontSize']) || DEFAULT_BASE_FONT_SIZE;
+            list.style.fontSize = px(baseFontSize);
+            $('body').css('font-size', px(baseFontSize + 1));
+            $('label.text').css('font-size', px(baseFontSize));
+            $('label.checkbox').css('font-size', px(baseFontSize - 1));
+            $('div#buttons.button').css('font-size', px(baseFontSize - 1));
+            $('ul#list').css('font-size', px(baseFontSize));
+            $('span#activity').css('font-size', px(baseFontSize + 1));
+        }
         if (prefs && "closeOnGo" in prefs) {
             closeOnGo = prefs["closeOnGo"];
         } else {
@@ -120,16 +136,6 @@ function getCloseOnGoPref() {
         } else {
             populateTabList();
         }
-        if (prefs && 'fontSize' in prefs) {
-            let baseFontSize = depx(prefs['fontSize']) || DEFAULT_BASE_FONT_SIZE;
-            list.style.fontSize = px(baseFontSize);
-            $('body').css('font-size', px(baseFontSize + 1));
-            $('label.text').css('font-size', px(baseFontSize));
-            $('label.checkbox').css('font-size', px(baseFontSize - 1));
-            $('div#buttons.button').css('font-size', px(baseFontSize - 1));
-            $('ul#list').css('font-size', px(baseFontSize));
-            $('span#activity').css('font-size', px(baseFontSize + 1));
-        }
     };
     let gotPrefErr = function(err) {
         console.log(`tabhunter: getCloseOnGoPref.gotPrefErr: err: ${err}`);
@@ -146,6 +152,7 @@ function makeTabItem(id, tab) {
       url: tab.url,
       windowID: id,
       tabID: tab.id,
+      tabIndex: tab.index,
       favIconUrl: tab.favIconUrl,
       audible: tab.audible
     };
@@ -155,6 +162,61 @@ function isForbiddenFavIconUrl(url) {
     return ['chrome://mozapps/skin/extensions/extensionGeneric-16.svg',
            'chrome://mozapps/skin/extensions/extensionGeneric-16.png'].indexOf(url) >= 0;
 }
+
+function subCompareByKey(tab1, tab2, key) {
+    let s1 = tab1[key].toLowerCase();
+    let s2 = tab2[key].toLowerCase();
+    if (s1 < s2) return -1;
+    if (s1 > s2) return 1;
+    return 0;
+}
+
+function compareByTitle(tab1, tab2) {
+    let res = subCompareByKey(tab1, tab2, 'title');
+    if (res != 0) return res;
+    res = subCompareByKey(tab1, tab2, 'url');
+    if (res != 0) return res;
+    return compareByWindowTab(tab1, tab2);
+}
+
+function compareByURL(tab1, tab2) {
+    let res = subCompareByKey(tab1, tab2, 'url');
+    if (res != 0) return res;
+    res = subCompareByKey(tab1, tab2, 'title');
+    if (res != 0) return res;
+    return compareByWindowTab(tab1, tab2);
+}
+
+function compareByWindowTab(tab1, tab2) {
+    let windowID1 = tab1.windowID;
+    let windowID2 = tab2.windowID;
+    if (windowID1 < windowID2) return -1;
+    if (windowID1 > windowID2) return 1;
+    let tabIndex1 = tab1.tabIndex;
+    let tabIndex2 = tab2.tabIndex;
+    return tabIndex1 - tabIndex2;
+}
+
+const comparisonFunctions = {'Title': compareByTitle,
+                             'URL': compareByURL,
+                             'Position': compareByWindowTab};
+
+function WindowIndexThing() {
+    this.currentIndex = 0;
+    this.indicesByID = {};
+}
+WindowIndexThing.prototype = {
+    index: function(windowID) {
+        if (windowID in this.indicesByID) {
+            return this.indicesByID[windowID];
+        }
+        this.currentIndex += 1;
+        this.indicesByID[windowID] = this.currentIndex;
+        return this.currentIndex;
+    },
+    __EOT__: null
+}
+var windowCounter = new WindowIndexThing();
 
 function populateTabList() {
     selectedIndex = 0;
@@ -171,16 +233,6 @@ function populateTabList() {
         }
         console.log(err);
     }
-    const compareByName = function(tab1, tab2) {
-        let title1 = tab1.title.toLowerCase();
-        let title2 = tab2.title.toLowerCase();
-        let url1 = tab1.url.toLowerCase();
-        let url2 = tab2.url.toLowerCase();
-        return (title1 < title2 ? -1 :
-                (title1 > title2 ? 1 :
-                 (url1 < url2 ? -1 :
-                  (url1 > url2 ? 1 : 0))));
-    };
     
     const doGetAllWindows = function (windowInfoArray) {
         if (showElapsedTimes) {
@@ -202,7 +254,7 @@ function populateTabList() {
             endTime("getting tabs");
             t1 = (new Date()).valueOf();
         }
-        items.sort(compareByName);
+        items.sort(sortBy);
         
         if (showElapsedTimes) {
             endTime("sorting tabs");
@@ -216,7 +268,7 @@ function populateTabList() {
         // Need to do this in a setTimeout of 100 msec for reasons unknown
         setTimeout(function() {
             try {
-		selectPattern();
+                selectPattern();
             } catch(e) {
                 console.log("* mainPattern.focus(): " + e);
             }
@@ -451,7 +503,13 @@ function makeListFromMatchedItems() {
         var idx = matchedItems[i];
         var item = items[idx];
         var el = document.createElement("li");
-        el.textContent = item.title + " - " + item.url;
+        if (sortBy == compareByWindowTab) {
+	    // Add 1 because not all tabhunter users are proggers
+            el.textContent = `[${windowCounter.index(item.windowID)}:${item.tabIndex + 1}] `;
+        } else {
+            el.textContent = '';
+        }
+        el.textContent += item.title + " - " + item.url;
         el.visibleIndex = i;
         el.actualIndex = idx;
         if (item.favIconUrl && !isForbiddenFavIconUrl(item.favIconUrl)) {
@@ -466,14 +524,14 @@ function makeListFromMatchedItems() {
         if (lastClickedIndex > -1 && idx == lastClickedActualIndex) {
             lastClickedIndex = i;
         }
-	if (i > 0) {
-	    let prevIdx = matchedItems[i - 1];
-	    let prevItem = items[prevIdx];
-	    if (prevItem.url == item.url) {
-		$(el).addClass("duplicate");
-		el.textContent = el.textContent + " [DUP]";
-	    }
-	}
+        if (i > 0) {
+            let prevIdx = matchedItems[i - 1];
+            let prevItem = items[prevIdx];
+            if (prevItem.url == item.url) {
+                $(el).addClass("duplicate");
+                el.textContent = el.textContent + " [DUP]";
+            }
+        }
         list.appendChild(el);
     }
     $("ul li:eq(" + selectedIndex + ")").select();
