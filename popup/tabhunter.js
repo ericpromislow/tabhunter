@@ -98,10 +98,8 @@ function px(size) {
 }
 
 function getCloseOnGoPref() {
-        
     let gotPrefOK = function(item) {
         let prefs = item["prefs"];
-
         if (prefs && 'sortBy' in prefs) {
             sortBy = comparisonFunctions[prefs['sortBy']];
         }
@@ -154,6 +152,7 @@ function makeTabItem(id, tab) {
       tabID: tab.id,
       tabIndex: tab.index,
       favIconUrl: tab.favIconUrl,
+      lastAccessed: tab.lastAccessed,
       audible: tab.audible
     };
 }
@@ -187,6 +186,12 @@ function compareByURL(tab1, tab2) {
     return compareByWindowTab(tab1, tab2);
 }
 
+function compareByRecency(tab1, tab2) {
+    let res = tab1.lastAccessed - tab2.lastAccessed;
+    if (res != 0) return res;
+    return compareByTitle(tab1, tab2);
+}
+
 function compareByWindowTab(tab1, tab2) {
     let windowID1 = tab1.windowID;
     let windowID2 = tab2.windowID;
@@ -199,6 +204,7 @@ function compareByWindowTab(tab1, tab2) {
 
 const comparisonFunctions = {'Title': compareByTitle,
                              'URL': compareByURL,
+			     'Recency': compareByRecency,
                              'Position': compareByWindowTab};
 
 function WindowIndexThing() {
