@@ -207,6 +207,26 @@ const comparisonFunctions = {'Title': compareByTitle,
 			     'Recency': compareByRecency,
                              'Position': compareByWindowTab};
 
+function getReadableAge(ts) {
+    let age = (new Date().valueOf() - ts) / 1000;  // sec
+    if (age < 60) {
+	return `${Math.round(age)} sec`;
+    }
+    age /= 60; // mins.
+    if (age < 60) {
+	return `${Math.round(age)} min`;
+    }
+    age /= 60; // hours.
+    if (age < 24) {
+	return `${Math.round(age)} hr`;
+    }
+    age /= 24; // days.
+    if (age < 366) {
+	return `${Math.round(age)} days`;
+    }
+    return `${Math.round(age * 10 / 365.25) / 10.0} yr`;
+}
+
 function WindowIndexThing() {
     this.currentIndex = 0;
     this.indicesByID = {};
@@ -516,6 +536,9 @@ function makeListFromMatchedItems() {
             el.textContent = '';
         }
         el.textContent += item.title + " - " + item.url;
+        if (sortBy == compareByRecency) {
+	    el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
+	}
         el.visibleIndex = i;
         el.actualIndex = idx;
         if (item.favIconUrl && !isForbiddenFavIconUrl(item.favIconUrl)) {
