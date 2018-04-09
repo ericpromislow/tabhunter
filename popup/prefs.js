@@ -5,7 +5,7 @@ var fontSizeInput, resetFontSizeButton;
 var sortByTitleButton;
 var sortByURLButton;
 var sortByPositionButton;
-var sortByRecencyButton;
+var sortByNeglectButton;
 var originalCommandKey;
 var isMac;
 var prefFields, prefSettings, origPrefSettings;
@@ -123,8 +123,8 @@ function getCheckSortByGroup() {
         return 'URL';
     } else if (sortByPositionButton.checked) {
         return 'Position';
-    } else if (sortByRecencyButton.checked) {
-        return 'Recency';
+    } else if (sortByNeglectButton.checked) {
+        return 'Neglect';
     } else {
         alert("Hey -- no sort button checked");
         return 'Title';
@@ -146,9 +146,9 @@ function initFields() {
     sortByTitleButton = document.getElementById("sortByTitle");
     sortByURLButton = document.getElementById("sortByURL");
     sortByPositionButton = document.getElementById("sortByPosition");
-    sortByRecencyButton = document.getElementById("sortByRecency");
+    sortByNeglectButton = document.getElementById("sortByNeglect");
     [sortByTitleButton, sortByURLButton,
-     sortByPositionButton, sortByRecencyButton].forEach(function(e) {
+     sortByPositionButton, sortByNeglectButton].forEach(function(e) {
        e.addEventListener('change', checkSortByGroup);
     });
     
@@ -369,8 +369,8 @@ function initFieldsWithPrefs() {
         case 'Position':
             sortByPositionButton.checked = true;
             break;
-        case 'Recency':
-            sortByRecencyButton.checked = true;
+        case 'Neglect':
+            sortByNeglectButton.checked = true;
             break;
         default:
             console.log(`tabhunter prefs: ignoring sortBy pref ${sortByValue}`);

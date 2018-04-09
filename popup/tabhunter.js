@@ -186,7 +186,7 @@ function compareByURL(tab1, tab2) {
     return compareByWindowTab(tab1, tab2);
 }
 
-function compareByRecency(tab1, tab2) {
+function compareByNeglect(tab1, tab2) {
     let res = tab1.lastAccessed - tab2.lastAccessed;
     if (res != 0) return res;
     return compareByTitle(tab1, tab2);
@@ -204,7 +204,7 @@ function compareByWindowTab(tab1, tab2) {
 
 const comparisonFunctions = {'Title': compareByTitle,
                              'URL': compareByURL,
-			     'Recency': compareByRecency,
+			     'Neglect': compareByNeglect,
                              'Position': compareByWindowTab};
 
 function getReadableAge(ts) {
@@ -221,10 +221,23 @@ function getReadableAge(ts) {
 	return `${Math.round(age)} hr`;
     }
     age /= 24; // days.
-    if (age < 366) {
-	return `${Math.round(age)} days`;
+    if (age <= 60) {
+	return pluralize(Math.round(age), 'day');
     }
-    return `${Math.round(age * 10 / 365.25) / 10.0} yr`;
+    if (age <= 366) {
+	return `${Math.round(age / 7)} weeks`;
+    }
+    let years = Math.round(age / 365);
+    let months = Math.round((age % 365) / 12);
+    if (months > 0) {
+	return `${pluralize(years, 'yr')} ${pluralize(months, 'mo')}`;
+    }
+    return `${pluralize(years, 'yr')}`;
+}
+
+function pluralize(amt, term) {
+    var suffix = (amt == 1) ? "" : "s";
+    return `${amt} ${term}${suffix}`;
 }
 
 function WindowIndexThing() {
@@ -536,7 +549,7 @@ function makeListFromMatchedItems() {
             el.textContent = '';
         }
         el.textContent += item.title + " - " + item.url;
-        if (sortBy == compareByRecency) {
+        if (sortBy == compareByNeglect) {
 	    el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
 	}
         el.visibleIndex = i;
