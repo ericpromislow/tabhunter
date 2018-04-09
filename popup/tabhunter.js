@@ -15,6 +15,7 @@ var showAudioButton;
 var g_showAudio;
 var closeOnGo = true;
 var sortBy = null;
+var sortByReverse = false;
 
 const DEFAULT_BASE_FONT_SIZE = 12;
 
@@ -106,6 +107,9 @@ function getCloseOnGoPref() {
         if (!sortBy) {
             sortBy = comparisonFunctions['Title'];
         }
+        if (prefs && 'sortByReverse' in prefs) {
+            sortByReverse = !!prefs['sortByReverse'];
+        }
         if (prefs && 'fontSize' in prefs) {
             let baseFontSize = depx(prefs['fontSize']) || DEFAULT_BASE_FONT_SIZE;
             list.style.fontSize = px(baseFontSize);
@@ -142,6 +146,26 @@ function getCloseOnGoPref() {
     };
     browser.storage.local.get().then(gotPrefOK, gotPrefErr);
 }
+
+function WindowIndexThing() {
+    this.currentIndex = 0;
+    this.indicesByID = {};
+}
+WindowIndexThing.prototype = {
+    intern: function(windowID) {
+        if (windowID in this.indicesByID) {
+            return this.indicesByID[windowID];
+        }
+        this.currentIndex += 1;
+        this.indicesByID[windowID] = this.currentIndex;
+        return this.currentIndex;
+    },
+    index: function(windowID) {
+        return this.indicesByID[windowID];
+    },
+    __EOT__: null
+}
+var windowCounter = new WindowIndexThing();
 
 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl, tab#audible] 
 function makeTabItem(id, tab) {
@@ -204,33 +228,41 @@ function compareByWindowTab(tab1, tab2) {
 
 const comparisonFunctions = {'Title': compareByTitle,
                              'URL': compareByURL,
-			     'Neglect': compareByNeglect,
+                             'Neglect': compareByNeglect,
                              'Position': compareByWindowTab};
+
+function sortByWithReverseCheck(tab1, tab2) {
+    var negateResult = sortByReverse ? -1 : 1;
+    var res = sortBy(tab1, tab2);
+    //console.log(`QQQ: win1:${tab1.
+    return res * negateResult;
+    // return (sortByReverse ? -1 : 1) * sortBy(tab1, tab2);
+}
 
 function getReadableAge(ts) {
     let age = (new Date().valueOf() - ts) / 1000;  // sec
     if (age < 60) {
-	return `${Math.round(age)} sec`;
+        return `${Math.round(age)} sec`;
     }
     age /= 60; // mins.
     if (age < 60) {
-	return `${Math.round(age)} min`;
+        return `${Math.round(age)} min`;
     }
     age /= 60; // hours.
     if (age < 24) {
-	return `${Math.round(age)} hr`;
+        return `${Math.round(age)} hr`;
     }
     age /= 24; // days.
     if (age <= 60) {
-	return pluralize(Math.round(age), 'day');
+        return pluralize(Math.round(age), 'day');
     }
     if (age <= 366) {
-	return `${Math.round(age / 7)} weeks`;
+        return `${Math.round(age / 7)} weeks`;
     }
     let years = Math.round(age / 365);
     let months = Math.round((age % 365) / 12);
     if (months > 0) {
-	return `${pluralize(years, 'yr')} ${pluralize(months, 'mo')}`;
+        return `${pluralize(years, 'yr')} ${pluralize(months, 'mo')}`;
     }
     return `${pluralize(years, 'yr')}`;
 }
@@ -239,23 +271,6 @@ function pluralize(amt, term) {
     var suffix = (amt == 1) ? "" : "s";
     return `${amt} ${term}${suffix}`;
 }
-
-function WindowIndexThing() {
-    this.currentIndex = 0;
-    this.indicesByID = {};
-}
-WindowIndexThing.prototype = {
-    index: function(windowID) {
-        if (windowID in this.indicesByID) {
-            return this.indicesByID[windowID];
-        }
-        this.currentIndex += 1;
-        this.indicesByID[windowID] = this.currentIndex;
-        return this.currentIndex;
-    },
-    __EOT__: null
-}
-var windowCounter = new WindowIndexThing();
 
 function populateTabList() {
     selectedIndex = 0;
@@ -293,7 +308,7 @@ function populateTabList() {
             endTime("getting tabs");
             t1 = (new Date()).valueOf();
         }
-        items.sort(sortBy);
+        items.sort(sortByWithReverseCheck);
         
         if (showElapsedTimes) {
             endTime("sorting tabs");
@@ -543,15 +558,15 @@ function makeListFromMatchedItems() {
         var item = items[idx];
         var el = document.createElement("li");
         if (sortBy == compareByWindowTab) {
-	    // Add 1 because not all tabhunter users are proggers
-            el.textContent = `[${windowCounter.index(item.windowID)}:${item.tabIndex + 1}] `;
+            // Add 1 because not all tabhunter users are proggers
+            el.textContent = `[${windowCounter.intern(item.windowID)}:${item.tabIndex + 1}] `;
         } else {
             el.textContent = '';
         }
         el.textContent += item.title + " - " + item.url;
         if (sortBy == compareByNeglect) {
-	    el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
-	}
+            el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
+        }
         el.visibleIndex = i;
         el.actualIndex = idx;
         if (item.favIconUrl && !isForbiddenFavIconUrl(item.favIconUrl)) {
@@ -569,7 +584,9 @@ function makeListFromMatchedItems() {
         if (i > 0) {
             let prevIdx = matchedItems[i - 1];
             let prevItem = items[prevIdx];
-            if (prevItem.url == item.url) {
+            // Tabs might have url='about:blank' if they're neglected and
+            // haven't been reloaded after a restart...
+            if (prevItem.url == item.url && prevItem.title == item.title) {
                 $(el).addClass("duplicate");
                 el.textContent = el.textContent + " [DUP]";
             }

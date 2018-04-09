@@ -13,15 +13,3 @@ div#change-shortcut-div.show {
     display: block;
     visibility: visible;
 }
-
-span#command_key_span {
-    display: inline-block;
-}
-
-span#close_on_return {
-    display: inline-block;
-}
-
-
-    
-    

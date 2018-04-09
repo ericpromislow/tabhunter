@@ -6,6 +6,7 @@ var sortByTitleButton;
 var sortByURLButton;
 var sortByPositionButton;
 var sortByNeglectButton;
+var sortByReverseCheckbox;
 var originalCommandKey;
 var isMac;
 var prefFields, prefSettings, origPrefSettings;
@@ -140,6 +141,8 @@ function initFields() {
     commandDescriptionInput = document.getElementById("command_description");
     closeOnGoCheckbox = document.getElementById("closeOnGo");
     closeOnGoCheckbox.checked = true;
+    sortByReverseCheckbox = document.getElementById("sortByReverse");
+    sortByReverseCheckbox.checked = false;
     fontSizeInput = document.getElementById("fontSize");
     fontSizeInput.addEventListener('change', checkFontSizeInput);
     
@@ -355,6 +358,12 @@ function initFieldsWithPrefs() {
         closeOnGoCheckbox.checked = true;
         origPrefSettings["closeOnGo"] = true;
     }
+    if ("sortByReverse" in origPrefSettings) {
+        sortByReverseCheckbox.checked = !!origPrefSettings["sortByReverse"];
+    } else {
+        sortByReverseCheckbox.checked = false;
+        origPrefSettings["sortByReverse"] = false;
+    }
     fontSizeInput.value = (('fontSize' in origPrefSettings) ?
                            origPrefSettings['fontSize'] : DEFAULT_BASE_FONT_SIZE);
     if ('sortBy' in origPrefSettings) {
@@ -394,12 +403,14 @@ function restoreChanges() {
         commandDescriptionInput.value = "";
     }
     closeOnGoCheckbox.checked = origPrefSettings["closeOnGo"];
+    sortByReverseCheckbox.checked = origPrefSettings["sortByReverse"];
 }
 
 function submitChanges() {
     var innerPrefs = {};
     var prefs = {"prefs": innerPrefs};
     innerPrefs["closeOnGo"] = closeOnGoCheckbox.checked;
+    innerPrefs["sortByReverse"] = sortByReverseCheckbox.checked;
     innerPrefs["fontSize"] = fontSizeInput.value;
     innerPrefs["sortBy"] = prefSettings['sortBy'];
     
