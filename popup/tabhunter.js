@@ -169,6 +169,7 @@ var windowCounter = new WindowIndexThing();
 
 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl, tab#audible] 
 function makeTabItem(id, tab) {
+    windowCounter.intern(id);
     return {
       title: tab.title,
       url: tab.url,
@@ -559,7 +560,7 @@ function makeListFromMatchedItems() {
         var el = document.createElement("li");
         if (sortBy == compareByWindowTab) {
             // Add 1 because not all tabhunter users are proggers
-            el.textContent = `[${windowCounter.intern(item.windowID)}:${item.tabIndex + 1}] `;
+            el.textContent = `[${windowCounter.index(item.windowID)}:${item.tabIndex + 1}] `;
         } else {
             el.textContent = '';
         }
