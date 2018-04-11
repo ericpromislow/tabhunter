@@ -31,6 +31,7 @@ function init() {
 
     mainPattern.addEventListener("input", onPatternChanged, false);
     document.addEventListener("keydown", processArrowKey, false);
+    document.addEventListener("keyup", processKey, false);
     document.getElementById("go").addEventListener("mouseup", doGoButton, false);
     document.getElementById("done").addEventListener("mouseup", doDoneButton, false);
     closeTabsButton = document.getElementById("closeTabs");
@@ -407,6 +408,28 @@ function processArrowKey(event) {
         processArrowKey_aux(event);
     } catch(e) {
         console.log("*** processArrowKey: awp: " + e);
+    }
+}
+
+function processKey(event) {
+    try {
+        var mask = getModifierMask(event);
+        var keyName = event.key;
+        if (keyName == "Control") {
+            return;
+        }
+        if ((mask & CTRL_KEY) == CTRL_KEY && keyName >= '1' && keyName <= '9') {
+            let keyValue = parseInt(keyName, 10);
+            if (keyValue <= matchedItems.length) {
+                selectedIndex = keyValue - 1;
+                doVisitSelectedURL();
+                event.stopPropagation();
+                event.preventDefault();
+                return;
+            }
+        }
+    } catch(e) {
+        console.log("*** processKey: awp: " + e);
     }
 }
 
