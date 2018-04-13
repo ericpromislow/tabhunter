@@ -16,6 +16,7 @@ var g_showAudio;
 var closeOnGo = true;
 var sortBy = null;
 var sortByReverse = false;
+var controlVisitN = false;
 
 const DEFAULT_BASE_FONT_SIZE = 12;
 
@@ -31,7 +32,6 @@ function init() {
 
     mainPattern.addEventListener("input", onPatternChanged, false);
     document.addEventListener("keydown", processArrowKey, false);
-    document.addEventListener("keyup", processKey, false);
     document.getElementById("go").addEventListener("mouseup", doGoButton, false);
     document.getElementById("done").addEventListener("mouseup", doDoneButton, false);
     closeTabsButton = document.getElementById("closeTabs");
@@ -110,6 +110,12 @@ function getCloseOnGoPref() {
         }
         if (prefs && 'sortByReverse' in prefs) {
             sortByReverse = !!prefs['sortByReverse'];
+        }
+        if (prefs && 'controlVisitN' in prefs) {
+            controlVisitN = !!prefs['controlVisitN'];
+	    if (controlVisitN) {
+		document.addEventListener("keyup", processKey, false);
+	    }
         }
         if (prefs && 'fontSize' in prefs) {
             let baseFontSize = depx(prefs['fontSize']) || DEFAULT_BASE_FONT_SIZE;

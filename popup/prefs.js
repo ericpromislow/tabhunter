@@ -7,6 +7,7 @@ var sortByURLButton;
 var sortByPositionButton;
 var sortByNeglectButton;
 var sortByReverseCheckbox;
+var controlVisitNCheckbox;
 var originalCommandKey;
 var isMac;
 var prefFields, prefSettings, origPrefSettings;
@@ -143,6 +144,8 @@ function initFields() {
     closeOnGoCheckbox.checked = true;
     sortByReverseCheckbox = document.getElementById("sortByReverse");
     sortByReverseCheckbox.checked = false;
+    controlVisitNCheckbox = document.getElementById("controlVisitN");
+    controlVisitNCheckbox.checked = false;
     fontSizeInput = document.getElementById("fontSize");
     fontSizeInput.addEventListener('change', checkFontSizeInput);
     
@@ -364,6 +367,12 @@ function initFieldsWithPrefs() {
         sortByReverseCheckbox.checked = false;
         origPrefSettings["sortByReverse"] = false;
     }
+    if ("controlVisitN" in origPrefSettings) {
+        controlVisitNCheckbox.checked = !!origPrefSettings["controlVisitN"];
+    } else {
+        controlVisitNCheckbox.checked = false;
+        origPrefSettings["controlVisitN"] = false;
+    }
     fontSizeInput.value = (('fontSize' in origPrefSettings) ?
                            origPrefSettings['fontSize'] : DEFAULT_BASE_FONT_SIZE);
     if ('sortBy' in origPrefSettings) {
@@ -404,6 +413,7 @@ function restoreChanges() {
     }
     closeOnGoCheckbox.checked = origPrefSettings["closeOnGo"];
     sortByReverseCheckbox.checked = origPrefSettings["sortByReverse"];
+    controlVisitNCheckbox.checked = origPrefSettings["controlVisitN"];
 }
 
 function submitChanges() {
@@ -411,6 +421,7 @@ function submitChanges() {
     var prefs = {"prefs": innerPrefs};
     innerPrefs["closeOnGo"] = closeOnGoCheckbox.checked;
     innerPrefs["sortByReverse"] = sortByReverseCheckbox.checked;
+    innerPrefs["controlVisitN"] = controlVisitNCheckbox.checked;
     innerPrefs["fontSize"] = fontSizeInput.value;
     innerPrefs["sortBy"] = prefSettings['sortBy'];
     
