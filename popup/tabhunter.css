@@ -57,9 +57,25 @@ input.input-text:focus {
     border-color: #000;
 }
 
-div#buttons {
+.buttondiv {
     margin-top: 3pt;
     font-size: 8pt;
+}
+
+div#moveToWindowArea {
+    padding-left: 6pt;
+}
+
+div#moveToWindowArea.hide {
+    display: none;
+    visibility: hidden;
+}
+
+div#moveToWindowArea.show {
+    border-top: 1px solid;
+    padding-top: 2pt;
+    display: block;
+    visibility: visible;
 }
 
 input.xbutton {

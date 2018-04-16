@@ -12,16 +12,17 @@ var t1, t2;
 var closeTabsButton;
 var matchCloseTabs;
 var showAudioButton;
+var moveToWindowButton;
+var selectWindowTargetWidget;
+var finishMoveToWindowButton;
 var g_showAudio;
+var g_windowInfoArray;
 var closeOnGo = true;
 var sortBy = null;
 var sortByReverse = false;
 var controlVisitN = false;
 
 const DEFAULT_BASE_FONT_SIZE = 12;
-
-// select/option items take only text.
-// lists take an image as well, so let's try it.
 
 function init() {
     var list = document.getElementById("list");
@@ -41,6 +42,12 @@ function init() {
     document.getElementById("copyURLTitle").addEventListener("mouseup", doCopyURLTitleButton, false);
     showAudioButton = document.getElementById("showAudio");
     showAudioButton.addEventListener("click", doHandleAudioCheckbox, false);
+    moveToWindowButton = document.getElementById("moveToWindow");
+    moveToWindowButton.addEventListener("mouseup", showWindowMover, false);
+
+    selectWindowTargetWidget = document.getElementById("windowList");
+    finishMoveToWindowButton = document.getElementById("doMoveToWindow");
+    finishMoveToWindowButton.addEventListener("mouseup", doMoveToWindowButton, false);
     g_showAudio = showAudioButton.checked;
 
     matchCloseTabs = /^(.*?)(s?)$/;
@@ -297,6 +304,7 @@ function populateTabList() {
     }
     
     const doGetAllWindows = function (windowInfoArray) {
+	g_windowInfoArray = windowInfoArray;
         if (showElapsedTimes) {
             endTime("getting " + (windowInfoArray.length) + " windows");
             t1 = (new Date()).valueOf();
@@ -646,6 +654,7 @@ function updateButtons() {
     document.getElementById("copyURL").disabled = otherDisabled;
     document.getElementById("copyTitle").disabled = otherDisabled;
     document.getElementById("copyURLTitle").disabled = otherDisabled;
+    document.getElementById("moveToWindow").disabled = otherDisabled;
     var closeTabsContent = closeTabsButton.textContent;
     var newCloseTabsContent = "";
     var m = matchCloseTabs.exec(closeTabsContent);
@@ -752,6 +761,63 @@ function doCopyTitleButton() {
 function doCopyURLTitleButton() {
     var text = gatherText(function(item) { return item.url + '-' + item.title; });
     setClipboard(text);
+}
+
+function showWindowMover() {
+    $("div#moveToWindowArea").removeClass("hide").addClass("show");
+    populateWindowPicker();
+}
+
+function hideWindowMover() {
+    $("div#moveToWindowArea").removeClass("show").addClass("hide");
+}
+
+function populateWindowPicker() {
+    try {
+    var currentLimits;
+    while (selectWindowTargetWidget.lastChild) {
+	selectWindowTargetWidget.removeChild(selectWindowTargetWidget.lastChild);
+    }
+    var i = 0;
+    for (var windowInfo of g_windowInfoArray) {
+	i += 1;
+	let optionElement = document.createElement("option");
+	optionElement.value = windowInfo.id;
+	optionElement.text = `[${i}] ${windowInfo.title}`;
+	if (i == 1) {
+	    optionElement.selected = true;
+	}
+	selectWindowTargetWidget.appendChild(optionElement);
+    }
+    } catch(ex) { console.log(ex); }
+}
+function doMoveToWindowButton() {
+    let reportErr = function(err) {
+	console.log("tabhunter: doMoveToWindowButton: " + err);
+    };
+    let options = selectWindowTargetWidget.selectedOptions;
+    if (options.length == 0) {
+	alert("No target window to move tabs to");
+	return;
+    }
+    let targetWindowID = parseInt(options.item(0).value, 10);
+    let targetIndex = 0;
+    g_windowInfoArray.forEach(function(windowInfo) {
+	if (windowInfo.id == targetWindowID) {
+	    targetIndex = windowInfo.tabs.length;
+	}
+    });
+    let selectedItems = getSelectedItemsJQ();
+    let itemsToMove = selectedItems.map(function(selectedItem) { return items[selectedItem.actualIndex]; });
+    let tabIds = itemsToMove.map(function(item) { return item.tabID; });
+    
+    browser.tabs.move(tabIds,
+		      {windowId: parseInt(targetWindowID, 10),
+		       index: targetIndex
+		      }
+		     ).then(function(tabsList) {
+			 hideWindowMover();
+		     }).catch(reportErr);
 }
 
 function doHandleAudioCheckbox() {
