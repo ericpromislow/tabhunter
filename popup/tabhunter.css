@@ -88,6 +88,22 @@ div#moveToWindowArea.show {
     visibility: visible;
 }
 
+div#statusbar.hide {
+    display: none;
+    visibility: hidden;
+}
+
+div#statusbar.show {
+    display: block;
+    visibility: visible;
+}
+
+
+div#moveToBookmarkContainer {
+    border-top: 1px solid;
+    padding-top: 2pt;
+}
+
 input.xbutton {
     border: 1px solid red;
     margin-left: 6px;

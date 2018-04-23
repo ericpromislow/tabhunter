@@ -14,9 +14,12 @@ var matchCloseTabs;
 var showAudioButton;
 var moveToWindowButton;
 var selectWindowTargetWidget;
+var selectBookmarkTargetWidget;
 var finishMoveToWindowButton;
+var finishMoveToBookmarkButton;
 var g_showAudio;
 var g_windowInfoArray;
+var g_bookmarkList = null;
 var closeOnGo = true;
 var sortBy = null;
 var sortByReverse = false;
@@ -46,8 +49,11 @@ function init() {
     moveToWindowButton.addEventListener("mouseup", showWindowMover, false);
 
     selectWindowTargetWidget = document.getElementById("windowList");
+    selectBookmarkTargetWidget = document.getElementById("bookmarkList");
     finishMoveToWindowButton = document.getElementById("doMoveToWindow");
     finishMoveToWindowButton.addEventListener("mouseup", doMoveToWindowButton, false);
+    finishMoveToBookmarkButton = document.getElementById("doMoveToBookmark");
+    finishMoveToBookmarkButton.addEventListener("mouseup", doMoveToBookmarkButton, false);
     g_showAudio = showAudioButton.checked;
 
     matchCloseTabs = /^(.*?)(s?)$/;
@@ -656,7 +662,9 @@ function updateButtons() {
     document.getElementById("copyURLTitle").disabled = otherDisabled;
     
     // showAudioButton is always enabled
+    
     finishMoveToWindowButton.disabled = otherDisabled;
+    finishMoveToBookmarkButton.disabled = otherDisabled;
     
     var closeTabsContent = closeTabsButton.textContent;
     var newCloseTabsContent = "";
@@ -772,6 +780,10 @@ function showWindowMover() {
     $("span#showMoreActions").removeClass("show").addClass("hide");
     $("span#hideMoreActions").removeClass("hide").addClass("show");
     populateWindowPicker();
+    if (!g_bookmarkList) {
+	// Watch out -- this one is async
+	populateBookmarkPicker();
+    }
 }
 
 function hideWindowMover() {
@@ -784,7 +796,6 @@ function hideWindowMover() {
 
 function populateWindowPicker() {
     try {
-    var currentLimits;
     while (selectWindowTargetWidget.lastChild) {
 	selectWindowTargetWidget.removeChild(selectWindowTargetWidget.lastChild);
     }
@@ -801,6 +812,7 @@ function populateWindowPicker() {
     }
     } catch(ex) { console.log(ex); }
 }
+
 function doMoveToWindowButton() {
     let reportErr = function(err) {
 	console.log("tabhunter: doMoveToWindowButton: " + err);
@@ -828,6 +840,86 @@ function doMoveToWindowButton() {
 		     ).then(function(tabsList) {
 			 hideWindowMover();
 		     }).catch(reportErr);
+}
+
+function populateBookmarkPicker() {
+    try {
+	g_bookmarkList = [];
+	var i = 0;
+	let extractTitlesFromItem = function(bookmarkItem, parentPath) {
+	    if (bookmarkItem.type != "folder") {
+		return;
+	    }
+	    var fullPath;
+	    var nextPath;
+	    if (bookmarkItem.title) {
+		i += 1;
+		fullPath = parentPath + bookmarkItem.title;
+		nextPath = fullPath + "/";
+		let optionElement = document.createElement("option");
+		optionElement.value = bookmarkItem.id;
+		optionElement.text = `[${i}] ${fullPath}`;
+		if (i == 1) {
+		    optionElement.selected = true;
+		}
+		selectBookmarkTargetWidget.appendChild(optionElement);
+		g_bookmarkList.push(bookmarkItem.title);
+	    } else {
+		nextPath = parentPath;
+	    }
+		
+	    if (bookmarkItem.children) {
+		for (child of bookmarkItem.children) {
+		    extractTitlesFromItem(child, nextPath);
+		}
+	    }
+	};
+	let getBookmarkTree = function(items) {
+	    extractTitlesFromItem(items[0], "");
+	}
+	let reportErr = function(err) {
+	    console.log("tabhunter: error getting bookmarks: " + err);
+	};
+	browser.bookmarks.getTree().then(getBookmarkTree, reportErr);
+    } catch(ex) { console.log(ex); }
+}
+
+
+function doMoveToBookmarkButton() {
+    try {
+    let options = selectBookmarkTargetWidget.selectedOptions;
+    if (options.length == 0) {
+	alert("No target bookmark to move tabs to");
+	return;
+    }
+    let targetBookmarkID = options.item(0).value;
+    let selectedItems = getSelectedItemsJQ();
+    let itemsToMove = selectedItems.map(function(selectedItem) { return items[selectedItem.actualIndex]; });
+    let urls = itemsToMove.map(function(item) { return item.url; });
+	let index = -1;
+	var reportErr, moveNextURL;
+    reportErr = function(err) {
+	console.log("tabhunter: error creating bookmark: " + err);
+    };
+    moveNextURL = function(newBookmark) {
+	if (index >= urls.length - 1) {
+	    let s = `Moved ${pluralize(urls.length, "tab")} to bookmark ${options.item(0).text}`;
+	    $("div#statusbar").removeClass("hide").addClass("show");
+	    $("p#statusbar-p").text(s);
+	    setTimeout(function() {
+		$("div#statusbar").removeClass("show").addClass("hide");
+		$("p#statusbar-p").text("");
+	    }, 30* 1000);
+	    return;
+	}
+	index += 1;
+	browser.bookmarks.create({
+	    parentId: targetBookmarkID,
+	    url: urls[index]
+	}).then(moveNextURL, reportErr);
+    };
+    moveNextURL(null);
+    } catch(ex) { console.log(ex); }
 }
 
 function doHandleAudioCheckbox() {

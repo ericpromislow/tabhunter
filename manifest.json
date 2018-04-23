@@ -40,8 +40,9 @@
 	"clipboardWrite",
 	"storage",
 	"tabs",
+	"bookmarks",
 	"<all_urls>"
     ],
     "short_name": "Tabhunter",
-    "version": "2.1.4"
+    "version": "2.1.5"
 }
