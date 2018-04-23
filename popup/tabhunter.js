@@ -654,7 +654,10 @@ function updateButtons() {
     document.getElementById("copyURL").disabled = otherDisabled;
     document.getElementById("copyTitle").disabled = otherDisabled;
     document.getElementById("copyURLTitle").disabled = otherDisabled;
-    document.getElementById("moveToWindow").disabled = otherDisabled;
+    
+    // showAudioButton is always enabled
+    finishMoveToWindowButton.disabled = otherDisabled;
+    
     var closeTabsContent = closeTabsButton.textContent;
     var newCloseTabsContent = "";
     var m = matchCloseTabs.exec(closeTabsContent);
@@ -668,7 +671,6 @@ function updateButtons() {
     if (newCloseTabsContent != "") {
         closeTabsButton.textContent = newCloseTabsContent;
     }
-    // showAudioButton is always enabled
 }
 
 function updateURL() {
@@ -764,12 +766,20 @@ function doCopyURLTitleButton() {
 }
 
 function showWindowMover() {
+    moveToWindowButton.removeEventListener("mouseup", showWindowMover, false);
+    moveToWindowButton.addEventListener("mouseup", hideWindowMover, false);
     $("div#moveToWindowArea").removeClass("hide").addClass("show");
+    $("span#showMoreActions").removeClass("show").addClass("hide");
+    $("span#hideMoreActions").removeClass("hide").addClass("show");
     populateWindowPicker();
 }
 
 function hideWindowMover() {
+    moveToWindowButton.removeEventListener("mouseup", hideWindowMover, false);
+    moveToWindowButton.addEventListener("mouseup", showWindowMover, false);
     $("div#moveToWindowArea").removeClass("show").addClass("hide");
+    $("span#hideMoreActions").removeClass("show").addClass("hide");
+    $("span#showMoreActions").removeClass("hide").addClass("show");
 }
 
 function populateWindowPicker() {

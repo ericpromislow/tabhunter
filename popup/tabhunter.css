@@ -62,6 +62,16 @@ input.input-text:focus {
     font-size: 8pt;
 }
 
+span.hide {
+    display: none;
+    visibility: hidden;
+}
+
+span.show {
+    display: inline;
+    visibility: visible;
+}
+
 div#moveToWindowArea {
     padding-left: 6pt;
 }
