@@ -1,4 +1,4 @@
-// tabhunter.js -- See LICENSE.txt for copyright and license details.
+// tabhunter.js -- See LICENSE.txt for copyright and license details. 
 
 var items = [];
 var selectedIndex;    // visible
@@ -14,12 +14,14 @@ var matchCloseTabs;
 var showAudioButton;
 var moveToWindowButton;
 var selectWindowTargetWidget;
-var selectBookmarkTargetWidget;
 var finishMoveToWindowButton;
+<% if ENV['TARGET'] == 'firefox' %>
+var selectBookmarkTargetWidget;
 var finishMoveToBookmarkButton;
+var g_bookmarkList = null;
+<% end %>
 var g_showAudio;
 var g_windowInfoArray;
-var g_bookmarkList = null;
 var closeOnGo = true;
 var sortBy = null;
 var sortByReverse = false;
@@ -49,11 +51,13 @@ function init() {
     moveToWindowButton.addEventListener("mouseup", showWindowMover, false);
 
     selectWindowTargetWidget = document.getElementById("windowList");
-    selectBookmarkTargetWidget = document.getElementById("bookmarkList");
     finishMoveToWindowButton = document.getElementById("doMoveToWindow");
     finishMoveToWindowButton.addEventListener("mouseup", doMoveToWindowButton, false);
+<% if ENV['TARGET'] == 'firefox' %>
+    selectBookmarkTargetWidget = document.getElementById("bookmarkList");
     finishMoveToBookmarkButton = document.getElementById("doMoveToBookmark");
     finishMoveToBookmarkButton.addEventListener("mouseup", doMoveToBookmarkButton, false);
+<% end %>
     g_showAudio = showAudioButton.checked;
 
     matchCloseTabs = /^(.*?)(s?)$/;
@@ -664,7 +668,10 @@ function updateButtons() {
     // showAudioButton is always enabled
     
     finishMoveToWindowButton.disabled = otherDisabled;
+
+<% if ENV['TARGET'] == 'firefox' %>
     finishMoveToBookmarkButton.disabled = otherDisabled;
+<% end %>
     
     var closeTabsContent = closeTabsButton.textContent;
     var newCloseTabsContent = "";
@@ -780,10 +787,12 @@ function showWindowMover() {
     $("span#showMoreActions").removeClass("show").addClass("hide");
     $("span#hideMoreActions").removeClass("hide").addClass("show");
     populateWindowPicker();
+<% if ENV['TARGET'] == 'firefox' %>
     if (!g_bookmarkList) {
 	// Watch out -- this one is async
 	populateBookmarkPicker();
     }
+<% end %>
 }
 
 function hideWindowMover() {
@@ -804,13 +813,20 @@ function populateWindowPicker() {
 	i += 1;
 	let optionElement = document.createElement("option");
 	optionElement.value = windowInfo.id;
-	optionElement.text = `[${i}] ${windowInfo.title}`;
+	optionElement.text = `[${i}] ${getWindowTitle(windowInfo)}`;
 	if (i == 1) {
 	    optionElement.selected = true;
 	}
 	selectWindowTargetWidget.appendChild(optionElement);
     }
     } catch(ex) { console.log(ex); }
+}
+
+function getWindowTitle(windowInfo) {
+<% if ENV['TARGET'] == 'firefox' %>
+    return windowInfo.title;
+<% end %>
+    return windowInfo.tabs[0].title
 }
 
 function doMoveToWindowButton() {
@@ -842,6 +858,7 @@ function doMoveToWindowButton() {
 		     }).catch(reportErr);
 }
 
+<% if ENV['TARGET'] == 'firefox' %>
 function populateBookmarkPicker() {
     try {
 	g_bookmarkList = [];
@@ -884,7 +901,6 @@ function populateBookmarkPicker() {
     } catch(ex) { console.log(ex); }
 }
 
-
 function doMoveToBookmarkButton() {
     try {
     let options = selectBookmarkTargetWidget.selectedOptions;
@@ -921,6 +937,7 @@ function doMoveToBookmarkButton() {
     moveNextURL(null);
     } catch(ex) { console.log(ex); }
 }
+<% end %>
 
 function doHandleAudioCheckbox() {
     g_showAudio = showAudioButton.checked;

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+version=<%= ENV['VERSION'] or die("tabhunter/build.sh.erb: VERSION not set") %>
+target=<%= ENV['TARGET'] or die("tabhunter/build.sh.erb: TARGET not set") %>
+
+zip -r build/tabhunter-${target}-${version}.zip LICENSE.txt README.md \
+   _locales/ icons/ manifest.json \
+   popup/{tabhunter,prefs}.{css,html,js} \
+   popup/jquery-3.2.1.min.js \
+<% if ENV['TARGET'] == 'chrome' %>
+   popup/browser-polyfill.min.js \
+<% end %>
+   -x '*~'
+
+<%#  key.pem %>

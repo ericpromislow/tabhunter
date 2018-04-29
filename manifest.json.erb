@@ -1,7 +1,11 @@
-{
+<% 
+version = ENV['VERSION'] or die("tabhunter/manifest.json.erb: VERSION not set")
+target = ENV['TARGET'] or die("build.sh.erb: TARGET not set") %>{
     "author": "Eric Promislow",
     "browser_action": {
+<% if target == 'firefox' %>
 	"browser_style": true,
+<% end %>
 	"default_icon": {
 	    "16": "icons/martini-16x16.png",
 	    "24": "icons/martini-24x24.png",
@@ -20,10 +24,12 @@
     },
     "default_locale": "en",
     "description": "Wade through all your tabs fast",
+<% if target == 'firefox' %>
     "developer": {
 	"name": "Eric Promislow",
 	"url": "https://github.com/ericpromislow/tabhunter"
     },
+<% end %>
     "homepage_url": "https://github.com/ericpromislow/tabhunter",
     "icons": {
 	"48": "icons/th-48x48.png",
@@ -33,8 +39,10 @@
     "manifest_version": 2,
     "name": "Tabhunter",
     "options_ui": {
-	"page": "popup/prefs.html",
-	"browser_style": true
+<% if target == 'firefox' %>
+	"browser_style": true,
+<% end %>
+	"page": "popup/prefs.html"
     },
     "permissions": [
 	"clipboardWrite",
@@ -44,5 +52,5 @@
 	"<all_urls>"
     ],
     "short_name": "Tabhunter",
-    "version": "2.1.5"
+    "version": "<%= version %>"
 }
