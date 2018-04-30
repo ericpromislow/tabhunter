@@ -130,9 +130,9 @@ function getCloseOnGoPref() {
         }
         if (prefs && 'controlVisitN' in prefs) {
             controlVisitN = !!prefs['controlVisitN'];
-	    if (controlVisitN) {
-		document.addEventListener("keyup", processKey, false);
-	    }
+            if (controlVisitN) {
+                document.addEventListener("keyup", processKey, false);
+            }
         }
         if (prefs && 'fontSize' in prefs) {
             let baseFontSize = depx(prefs['fontSize']) || DEFAULT_BASE_FONT_SIZE;
@@ -314,7 +314,7 @@ function populateTabList() {
     }
     
     const doGetAllWindows = function (windowInfoArray) {
-	g_windowInfoArray = windowInfoArray;
+        g_windowInfoArray = windowInfoArray;
         if (showElapsedTimes) {
             endTime("getting " + (windowInfoArray.length) + " windows");
             t1 = (new Date()).valueOf();
@@ -548,11 +548,43 @@ function onPatternChanged(event, calledFromInit) {
     matchedItems = [];
     var pattern = mainPattern.value;
     var ptn;
-    var fn;
+    var fn, winFnParts = [];
     browser.storage.local.set({"pattern": pattern});
     if (pattern.length == 0) {
         fn = allowAll;
     } else {
+        // If the pattern starts with a window-selector, handle it
+        let p = /^\{w:?(\d+)(?::([-\d]+))?\}(.*)$/;
+        let m = p.exec(pattern);
+        if (m) {
+            let winNum = parseInt(m[1], 10);
+            winFnParts.push(function(item) {
+                return windowCounter.index(item.windowID) == winNum;
+            });
+            if (m[2] !== undefined) {
+                let [startTabNum, endTabNum] = m[2].split('-', 2);
+                if (endTabNum.indexOf('-') >= 0) {
+                    console.log('Tabhunter: at most one dash allowed in a tab list');
+                    //TODO: Write out an error message
+                    winFnParts.push(function(item) {
+                        return false;
+                    });
+                }
+                if (startTabNum != "") {
+                    startTabNum = parseInt(startTabNum, 10) - 1;
+                    winFnParts.push(function(item) {
+                        return item.tabIndex >= startTabNum
+                    });
+                }
+                if (endTabNum != "") {
+                    endTabNum = parseInt(endTabNum, 10) - 1;
+                    winFnParts.push(function(item) {
+                        return item.tabIndex <= endTabNum
+                    });
+                }
+            }
+            pattern = m[3];
+        }
         try {
             if (/[A-Z]/.test(pattern) && /[a-z]/.test(pattern)) {
                 // If they specify both cases, don't ignore case.
@@ -574,10 +606,15 @@ function onPatternChanged(event, calledFromInit) {
         }
     }
     for (var i = 0; i < items.length; i++) {
-        if (g_showAudio && !items[i].audible) {
+        // if (!winFnParts.every(function(f) { return f(); })) {
+        let item = items[i];
+        if (!winFnParts.every((f) => f(item))) {
             continue;
         }
-        if (fn(items[i])) {
+        if (g_showAudio && !item.audible) {
+            continue;
+        }
+        if (fn(item)) {
             matchedItems.push(i);
         }
     }
@@ -789,8 +826,8 @@ function showWindowMover() {
     populateWindowPicker();
 <% if ENV['TARGET'] == 'firefox' %>
     if (!g_bookmarkList) {
-	// Watch out -- this one is async
-	populateBookmarkPicker();
+        // Watch out -- this one is async
+        populateBookmarkPicker();
     }
 <% end %>
 }
@@ -806,18 +843,18 @@ function hideWindowMover() {
 function populateWindowPicker() {
     try {
     while (selectWindowTargetWidget.lastChild) {
-	selectWindowTargetWidget.removeChild(selectWindowTargetWidget.lastChild);
+        selectWindowTargetWidget.removeChild(selectWindowTargetWidget.lastChild);
     }
     var i = 0;
     for (var windowInfo of g_windowInfoArray) {
-	i += 1;
-	let optionElement = document.createElement("option");
-	optionElement.value = windowInfo.id;
-	optionElement.text = `[${i}] ${getWindowTitle(windowInfo)}`;
-	if (i == 1) {
-	    optionElement.selected = true;
-	}
-	selectWindowTargetWidget.appendChild(optionElement);
+        i += 1;
+        let optionElement = document.createElement("option");
+        optionElement.value = windowInfo.id;
+        optionElement.text = `[${i}] ${getWindowTitle(windowInfo)}`;
+        if (i == 1) {
+            optionElement.selected = true;
+        }
+        selectWindowTargetWidget.appendChild(optionElement);
     }
     } catch(ex) { console.log(ex); }
 }
@@ -831,73 +868,73 @@ function getWindowTitle(windowInfo) {
 
 function doMoveToWindowButton() {
     let reportErr = function(err) {
-	console.log("tabhunter: doMoveToWindowButton: " + err);
+        console.log("tabhunter: doMoveToWindowButton: " + err);
     };
     let options = selectWindowTargetWidget.selectedOptions;
     if (options.length == 0) {
-	alert("No target window to move tabs to");
-	return;
+        alert("No target window to move tabs to");
+        return;
     }
     let targetWindowID = parseInt(options.item(0).value, 10);
     let targetIndex = 0;
     g_windowInfoArray.forEach(function(windowInfo) {
-	if (windowInfo.id == targetWindowID) {
-	    targetIndex = windowInfo.tabs.length;
-	}
+        if (windowInfo.id == targetWindowID) {
+            targetIndex = windowInfo.tabs.length;
+        }
     });
     let selectedItems = getSelectedItemsJQ();
     let itemsToMove = selectedItems.map(function(selectedItem) { return items[selectedItem.actualIndex]; });
     let tabIds = itemsToMove.map(function(item) { return item.tabID; });
     
     browser.tabs.move(tabIds,
-		      {windowId: parseInt(targetWindowID, 10),
-		       index: targetIndex
-		      }
-		     ).then(function(tabsList) {
-			 hideWindowMover();
-		     }).catch(reportErr);
+                      {windowId: parseInt(targetWindowID, 10),
+                       index: targetIndex
+                      }
+                     ).then(function(tabsList) {
+                         hideWindowMover();
+                     }).catch(reportErr);
 }
 
 <% if ENV['TARGET'] == 'firefox' %>
 function populateBookmarkPicker() {
     try {
-	g_bookmarkList = [];
-	var i = 0;
-	let extractTitlesFromItem = function(bookmarkItem, parentPath) {
-	    if (bookmarkItem.type != "folder") {
-		return;
-	    }
-	    var fullPath;
-	    var nextPath;
-	    if (bookmarkItem.title) {
-		i += 1;
-		fullPath = parentPath + bookmarkItem.title;
-		nextPath = fullPath + "/";
-		let optionElement = document.createElement("option");
-		optionElement.value = bookmarkItem.id;
-		optionElement.text = `[${i}] ${fullPath}`;
-		if (i == 1) {
-		    optionElement.selected = true;
-		}
-		selectBookmarkTargetWidget.appendChild(optionElement);
-		g_bookmarkList.push(bookmarkItem.title);
-	    } else {
-		nextPath = parentPath;
-	    }
-		
-	    if (bookmarkItem.children) {
-		for (child of bookmarkItem.children) {
-		    extractTitlesFromItem(child, nextPath);
-		}
-	    }
-	};
-	let getBookmarkTree = function(items) {
-	    extractTitlesFromItem(items[0], "");
-	}
-	let reportErr = function(err) {
-	    console.log("tabhunter: error getting bookmarks: " + err);
-	};
-	browser.bookmarks.getTree().then(getBookmarkTree, reportErr);
+        g_bookmarkList = [];
+        var i = 0;
+        let extractTitlesFromItem = function(bookmarkItem, parentPath) {
+            if (bookmarkItem.type != "folder") {
+                return;
+            }
+            var fullPath;
+            var nextPath;
+            if (bookmarkItem.title) {
+                i += 1;
+                fullPath = parentPath + bookmarkItem.title;
+                nextPath = fullPath + "/";
+                let optionElement = document.createElement("option");
+                optionElement.value = bookmarkItem.id;
+                optionElement.text = `[${i}] ${fullPath}`;
+                if (i == 1) {
+                    optionElement.selected = true;
+                }
+                selectBookmarkTargetWidget.appendChild(optionElement);
+                g_bookmarkList.push(bookmarkItem.title);
+            } else {
+                nextPath = parentPath;
+            }
+                
+            if (bookmarkItem.children) {
+                for (child of bookmarkItem.children) {
+                    extractTitlesFromItem(child, nextPath);
+                }
+            }
+        };
+        let getBookmarkTree = function(items) {
+            extractTitlesFromItem(items[0], "");
+        }
+        let reportErr = function(err) {
+            console.log("tabhunter: error getting bookmarks: " + err);
+        };
+        browser.bookmarks.getTree().then(getBookmarkTree, reportErr);
     } catch(ex) { console.log(ex); }
 }
 
@@ -905,34 +942,34 @@ function doMoveToBookmarkButton() {
     try {
     let options = selectBookmarkTargetWidget.selectedOptions;
     if (options.length == 0) {
-	alert("No target bookmark to move tabs to");
-	return;
+        alert("No target bookmark to move tabs to");
+        return;
     }
     let targetBookmarkID = options.item(0).value;
     let selectedItems = getSelectedItemsJQ();
     let itemsToMove = selectedItems.map(function(selectedItem) { return items[selectedItem.actualIndex]; });
     let urls = itemsToMove.map(function(item) { return item.url; });
-	let index = -1;
-	var reportErr, moveNextURL;
+        let index = -1;
+        var reportErr, moveNextURL;
     reportErr = function(err) {
-	console.log("tabhunter: error creating bookmark: " + err);
+        console.log("tabhunter: error creating bookmark: " + err);
     };
     moveNextURL = function(newBookmark) {
-	if (index >= urls.length - 1) {
-	    let s = `Moved ${pluralize(urls.length, "tab")} to bookmark ${options.item(0).text}`;
-	    $("div#statusbar").removeClass("hide").addClass("show");
-	    $("p#statusbar-p").text(s);
-	    setTimeout(function() {
-		$("div#statusbar").removeClass("show").addClass("hide");
-		$("p#statusbar-p").text("");
-	    }, 30* 1000);
-	    return;
-	}
-	index += 1;
-	browser.bookmarks.create({
-	    parentId: targetBookmarkID,
-	    url: urls[index]
-	}).then(moveNextURL, reportErr);
+        if (index >= urls.length - 1) {
+            let s = `Moved ${pluralize(urls.length, "tab")} to bookmark ${options.item(0).text}`;
+            $("div#statusbar").removeClass("hide").addClass("show");
+            $("p#statusbar-p").text(s);
+            setTimeout(function() {
+                $("div#statusbar").removeClass("show").addClass("hide");
+                $("p#statusbar-p").text("");
+            }, 30* 1000);
+            return;
+        }
+        index += 1;
+        browser.bookmarks.create({
+            parentId: targetBookmarkID,
+            url: urls[index]
+        }).then(moveNextURL, reportErr);
     };
     moveNextURL(null);
     } catch(ex) { console.log(ex); }

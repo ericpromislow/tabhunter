@@ -1,5 +1,5 @@
 TARGET=firefox
-VERSION=2.1.6
+VERSION=2.1.7
 
 TDIR=build/${TARGET}
 TBDIR=$(TDIR)/build
@@ -111,5 +111,6 @@ $(TDIR)/popup/tabhunter.html: popup/tabhunter.html.erb
 
 $(TDIR)/popup/tabhunter.js: popup/tabhunter.js.erb
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
+	node -c $@
 
 
