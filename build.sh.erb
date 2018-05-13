@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 version=<%= ENV['VERSION'] or die("tabhunter/build.sh.erb: VERSION not set") %>
 target=<%= ENV['TARGET'] or die("tabhunter/build.sh.erb: TARGET not set") %>
