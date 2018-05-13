@@ -1,4 +1,4 @@
-## 2.1.7 - In windows/tab mode, numeric sub-selection:
+## 2.1.7 - numeric sub-selection:
 
 * putting `{w:N}` at the start of a pattern shows only tabs in window N
 
