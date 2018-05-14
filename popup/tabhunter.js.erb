@@ -12,7 +12,11 @@ var t1, t2;
 var closeTabsButton;
 var matchCloseTabs;
 var showAudioButton;
+var hideDiscardedTabsButton;
 var moveToWindowButton;
+var discardTabsButton;
+var activateTabsButton;
+var hasDiscardedTabs;
 var selectWindowTargetWidget;
 var finishMoveToWindowButton;
 <% if ENV['TARGET'] == 'firefox' %>
@@ -21,6 +25,7 @@ var finishMoveToBookmarkButton;
 var g_bookmarkList = null;
 <% end %>
 var g_showAudio;
+var g_hideDiscardTabs;
 var g_windowInfoArray;
 var closeOnGo = true;
 var sortBy = null;
@@ -45,10 +50,23 @@ function init() {
     document.getElementById("copyURL").addEventListener("mouseup", doCopyURLButton, false);
     document.getElementById("copyTitle").addEventListener("mouseup", doCopyTitleButton, false);
     document.getElementById("copyURLTitle").addEventListener("mouseup", doCopyURLTitleButton, false);
+    
     showAudioButton = document.getElementById("showAudio");
     showAudioButton.addEventListener("click", doHandleAudioCheckbox, false);
+    g_showAudio = showAudioButton.checked;
+    
+    hideDiscardedTabsButton = document.getElementById("hideDiscardedTabs");
+    hideDiscardedTabsButton.addEventListener("click", doHideDiscardedTabsCheckbox, false);
+    g_hideDiscardTabs = hideDiscardedTabsButton.checked;
+    hasDiscardedTabs = false;
+    
     moveToWindowButton = document.getElementById("moveToWindow");
     moveToWindowButton.addEventListener("mouseup", showWindowMover, false);
+
+    discardTabsButton = document.getElementById("discardSelectedTabs");
+    discardTabsButton.addEventListener("mouseup", discardTheTabs, false);
+    activateTabsButton = document.getElementById("activateSelectedTabs");
+    activateTabsButton.addEventListener("mouseup", activateTheTabs, false);
 
     selectWindowTargetWidget = document.getElementById("windowList");
     finishMoveToWindowButton = document.getElementById("doMoveToWindow");
@@ -58,7 +76,6 @@ function init() {
     finishMoveToBookmarkButton = document.getElementById("doMoveToBookmark");
     finishMoveToBookmarkButton.addEventListener("mouseup", doMoveToBookmarkButton, false);
 <% end %>
-    g_showAudio = showAudioButton.checked;
 
     matchCloseTabs = /^(.*?)(s?)$/;
 
@@ -95,12 +112,30 @@ function restoreAudioSetting() {
             g_showAudio = item.showAudio;
             showAudioButton.checked = g_showAudio;
         }
+	if ('hideDiscardTabs' in item) {
+	    g_hideDiscardTabs = item.hideDiscardTabs;
+	    hideDiscardedTabsButton.checked = g_hideDiscardTabs;
+	}
+        restoreHideAudioSetting();
+    };
+    var gotSettingErr = function(err) {
+        restoreHideAudioSetting();
+    };
+    browser.storage.local.get("showAudio").then(gotSettingOK, gotSettingErr);
+}
+
+function restoreHideAudioSetting() {
+    var gotSettingOK = function(item) {
+	if ('hideDiscardTabs' in item) {
+	    g_hideDiscardTabs = item.hideDiscardTabs;
+	    hideDiscardedTabsButton.checked = g_hideDiscardTabs;
+	}
         getCloseOnGoPref();
     };
     var gotSettingErr = function(err) {
         populateTabList();
     };
-    browser.storage.local.get("showAudio").then(gotSettingOK, gotSettingErr);
+    browser.storage.local.get("hideDiscardTabs").then(gotSettingOK, gotSettingErr);
 }
 
 function depx(pref) {
@@ -202,6 +237,7 @@ function makeTabItem(id, tab) {
       tabIndex: tab.index,
       favIconUrl: tab.favIconUrl,
       lastAccessed: tab.lastAccessed,
+      discarded: tab.discarded,
       audible: tab.audible
     };
 }
@@ -608,11 +644,15 @@ function onPatternChanged(event, calledFromInit) {
     for (var i = 0; i < items.length; i++) {
         // if (!winFnParts.every(function(f) { return f(); })) {
         let item = items[i];
-        if (!winFnParts.every((f) => f(item))) {
+        if ((!winFnParts.every((f) => f(item)))
+	    || (g_showAudio && !item.audible)) {
             continue;
         }
-        if (g_showAudio && !item.audible) {
-            continue;
+	if (item.discarded) {
+	    hasDiscardedTabs = true;
+	    if (g_hideDiscardTabs) {
+		continue;
+	    }
         }
         if (fn(item)) {
             matchedItems.push(i);
@@ -626,6 +666,15 @@ function onPatternChanged(event, calledFromInit) {
         return;
     }
     makeListFromMatchedItems();
+}
+
+function setStatusBarMessage(msg) {
+    $("div#statusbar").removeClass("hide").addClass("show");
+    $("p#statusbar-p").text(msg);
+    setTimeout(function() {
+        $("div#statusbar").removeClass("show").addClass("hide");
+        $("p#statusbar-p").text("");
+    }, 30* 1000);
 }
 
 function makeListFromMatchedItems() {
@@ -676,6 +725,9 @@ function makeListFromMatchedItems() {
                 el.textContent = el.textContent + " [DUP]";
             }
         }
+	if (item.discarded) {
+            $(el).addClass("discarded");
+	}
         list.appendChild(el);
     }
     $("ul li:eq(" + selectedIndex + ")").select();
@@ -705,6 +757,8 @@ function updateButtons() {
     // showAudioButton is always enabled
     
     finishMoveToWindowButton.disabled = otherDisabled;
+    discardTabsButton.disabled = otherDisabled;
+    activateTabsButton.disabled = !hasDiscardedTabs || otherDisabled;
 
 <% if ENV['TARGET'] == 'firefox' %>
     finishMoveToBookmarkButton.disabled = otherDisabled;
@@ -767,7 +821,7 @@ function doCloseTabsButton() {
     var removeTabError = function(err) {
         var msg = "Error removing tab: ";
         if (typeof(err) == "string") {
-            msg += err;;
+            msg += err;
         } else {
             msg += err.message;
         }
@@ -866,6 +920,75 @@ function getWindowTitle(windowInfo) {
     return windowInfo.tabs[0].title
 }
 
+function discardTheTabs() {
+    var selectedItems = getSelectedItemsJQ();
+    var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
+    var actualItems = selectedActualIndices.map((i) => items[i]);
+    var tabIDs = actualItems.filter((item) => !item.discarded).map((item) => item.tabID);
+    if (tabIDs.length == 0) {
+	let s = "All selected items are already discarded";
+	setStatusBarMessage(s)
+	console.log("Tabhunter: " + s);
+    } else {
+	let discardTabError = function(err) {
+            var msg = "Error discarding tab: ";
+            if (typeof(err) == "string") {
+		msg += err;
+            } else {
+		msg += err.message;
+            }
+	    setStatusBarMessage(msg)
+	    console.log("Tabhunter: " + msg);
+	}
+	let discardTabOK = function() {
+	    console.log("QQQ: Discard successful");
+            setTimeout(populateTabList, 10);
+	}
+	console.log(`QQQ: - browser.tabs.discard(${tabIDs})`);
+	browser.tabs.discard(tabIDs).then(discardTabOK, discardTabError);
+    }
+}
+
+function tabActivator(tabIDs) {
+    this.index = -1;
+    this.tabIDs = tabIDs;
+}
+
+tabActivator.prototype = {
+    discardTabError: function(error) {
+	let s = `Error activating tab ${items[this.index].title}: ${error}`;
+	setStatusBarMessage(s);
+        console.log("tabhunter: " + s);
+    },
+    next: function() {
+	if (this.index >= this.tabIDs.length - 1) {
+	    console.log("QQQ: Activate successful");
+            setTimeout(populateTabList, 10);
+	    return;
+	}
+	this.index += 1;
+	let self = this;
+	console.log(`QQQ: - go activate tab ${items[this.index].title}`);
+	browser.tabs.update(this.tabIDs[this.index],
+			    {active: true}).then(self.next, self.discardTabError);
+    }
+};    
+
+function activateTheTabs() {
+    var selectedItems = getSelectedItemsJQ();
+    var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
+    var actualItems = selectedActualIndices.map((i) => items[i]);
+    var tabIDs = actualItems.filter((item) => item.discarded).map((item) => item.tabID);
+    if (tabIDs.length == 0) {
+	let s = "All selected items are already activated";
+	setStatusBarMessage(s)
+	console.log("Tabhunter: " + s);
+    } else {
+	console.log(`QQQ: activateTheTabs ${tabIDs.join(' : ')}`);
+	new TabActivator(tabIDs).next();
+    }
+}
+
 function doMoveToWindowButton() {
     let reportErr = function(err) {
         console.log("tabhunter: doMoveToWindowButton: " + err);
@@ -957,12 +1080,7 @@ function doMoveToBookmarkButton() {
     moveNextURL = function(newBookmark) {
         if (index >= urls.length - 1) {
             let s = `Moved ${pluralize(urls.length, "tab")} to bookmark ${options.item(0).text}`;
-            $("div#statusbar").removeClass("hide").addClass("show");
-            $("p#statusbar-p").text(s);
-            setTimeout(function() {
-                $("div#statusbar").removeClass("show").addClass("hide");
-                $("p#statusbar-p").text("");
-            }, 30* 1000);
+	    setStatusBarMessage(s);
             return;
         }
         index += 1;
@@ -979,6 +1097,12 @@ function doMoveToBookmarkButton() {
 function doHandleAudioCheckbox() {
     g_showAudio = showAudioButton.checked;
     browser.storage.local.set({"showAudio": g_showAudio});
+    onPatternChanged(null, false);
+}
+
+function doHideDiscardedTabsCheckbox() {
+    g_hideDiscardTabs = hideDiscardedTabsButton.checked;
+    browser.storage.local.set({"hideDiscardTabs": g_hideDiscardTabs});
     onPatternChanged(null, false);
 }
 

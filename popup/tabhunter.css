@@ -165,8 +165,16 @@ ul#list li {
     
 }
 
+ul#list li.duplicate.discarded {
+    color: #CD853F; /* peru; */
+}
+
 ul#list li.duplicate {
     color: orange;
+}
+
+ul#list li.discarded {
+    color: #708090; /* slategrey */
 }
 
 ul#list li.selected {
