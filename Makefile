@@ -4,6 +4,7 @@ VERSION=2.1.7
 TDIR=build/${TARGET}
 TBDIR=$(TDIR)/build
 ZIPPER=$(TBDIR)/tabhunter-$(TARGET)-$(VERSION).zip
+TDIRS=$(TDIR) $(TDIR)/build $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup
 
 SOURCES=$(TDIR) $(TBDIR) $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup \
 		$(TDIR)/_locales/en/messages.json \
@@ -35,9 +36,9 @@ all-firefox:
 all-chrome:
 	$(MAKE) -e TARGET=chrome do-chrome
 
-do-firefox: $(ZIPPER)
+do-firefox: $(TDIRS) $(ZIPPER)
 
-do-chrome: $(TDIR)/popup/browser-polyfill.min.js $(ZIPPER) 
+do-chrome: $(TDIRS) $(TDIR)/popup/browser-polyfill.min.js $(ZIPPER) 
 
 $(ZIPPER): $(SOURCES)
 	cd $(TDIR) ; ./build.sh
