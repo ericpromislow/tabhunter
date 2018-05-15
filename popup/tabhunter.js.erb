@@ -26,6 +26,7 @@ var g_bookmarkList = null;
 <% end %>
 var g_showAudio;
 var g_hideDiscardTabs;
+var g_activeTab;
 var g_windowInfoArray;
 var closeOnGo = true;
 var sortBy = null;
@@ -38,6 +39,7 @@ function init() {
     var list = document.getElementById("list");
     mainPattern = document.getElementById("pattern");
     textarea = document.getElementById("textarea");
+    g_activeTab = -1;
 
     tablist = list;
 
@@ -361,6 +363,10 @@ function populateTabList() {
             var id = windowInfo.id;
             var tabs = windowInfo.tabs;
             for (var tab of tabs) {
+		if (tab.active && windowInfo.focused) {
+		    console.log(`QQQ: makeTabItem: window ${id} (${tab.title}) is active`);
+		    g_activeTab = tab.id;
+		}
                 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl
                 items.push(makeTabItem(id, tab));
             }
@@ -953,8 +959,9 @@ TabChanger.prototype = {
 function discardTheTabs() {
     var selectedItems = getSelectedItemsJQ();
     var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
-    var actualItems = selectedActualIndices.map((i) => items[i]).filter((item) => !item.discarded);
+    var actualItems = selectedActualIndices.map((i) => items[i]).filter((item) => !item.discarded && item.tabID != g_activeTab);
     var tabIDs = actualItems.map((item) => item.tabID);
+    console.log(`QQQ: discard tabs <${actualItems.map((item) => item.title).join(">, <")}>`);
     if (tabIDs.length == 0) {
         let s = "All selected items are already discarded";
         setStatusBarMessage(s)
