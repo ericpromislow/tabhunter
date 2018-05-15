@@ -364,7 +364,6 @@ function populateTabList() {
             var tabs = windowInfo.tabs;
             for (var tab of tabs) {
 		if (tab.active && windowInfo.focused) {
-		    console.log(`QQQ: makeTabItem: window ${id} (${tab.title}) is active`);
 		    g_activeTab = tab.id;
 		}
                 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl
@@ -936,22 +935,18 @@ function TabChanger(tabIDs, opLabel, op, actualItems) {
 
 TabChanger.prototype = {
     changeTabError: function(error) {
-        for (var x in this) {
-            console.log(`QQQ: this.${x} = ${this[x]}`);
-        }
         let s = `Error: ${this.opLabel}: tab ${this.actualItems[this.index].title}: ${error}`;
         setStatusBarMessage(s);
         console.log("tabhunter: " + s);
     },
     next: function() {
         if (this.index >= this.tabIDs.length - 1) {
-            console.log(`QQQ: ${this.opLabel} successful`);
+            setStatusBarMessage(`${this.opLabel} successful`);
             setTimeout(populateTabList, 10);
             return;
         }
         this.index += 1;
         let self = this;
-        console.log(`QQQ: - go ${this.opLabel} tab ${this.actualItems[this.index].title}`);
         this.op(this.tabIDs[this.index], this.next.bind(this), this.changeTabError.bind(this));
     }
 };    
@@ -961,10 +956,9 @@ function discardTheTabs() {
     var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
     var actualItems = selectedActualIndices.map((i) => items[i]).filter((item) => !item.discarded && item.tabID != g_activeTab);
     var tabIDs = actualItems.map((item) => item.tabID);
-    console.log(`QQQ: discard tabs <${actualItems.map((item) => item.title).join(">, <")}>`);
     if (tabIDs.length == 0) {
         let s = "All selected items are already discarded";
-        setStatusBarMessage(s)
+        setStatusBarMessage(s);
         console.log("Tabhunter: " + s);
         return;
     }
@@ -980,13 +974,11 @@ function discardTheTabs() {
         console.log("Tabhunter: " + msg);
     }
     let discardTabOK = function() {
-        console.log("QQQ: Discard successful");
+        setStatusBarMessage("Discard successful");
         setTimeout(populateTabList, 10);
     }
-    console.log(`QQQ: - browser.tabs.discard(${tabIDs})`);
     browser.tabs.discard(tabIDs).then(discardTabOK, discardTabError);
 <% else %>
-    console.log(`QQQ: discardTheTabs ${tabIDs.join(' : ')}`);
     new TabChanger(tabIDs, "discard", function(tabID, onResolve, onReject) {
                                          browser.tabs.discard(tabID).
                                          then(onResolve).
@@ -1005,7 +997,6 @@ function activateTheTabs() {
         setStatusBarMessage(s)
         console.log("Tabhunter: " + s);
     } else {
-        console.log(`QQQ: activateTheTabs ${tabIDs.join(' : ')}`);
         new TabChanger(tabIDs, "activate", function(tabID, onResolve, onReject) {
               browser.tabs.reload(tabID).
                 then(onResolve).
