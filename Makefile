@@ -1,5 +1,5 @@
 TARGET=firefox
-VERSION=2.1.8
+VERSION=2.1.9
 
 TDIR=build/${TARGET}
 TBDIR=$(TDIR)/build
@@ -82,7 +82,7 @@ $(TDIR)/LICENSE.txt : LICENSE.txt
 $(TDIR)/README.md : README.md
 	cp $< $@
 
-$(TDIR)/build.sh : build.sh.erb
+$(TDIR)/build.sh : build.sh.erb Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 	chmod +x $@
 
