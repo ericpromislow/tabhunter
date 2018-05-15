@@ -112,10 +112,10 @@ function restoreAudioSetting() {
             g_showAudio = item.showAudio;
             showAudioButton.checked = g_showAudio;
         }
-	if ('hideDiscardTabs' in item) {
-	    g_hideDiscardTabs = item.hideDiscardTabs;
-	    hideDiscardedTabsButton.checked = g_hideDiscardTabs;
-	}
+        if ('hideDiscardTabs' in item) {
+            g_hideDiscardTabs = item.hideDiscardTabs;
+            hideDiscardedTabsButton.checked = g_hideDiscardTabs;
+        }
         restoreHideAudioSetting();
     };
     var gotSettingErr = function(err) {
@@ -126,10 +126,10 @@ function restoreAudioSetting() {
 
 function restoreHideAudioSetting() {
     var gotSettingOK = function(item) {
-	if ('hideDiscardTabs' in item) {
-	    g_hideDiscardTabs = item.hideDiscardTabs;
-	    hideDiscardedTabsButton.checked = g_hideDiscardTabs;
-	}
+        if ('hideDiscardTabs' in item) {
+            g_hideDiscardTabs = item.hideDiscardTabs;
+            hideDiscardedTabsButton.checked = g_hideDiscardTabs;
+        }
         getCloseOnGoPref();
     };
     var gotSettingErr = function(err) {
@@ -295,7 +295,6 @@ const comparisonFunctions = {'Title': compareByTitle,
 function sortByWithReverseCheck(tab1, tab2) {
     var negateResult = sortByReverse ? -1 : 1;
     var res = sortBy(tab1, tab2);
-    //console.log(`QQQ: win1:${tab1.
     return res * negateResult;
     // return (sortByReverse ? -1 : 1) * sortBy(tab1, tab2);
 }
@@ -645,14 +644,14 @@ function onPatternChanged(event, calledFromInit) {
         // if (!winFnParts.every(function(f) { return f(); })) {
         let item = items[i];
         if ((!winFnParts.every((f) => f(item)))
-	    || (g_showAudio && !item.audible)) {
+            || (g_showAudio && !item.audible)) {
             continue;
         }
-	if (item.discarded) {
-	    hasDiscardedTabs = true;
-	    if (g_hideDiscardTabs) {
-		continue;
-	    }
+        if (item.discarded) {
+            hasDiscardedTabs = true;
+            if (g_hideDiscardTabs) {
+                continue;
+            }
         }
         if (fn(item)) {
             matchedItems.push(i);
@@ -725,9 +724,9 @@ function makeListFromMatchedItems() {
                 el.textContent = el.textContent + " [DUP]";
             }
         }
-	if (item.discarded) {
+        if (item.discarded) {
             $(el).addClass("discarded");
-	}
+        }
         list.appendChild(el);
     }
     $("ul li:eq(" + selectedIndex + ")").select();
@@ -916,76 +915,95 @@ function populateWindowPicker() {
 function getWindowTitle(windowInfo) {
 <% if ENV['TARGET'] == 'firefox' %>
     return windowInfo.title;
-<% end %>
+<% else %>
     return windowInfo.tabs[0].title
+<% end %>
 }
+
+function TabChanger(tabIDs, opLabel, op, actualItems) {
+    this.index = -1;
+    this.tabIDs = tabIDs;
+    this.op = op;
+    this.opLabel = opLabel;
+    this.actualItems = actualItems;
+}
+
+TabChanger.prototype = {
+    changeTabError: function(error) {
+        for (var x in this) {
+            console.log(`QQQ: this.${x} = ${this[x]}`);
+        }
+        let s = `Error: ${this.opLabel}: tab ${this.actualItems[this.index].title}: ${error}`;
+        setStatusBarMessage(s);
+        console.log("tabhunter: " + s);
+    },
+    next: function() {
+        if (this.index >= this.tabIDs.length - 1) {
+            console.log(`QQQ: ${this.opLabel} successful`);
+            setTimeout(populateTabList, 10);
+            return;
+        }
+        this.index += 1;
+        let self = this;
+        console.log(`QQQ: - go ${this.opLabel} tab ${this.actualItems[this.index].title}`);
+        this.op(this.tabIDs[this.index], this.next.bind(this), this.changeTabError.bind(this));
+    }
+};    
 
 function discardTheTabs() {
     var selectedItems = getSelectedItemsJQ();
     var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
-    var actualItems = selectedActualIndices.map((i) => items[i]);
-    var tabIDs = actualItems.filter((item) => !item.discarded).map((item) => item.tabID);
+    var actualItems = selectedActualIndices.map((i) => items[i]).filter((item) => !item.discarded);
+    var tabIDs = actualItems.map((item) => item.tabID);
     if (tabIDs.length == 0) {
-	let s = "All selected items are already discarded";
-	setStatusBarMessage(s)
-	console.log("Tabhunter: " + s);
-    } else {
-	let discardTabError = function(err) {
-            var msg = "Error discarding tab: ";
-            if (typeof(err) == "string") {
-		msg += err;
-            } else {
-		msg += err.message;
-            }
-	    setStatusBarMessage(msg)
-	    console.log("Tabhunter: " + msg);
-	}
-	let discardTabOK = function() {
-	    console.log("QQQ: Discard successful");
-            setTimeout(populateTabList, 10);
-	}
-	console.log(`QQQ: - browser.tabs.discard(${tabIDs})`);
-	browser.tabs.discard(tabIDs).then(discardTabOK, discardTabError);
+        let s = "All selected items are already discarded";
+        setStatusBarMessage(s)
+        console.log("Tabhunter: " + s);
+        return;
     }
-}
-
-function tabActivator(tabIDs) {
-    this.index = -1;
-    this.tabIDs = tabIDs;
-}
-
-tabActivator.prototype = {
-    discardTabError: function(error) {
-	let s = `Error activating tab ${items[this.index].title}: ${error}`;
-	setStatusBarMessage(s);
-        console.log("tabhunter: " + s);
-    },
-    next: function() {
-	if (this.index >= this.tabIDs.length - 1) {
-	    console.log("QQQ: Activate successful");
-            setTimeout(populateTabList, 10);
-	    return;
-	}
-	this.index += 1;
-	let self = this;
-	console.log(`QQQ: - go activate tab ${items[this.index].title}`);
-	browser.tabs.update(this.tabIDs[this.index],
-			    {active: true}).then(self.next, self.discardTabError);
+<% if ENV['TARGET'] == 'firefox' %>
+    let discardTabError = function(err) {
+        var msg = "Error discarding tab: ";
+        if (typeof(err) == "string") {
+            msg += err;
+        } else {
+            msg += err.message;
+        }
+        setStatusBarMessage(msg)
+        console.log("Tabhunter: " + msg);
     }
-};    
+    let discardTabOK = function() {
+        console.log("QQQ: Discard successful");
+        setTimeout(populateTabList, 10);
+    }
+    console.log(`QQQ: - browser.tabs.discard(${tabIDs})`);
+    browser.tabs.discard(tabIDs).then(discardTabOK, discardTabError);
+<% else %>
+    console.log(`QQQ: discardTheTabs ${tabIDs.join(' : ')}`);
+    new TabChanger(tabIDs, "discard", function(tabID, onResolve, onReject) {
+                                         browser.tabs.discard(tabID).
+                                         then(onResolve).
+                                         catch(onReject);
+              }, actualItems).next();
+<% end %>
+}
 
 function activateTheTabs() {
     var selectedItems = getSelectedItemsJQ();
     var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
-    var actualItems = selectedActualIndices.map((i) => items[i]);
-    var tabIDs = actualItems.filter((item) => item.discarded).map((item) => item.tabID);
+    var actualItems = selectedActualIndices.map((i) => items[i]).filter((item) => item.discarded);
+    var tabIDs = actualItems.map((item) => item.tabID);
     if (tabIDs.length == 0) {
-	let s = "All selected items are already activated";
-	setStatusBarMessage(s)
-	console.log("Tabhunter: " + s);
+        let s = "All selected items are already activated";
+        setStatusBarMessage(s)
+        console.log("Tabhunter: " + s);
     } else {
-	console.log(`QQQ: activateTheTabs ${tabIDs.join(' : ')}`);
-	new TabActivator(tabIDs).next();
+        console.log(`QQQ: activateTheTabs ${tabIDs.join(' : ')}`);
+        new TabChanger(tabIDs, "activate", function(tabID, onResolve, onReject) {
+              browser.tabs.reload(tabID).
+                then(onResolve).
+                catch(onReject);
+              }, actualItems).next();
     }
 }
 
@@ -1080,7 +1098,7 @@ function doMoveToBookmarkButton() {
     moveNextURL = function(newBookmark) {
         if (index >= urls.length - 1) {
             let s = `Moved ${pluralize(urls.length, "tab")} to bookmark ${options.item(0).text}`;
-	    setStatusBarMessage(s);
+            setStatusBarMessage(s);
             return;
         }
         index += 1;
