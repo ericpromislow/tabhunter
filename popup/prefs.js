@@ -1,6 +1,6 @@
 // prefs.html -:- See LICENSE.txt for copyright and license details.
 
-console.log("Loading prefs.js...");
+var thPrefFunc = (function() {
 
 var commandKeyInput, commandDescriptionInput, closeOnGoCheckbox;
 var fontSizeInput, resetFontSizeButton;
@@ -469,4 +469,15 @@ function handleConfigKeyPress(event) {
     event.preventDefault();
 }
 
-$(document).ready(initPrefs);
+return {
+    initPrefs: function() {
+	initPrefs();
+    }
+};
+
+});
+
+$(document).ready(function() {
+  let thPref = thPrefFunc();
+  thPref.initPrefs();
+});

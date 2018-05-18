@@ -1,5 +1,7 @@
 // tabhunter.js -- See LICENSE.txt for copyright and license details. 
 
+var thMainFunc = (function() {
+
 var items = [];
 var selectedIndex;    // visible
 var lastClickedIndex; // visible
@@ -646,7 +648,7 @@ function onPatternChanged(event, calledFromInit) {
         }
     }
     for (var i = 0; i < items.length; i++) {
-        // if (!winFnParts.every(function(f) { return f(); })) {
+        // if (!winFnParts.every(function(f) { return f(); })) { }
         let item = items[i];
         if ((!winFnParts.every((f) => f(item)))
             || (g_showAudio && !item.audible)) {
@@ -1138,4 +1140,16 @@ function getModifierMask(event) {
             (event.commandKey ? CTRL_KEY : 0 ));
 }
 
-$(document).ready(init);
+return {
+    init: function () {
+	return init();
+    }
+};
+
+});
+
+$(document).ready(function() {
+  let thMain = thMainFunc();
+  thMain.init();
+});
+
