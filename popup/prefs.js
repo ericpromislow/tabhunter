@@ -1,5 +1,7 @@
 // prefs.html -:- See LICENSE.txt for copyright and license details.
 
+console.log("Loading prefs.js...");
+
 var commandKeyInput, commandDescriptionInput, closeOnGoCheckbox;
 var fontSizeInput, resetFontSizeButton;
 var sortByTitleButton;
@@ -44,6 +46,7 @@ const FUNCTION_KEY_NAMES = ["Home", "End", "PageUp", "PageDown", "Insert", "Dele
 const PREF_FIELD_NAMES = ["command_key", "closeOnGo"];
 
 function initPrefs() {
+    console.log(`QQQ: >> initPrefs`);
     FUNCTION_KEY_NAMES.forEach(function(name) {
             USER_NAMES_FROM_KEYS[name] = name.toLowerCase();
             API_NAMES_FROM_KEYS[name] = name;

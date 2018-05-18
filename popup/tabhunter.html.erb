@@ -10,6 +10,7 @@
   <script src="browser-polyfill.min.js"></script>
 <% end %>
   <script src="tabhunter.js"></script>
+  <script src="prefs.js"></script>
 <body id="body">
   <div id="form">
     <div class="row">
@@ -42,9 +43,11 @@
               >More ...</button>
     </div>
     <div id="moveToWindowArea" class="buttondiv hide">
-      <select name="windowList" id="windowList">
-      </select>
-      <button type="button" class="button" id="doMoveToWindow">Move the Tabs</button>
+      <div id="moveToWindowContainer" >
+        <select name="windowList" id="windowList">
+        </select>
+        <button type="button" class="button" id="doMoveToWindow">Move the Tabs</button>
+      </div>
 <% if ENV['TARGET'] == 'firefox' %>
       <div id="moveToBookmarkContainer" >
         <select name="bookmarkList" id="bookmarkList">
@@ -60,11 +63,14 @@
         <button type="button" class="button" id="discardSelectedTabs">Discard Tabs</button>
         <button type="button" class="button" id="activateSelectedTabs">Activate Tabs</button>
       </div>
+      <div id="prefsContainer">
+        <%= File.read(File.expand_path("../_prefs.html", __FILE__)) %>
+      </div>
       <div id="statusbar" class="hide">
         <p id="statusbar-p">
           Tabhunter ...
         </p>
-      <div/>
+      </div>
     </div>
     <textarea id="textarea"></textarea>
   </div>

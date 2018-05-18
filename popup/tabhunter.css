@@ -98,8 +98,17 @@ div#statusbar.show {
     visibility: visible;
 }
 
+div#moveToWindowArea {
+    padding-bottom: 2pt;
+}
 
 div#moveToBookmarkContainer {
+    border-top: 1px solid;
+    padding-top: 2pt;
+    padding-bottom: 2pt;
+}
+
+div#discardArea {
     border-top: 1px solid;
     padding-top: 2pt;
 }

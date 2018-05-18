@@ -1,5 +1,5 @@
 TARGET=firefox
-VERSION=2.1.9
+VERSION=2.2.0
 
 TDIR=build/${TARGET}
 TBDIR=$(TDIR)/build
@@ -86,7 +86,7 @@ $(TDIR)/build.sh : build.sh.erb Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 	chmod +x $@
 
-$(TDIR)/manifest.json : manifest.json.erb
+$(TDIR)/manifest.json : manifest.json.erb Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
 $(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill.min.js
@@ -98,7 +98,7 @@ $(TDIR)/popup/jquery-3.2.1.min.js: popup/jquery-3.2.1.min.js
 $(TDIR)/popup/prefs.css: popup/prefs.css
 	cp $< $@
 
-$(TDIR)/popup/prefs.html: popup/prefs.html
+$(TDIR)/popup/_prefs.html: popup/_prefs.html
 	cp $< $@
 
 $(TDIR)/popup/prefs.js: popup/prefs.js
@@ -113,5 +113,8 @@ $(TDIR)/popup/tabhunter.html: popup/tabhunter.html.erb
 $(TDIR)/popup/tabhunter.js: popup/tabhunter.js.erb
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 	node -c $@
+
+$(TDIR)/popup/prefs.html: popup/prefs.html.erb
+	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
 
