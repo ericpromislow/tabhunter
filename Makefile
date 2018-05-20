@@ -103,9 +103,9 @@ $(TDIR)/popup/prefs.css: popup/prefs.css
 $(TDIR)/popup/_prefs.html: popup/_prefs.html
 	cp $< $@
 
-$(TDIR)/popup/prefs.js: popup/prefs.js
-	node -c $<
-	cp $< $@
+$(TDIR)/popup/prefs.js: popup/prefs.js.erb
+	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
+	node -c $@
 
 $(TDIR)/popup/tabhunter.css: popup/tabhunter.css
 	cp $< $@

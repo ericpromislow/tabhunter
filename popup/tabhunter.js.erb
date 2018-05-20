@@ -1143,13 +1143,16 @@ function getModifierMask(event) {
 return {
     init: function () {
 	return init();
-    }
+    },
+    reloadPrefsAndMatches: getCloseOnGoPref,
+    __BOSCO__ : null
 };
 
 });
 
+var thMain = null;
 $(document).ready(function() {
-  let thMain = thMainFunc();
+  thMain = thMainFunc();
   thMain.init();
 });
 

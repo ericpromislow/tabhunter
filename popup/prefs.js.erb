@@ -45,7 +45,6 @@ const FUNCTION_KEY_NAMES = ["Home", "End", "PageUp", "PageDown", "Insert", "Dele
 const PREF_FIELD_NAMES = ["command_key", "closeOnGo"];
 
 function initPrefs() {
-    console.log(`QQQ: >> initPrefs`);
     FUNCTION_KEY_NAMES.forEach(function(name) {
             USER_NAMES_FROM_KEYS[name] = name.toLowerCase();
             API_NAMES_FROM_KEYS[name] = name;
@@ -136,6 +135,16 @@ function checkSortByGroup(event) {
     submitChanges();
 }
 
+function getURLForLocalFile(fname) {
+    var head;
+<% if ENV['TARGET'] == 'firefox' %>
+    head = browser;
+<% else %>
+    head = chrome;
+<% end %>
+    return head.extension.getURL("popup/images/restore12.png");
+}
+
 function initFields() {
     commandKeyInput = document.getElementById("command_key");
     commandDescriptionInput = document.getElementById("command_description");
@@ -143,13 +152,10 @@ function initFields() {
     closeOnGoCheckbox.checked = true;
     closeOnGoCheckbox.addEventListener('change', handleCloseOnGoCheckboxChange, false);
 
-    ["restoreCloseOnGoImg", "restoreSortByReverseImg", "restoreControlVisitNImg"
-    ].forEach(function(id) {
-	document.getElementById(id).setAttribute("src", browser.extension.getURL("popup/images/restore12.png"));
-    });
-
-    ["restoreStartupKeyImg", "restoreFontSizeImg"].forEach(function(id) {
-	document.getElementById(id).setAttribute("src", browser.extension.getURL("popup/images/restore12.png"));
+    let imageURL = getURLForLocalFile("popup/images/restore12.png");
+    ["restoreCloseOnGoImg", "restoreSortByReverseImg", "restoreControlVisitNImg",
+     "restoreStartupKeyImg", "restoreFontSizeImg"].forEach(function(id) {
+	document.getElementById(id).setAttribute("src", imageURL);
     });    
 
     let restoreCloseAndGoButton = document.getElementById("restoreCloseOnGoButton");
@@ -178,7 +184,6 @@ function initFields() {
      sortByPositionButton, sortByNeglectButton].forEach(function(e) {
 	 e.addEventListener('change', checkSortByGroup, false);
     });
-    
     var gotCommandsOK = function(commands) {
         if (commands[0].name == "_execute_browser_action") {
             commandKeyInput.value =
@@ -479,6 +484,7 @@ function submitChanges() {
         let updateCommandOK = function() {
             console.log(`tabhunter: shortcut changed`);
             //alert("shortcut changed");
+	    postSubmitChanges();
         };
         let updateCommandErr = function(err) {
             dumpError(err, `Error updating command: ${err}`);
@@ -488,6 +494,14 @@ function submitChanges() {
                                   shortcut: prefSettings["_execute_browser_action"],
                                   description: commandDescriptionInput.value
                                 }).then(updateCommandOK, updateCommandErr);
+    } else {
+	postSubmitChanges();
+    }
+}
+
+function postSubmitChanges() {
+    if (typeof(thMain) != "undefined") {
+	thMain.reloadPrefsAndMatches();
     }
 }
 
@@ -517,7 +531,8 @@ return {
 
 });
 
+var thPref;
 $(document).ready(function() {
-  let thPref = thPrefFunc();
+  thPref = thPrefFunc();
   thPref.initPrefs();
 });
