@@ -4,7 +4,8 @@ VERSION=2.2.0
 TDIR=build/${TARGET}
 TBDIR=$(TDIR)/build
 ZIPPER=$(TBDIR)/tabhunter-$(TARGET)-$(VERSION).zip
-TDIRS=$(TDIR) $(TDIR)/build $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup
+TDIRS=$(TDIR) $(TDIR)/build $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons \
+	$(TDIR)/popup $(TDIR)/popup/images
 
 SOURCES=$(TDIR) $(TBDIR) $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup \
 		$(TDIR)/_locales/en/messages.json \
@@ -24,6 +25,7 @@ SOURCES=$(TDIR) $(TBDIR) $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TD
 		$(TDIR)/popup/prefs.css \
 		$(TDIR)/popup/prefs.html \
 		$(TDIR)/popup/prefs.js \
+		$(TDIR)/popup/images/restore12.png \
 		$(TDIR)/popup/tabhunter.css \
 		$(TDIR)/popup/tabhunter.html \
 		$(TDIR)/popup/tabhunter.js
@@ -46,7 +48,7 @@ $(ZIPPER): $(SOURCES)
 build:
 	mkdir -p $@
 
-$(TDIR) $(TDIR)/build $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup:
+$(TDIR) $(TDIR)/build $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup $(TDIR)/popup/images:
 	mkdir -p $@
 
 $(TDIR)/_locales/en/messages.json: _locales/en/messages.json
@@ -102,6 +104,7 @@ $(TDIR)/popup/_prefs.html: popup/_prefs.html
 	cp $< $@
 
 $(TDIR)/popup/prefs.js: popup/prefs.js
+	node -c $<
 	cp $< $@
 
 $(TDIR)/popup/tabhunter.css: popup/tabhunter.css
@@ -116,5 +119,9 @@ $(TDIR)/popup/tabhunter.js: popup/tabhunter.js.erb
 
 $(TDIR)/popup/prefs.html: popup/prefs.html.erb
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
+
+$(TDIR)/popup/images/restore12.png: popup/images/restore12.png
+	cp $< $@
+
 
 

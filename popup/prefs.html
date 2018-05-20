@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<!-- prefs.html.erb -:- See LICENSE.txt for copyright and license details. -->
+<html lang="en">
+  <head>
+    <link href="prefs.css" rel="stylesheet" type="text/css" />
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Tabhunter Preferences </title>
+  <script src="jquery-3.2.1.min.js"></script>
+<% if ENV['TARGET'] == 'chrome' %>
+  <script src="browser-polyfill.min.js"></script>
+-->
+  <script src="prefs.js"></script>
+</head>
+<body>
+  <article>
+  <h1>Tabhunter Preferences</h1>
+  <div>
+      <div id="change-shortcut-div" class="hide">
+	<fieldset>
+	  <legend>Keyboard Shortcut</legend>
+	  <button type="button" class="restoreButton"
+		  title="Restore Setting"
+		 id="restoreStartupKeyButton">
+            <img alt="Restore StartupKey setting" id="restoreStartupKeyImg" />
+          </button>
+	  <label class="input-text" for="command_key">Startup Key Sequence: </label>
+	  <input id="command_key" type="text" class="text"
+		 rows="1"
+		 columns="12"
+		 />
+	  <label class="input-text" for="command_description">Description:</label>
+	  <input id="command_description" type="text" class="text"
+		 rows="1"
+		 columns="24"
+		 />
+	</fieldset>
+      </div>
+      <div id="close-on-return-div">
+	<fieldset>
+	  <legend>Close When Changing Tabs</legend>
+	  <button type="button" class="restoreButton"
+		  title="Restore Setting"
+		 id="restoreCloseOnGoButton">
+            <img alt="Restore CloseOnGo setting" id="restoreCloseOnGoImg" />
+          </button>
+	  <input type="checkbox" class="xbutton" name="closeOnGo" id="closeOnGo"
+		 value="true"
+		 />
+	  <label for="closeOnGo">Close On Go</label>
+	</fieldset>
+      </div>
+      <div id="font-size-div">
+	<fieldset>
+	  <legend>Font Size</legend>
+	  <button type="button" class="restoreButton"
+		  title="Restore Setting"
+		 id="restoreFontSizeButton">
+            <img alt="Restore Font Size" id="restoreFontSizeImg" />
+          </button>
+	  <label for="fontSize">Font Size</label>
+	  <input type="number" class="xbutton" name="fontSize" id="fontSize"
+		 value=""
+		 />
+	</fieldset>
+      </div>
+      <div id="sort-by-div">
+	<fieldset>
+	  <legend>Sort by...</legend>
+	  <input type="radio" id="sortByTitle" name="sortBy"
+		 value="Title" checked />
+	  <label for="sortByTitle">Title</label>
+	  <input type="radio" id="sortByURL" name="sortBy"
+		 value="URL" />
+	  <label for="sortByURL">URL</label>
+	  <input type="radio" id="sortByPosition" name="sortBy"
+		 value="Position" />
+	  <label for="sortByPosition">Window/Tab</label>
+	  <input type="radio" id="sortByNeglect" name="sortBy"
+		 value="Neglect" />
+	  <label for="sortByNeglect">Neglect</label>
+	  <br />
+	  <button type="button" class="restoreButton"
+		  title="Restore Setting"
+		  id="restoreSortByReverseButton">
+            <img alt="Restore SortByReverse setting" id="restoreSortByReverseImg" />
+          </button>
+	  <input type="checkbox" class="xbutton" name="sortByReverse" id="sortByReverse"
+		 value="false"
+		 />
+	  <label for="sortByReverse">Reverse Sort</label>
+	  <br />
+	  <button type="button" class="restoreButton"
+		  title="Restore Setting"
+		  id="restoreControlVisitNButton">
+            <img alt="Restore Control-N setting" id="restoreControlVisitNImg" />
+          </button>
+	  <input type="checkbox" class="xbutton" name="controlVisitN" id="controlVisitN"
+		 value="false"
+		 />
+	  <label for="controlVisitN" id="controlVisitN-label"><span id="controlVisitN-modifier-name">Ctrl-1 for item 1, etc.</label>
+	</fieldset>
+      </div>
+  </div>
+  </article>
+</html>
+

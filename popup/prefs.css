@@ -13,3 +13,12 @@ div#change-shortcut-div.show {
     display: block;
     visibility: visible;
 }
+
+button.restoreButton {
+    border: none;
+}
+
+button.restoreButton:hover {
+    border-color: rgb(109, 109, 109);
+    background-color: #ddd;
+}

@@ -3,7 +3,7 @@
 var thPrefFunc = (function() {
 
 var commandKeyInput, commandDescriptionInput, closeOnGoCheckbox;
-var fontSizeInput, resetFontSizeButton;
+var fontSizeInput;
 var sortByTitleButton;
 var sortByURLButton;
 var sortByPositionButton;
@@ -13,7 +13,6 @@ var controlVisitNCheckbox;
 var originalCommandKey;
 var isMac;
 var prefFields, prefSettings, origPrefSettings;
-var okButton, restoreButton;
 var prefs;
 
 const DEFAULT_BASE_FONT_SIZE = 12;
@@ -61,12 +60,8 @@ function initPrefs() {
             throw new Error(`Awp: no field for pref ${prefName}`);
         }
     }
-    okButton = document.getElementById("submit");
-    restoreButton = document.getElementById("restore");
-    okButton.addEventListener("click", submitChanges);
-    restoreButton.addEventListener("click", restoreChanges);
-    resetFontSizeButton = document.getElementById("resetFontSize");
-    resetFontSizeButton.addEventListener("click", resetFontSizeToFactory);
+    
+    document.getElementById("restoreFontSizeButton").addEventListener("click", resetFontSizeToFactory);
 
     $("button").mouseover(doMouseOver);
     $("button").mouseout(doMouseOut);
@@ -117,7 +112,7 @@ function checkFontSizeInput(event) {
         alert('sorry, max size of 36');
         event.target.value = 36;
     }
-    return true;
+    submitChanges();
 }
 
 
@@ -138,6 +133,7 @@ function getCheckSortByGroup() {
 
 function checkSortByGroup(event) {
     prefSettings['sortBy'] = getCheckSortByGroup();
+    submitChanges();
 }
 
 function initFields() {
@@ -145,10 +141,32 @@ function initFields() {
     commandDescriptionInput = document.getElementById("command_description");
     closeOnGoCheckbox = document.getElementById("closeOnGo");
     closeOnGoCheckbox.checked = true;
+    closeOnGoCheckbox.addEventListener('change', handleCloseOnGoCheckboxChange, false);
+
+    ["restoreCloseOnGoImg", "restoreSortByReverseImg", "restoreControlVisitNImg"
+    ].forEach(function(id) {
+	document.getElementById(id).setAttribute("src", browser.extension.getURL("popup/images/restore12.png"));
+    });
+
+    ["restoreStartupKeyImg", "restoreFontSizeImg"].forEach(function(id) {
+	document.getElementById(id).setAttribute("src", browser.extension.getURL("popup/images/restore12.png"));
+    });    
+
+    let restoreCloseAndGoButton = document.getElementById("restoreCloseOnGoButton");
+    restoreCloseAndGoButton.addEventListener('click', handleRestoreCloseOnGoButton, false);
+
+    document.getElementById("restoreSortByReverseButton").addEventListener('click', handleRestoreSortByReverseButton, false);
+    document.getElementById("restoreControlVisitNButton").addEventListener('click', handleRestoreControlVisitNButton, false);
+    document.getElementById("restoreStartupKeyButton").addEventListener('click', handleRestoreStartupKeyButton, false);
+
     sortByReverseCheckbox = document.getElementById("sortByReverse");
     sortByReverseCheckbox.checked = false;
+    sortByReverseCheckbox.addEventListener('change', submitChanges, false);
+
     controlVisitNCheckbox = document.getElementById("controlVisitN");
     controlVisitNCheckbox.checked = false;
+    controlVisitNCheckbox.addEventListener('change', submitChanges, false);
+    
     fontSizeInput = document.getElementById("fontSize");
     fontSizeInput.addEventListener('change', checkFontSizeInput);
     
@@ -158,7 +176,7 @@ function initFields() {
     sortByNeglectButton = document.getElementById("sortByNeglect");
     [sortByTitleButton, sortByURLButton,
      sortByPositionButton, sortByNeglectButton].forEach(function(e) {
-       e.addEventListener('change', checkSortByGroup);
+	 e.addEventListener('change', checkSortByGroup, false);
     });
     
     var gotCommandsOK = function(commands) {
@@ -402,11 +420,33 @@ function initFieldsWithPrefs() {
     }
 }
 
-function resetFontSizeToFactory() {
-    fontSizeInput.value = DEFAULT_BASE_FONT_SIZE;
+function handleCloseOnGoCheckboxChange(event) {
+    //TODO: Tie these event-handlers to submitChanges directly, and add
+    // event handlers in tabhunter.js to update views
+    submitChanges();
 }
 
-function restoreChanges() {
+function resetFontSizeToFactory() {
+    fontSizeInput.value = DEFAULT_BASE_FONT_SIZE;
+    submitChanges();
+}
+
+function handleRestoreCloseOnGoButton(event) {
+    closeOnGoCheckbox.checked = origPrefSettings["closeOnGo"];
+    submitChanges();
+}
+
+function handleRestoreSortByReverseButton(event) {
+    sortByReverseCheckbox.checked = origPrefSettings["sortByReverse"];
+    submitChanges();
+}
+
+function handleRestoreControlVisitNButton(event) {
+    controlVisitNCheckbox.checked = origPrefSettings["controlVisitN"];
+    submitChanges();
+}
+
+function handleRestoreStartupKeyButton(event) {
     if ("_execute_browser_action" in origPrefSettings) {
         commandKeyInput.value = origPrefSettings["_execute_browser_action"];
         commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"] || "";
@@ -414,9 +454,7 @@ function restoreChanges() {
         commandKeyInput.value = "";
         commandDescriptionInput.value = "";
     }
-    closeOnGoCheckbox.checked = origPrefSettings["closeOnGo"];
-    sortByReverseCheckbox.checked = origPrefSettings["sortByReverse"];
-    controlVisitNCheckbox.checked = origPrefSettings["controlVisitN"];
+    submitChanges();
 }
 
 function submitChanges() {
@@ -472,7 +510,9 @@ function handleConfigKeyPress(event) {
 return {
     initPrefs: function() {
 	initPrefs();
-    }
+	this.closeOnGoCheckbox_checked = closeOnGoCheckbox.checked;
+    },
+    __bosco__: null
 };
 
 });
