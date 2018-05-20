@@ -2,7 +2,7 @@
 
 var thPrefFunc = (function() {
 
-var commandKeyInput, commandDescriptionInput, closeOnGoCheckbox;
+var commandKeyInput, closeOnGoCheckbox;
 var fontSizeInput;
 var sortByTitleButton;
 var sortByURLButton;
@@ -147,8 +147,7 @@ function getURLForLocalFile(fname) {
 
 function initFields() {
     commandKeyInput = document.getElementById("command_key");
-    commandDescriptionInput = document.getElementById("command_description");
-    commandDescriptionInput.addEventListener('input', handleCommandDescriptionInputChange, false);
+
     closeOnGoCheckbox = document.getElementById("closeOnGo");
     closeOnGoCheckbox.checked = true;
     closeOnGoCheckbox.addEventListener('change', submitChanges, false);
@@ -191,8 +190,7 @@ function initFields() {
                 prefSettings["_execute_browser_action"] =
                 origPrefSettings["_execute_browser_action"] =
                 userStringFromInternalString(commands[0].shortcut);
-            commandDescriptionInput.description =
-                prefSettings["_execute_browser_action__description"] =
+            prefSettings["_execute_browser_action__description"] =
                 origPrefSettings["_execute_browser_action__description"] =
                 (commands[0].description || "");
         }
@@ -377,10 +375,8 @@ function propertiesToUserAndAPIString(props) {
 function initFieldsWithPrefs() {
     if ("_execute_browser_action" in origPrefSettings) {
         commandKeyInput.value = origPrefSettings["_execute_browser_action"];
-        commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"];
     } else {
         commandKeyInput.value = "";
-        commandDescriptionInput.value = "";
     }
     if ("closeOnGo" in origPrefSettings) {
         closeOnGoCheckbox.checked = !!origPrefSettings["closeOnGo"];
@@ -418,17 +414,12 @@ function initFieldsWithPrefs() {
             sortByNeglectButton.checked = true;
             break;
         default:
-            console.log(`tabhunter prefs: ignoring sortBy pref ${sortByValue}`);
+            //console.log(`tabhunter prefs: ignoring sortBy pref ${sortByValue}`);
             sortByTitleButton.checked = true;
         }
     } else {
         sortByTitleButton.checked = true;
     }
-}
-
-function handleCommandDescriptionInputChange(event) {
-    console.log(`ok... thing is changin`);
-    updateCommands();
 }
 
 function resetFontSizeToFactory() {
@@ -454,10 +445,8 @@ function handleRestoreControlVisitNButton(event) {
 function handleRestoreStartupKeyButton(event) {
     if ("_execute_browser_action" in origPrefSettings) {
         commandKeyInput.value = origPrefSettings["_execute_browser_action"];
-        commandDescriptionInput.value = origPrefSettings["_execute_browser_action__description"] || "";
     } else {
         commandKeyInput.value = "";
-        commandDescriptionInput.value = "";
     }
     updateCommands();
 }
@@ -474,29 +463,11 @@ function submitChanges() {
     let updatePrefErr = function(err) {
         dumpError(err, `Error updating prefs`);
     };
-    browser.storage.local.set(prefs).catch(
+    browser.storage.local.set(prefs).then(postSubmitChanges).
+	catch(
     function(err) {
             dumpError(err, "Error updating _execute_browser_action: ");
     });
-    
-    if (prefSettings["_execute_browser_action"] !== origPrefSettings["_execute_browser_action"]
-        || commandDescriptionInput.value !== origPrefSettings["_execute_browser_action__description"]) {
-        let updateCommandOK = function() {
-            console.log(`tabhunter: shortcut changed`);
-            //alert("shortcut changed");
-	    postSubmitChanges();
-        };
-        let updateCommandErr = function(err) {
-            dumpError(err, `Error updating command: ${err}`);
-            alert(`Error updating command: ${err}`);
-        };
-        browser.commands.update({ name: "_execute_browser_action",
-                                  shortcut: prefSettings["_execute_browser_action"],
-                                  description: commandDescriptionInput.value
-                                }).then(updateCommandOK, updateCommandErr);
-    } else {
-	postSubmitChanges();
-    }
 }
 
 function postSubmitChanges() {
@@ -507,7 +478,7 @@ function postSubmitChanges() {
 
 function updateCommands() {
     let updateCommandOK = function() {
-        console.log(`tabhunter: shortcut changed`);
+        //console.log(`tabhunter: shortcut changed`);
     };
     let updateCommandErr = function(err) {
         dumpError(err, `Error updating command: ${err}`);
@@ -515,7 +486,7 @@ function updateCommands() {
     };
     browser.commands.update({ name: "_execute_browser_action",
                               shortcut: prefSettings["_execute_browser_action"],
-                              description: commandDescriptionInput.value
+                              description: prefSettings["_execute_browser_action__description"]
                             }).then(updateCommandOK, updateCommandErr);
 }
 

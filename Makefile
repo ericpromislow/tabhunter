@@ -100,9 +100,6 @@ $(TDIR)/popup/jquery-3.2.1.min.js: popup/jquery-3.2.1.min.js
 $(TDIR)/popup/prefs.css: popup/prefs.css
 	cp $< $@
 
-$(TDIR)/popup/_prefs.html: popup/_prefs.html
-	cp $< $@
-
 $(TDIR)/popup/prefs.js: popup/prefs.js.erb
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 	node -c $@
@@ -110,14 +107,14 @@ $(TDIR)/popup/prefs.js: popup/prefs.js.erb
 $(TDIR)/popup/tabhunter.css: popup/tabhunter.css
 	cp $< $@
 
-$(TDIR)/popup/tabhunter.html: popup/tabhunter.html.erb
+$(TDIR)/popup/tabhunter.html: popup/tabhunter.html.erb popup/_prefs.html
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
 $(TDIR)/popup/tabhunter.js: popup/tabhunter.js.erb
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 	node -c $@
 
-$(TDIR)/popup/prefs.html: popup/prefs.html.erb
+$(TDIR)/popup/prefs.html: popup/prefs.html.erb popup/_prefs.html
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
 $(TDIR)/popup/images/restore12.png: popup/images/restore12.png
