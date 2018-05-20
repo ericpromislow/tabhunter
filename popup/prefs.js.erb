@@ -148,9 +148,10 @@ function getURLForLocalFile(fname) {
 function initFields() {
     commandKeyInput = document.getElementById("command_key");
     commandDescriptionInput = document.getElementById("command_description");
+    commandDescriptionInput.addEventListener('input', handleCommandDescriptionInputChange, false);
     closeOnGoCheckbox = document.getElementById("closeOnGo");
     closeOnGoCheckbox.checked = true;
-    closeOnGoCheckbox.addEventListener('change', handleCloseOnGoCheckboxChange, false);
+    closeOnGoCheckbox.addEventListener('change', submitChanges, false);
 
     let imageURL = getURLForLocalFile("popup/images/restore12.png");
     ["restoreCloseOnGoImg", "restoreSortByReverseImg", "restoreControlVisitNImg",
@@ -425,10 +426,9 @@ function initFieldsWithPrefs() {
     }
 }
 
-function handleCloseOnGoCheckboxChange(event) {
-    //TODO: Tie these event-handlers to submitChanges directly, and add
-    // event handlers in tabhunter.js to update views
-    submitChanges();
+function handleCommandDescriptionInputChange(event) {
+    console.log(`ok... thing is changin`);
+    updateCommands();
 }
 
 function resetFontSizeToFactory() {
@@ -459,7 +459,7 @@ function handleRestoreStartupKeyButton(event) {
         commandKeyInput.value = "";
         commandDescriptionInput.value = "";
     }
-    submitChanges();
+    updateCommands();
 }
 
 function submitChanges() {
@@ -505,6 +505,20 @@ function postSubmitChanges() {
     }
 }
 
+function updateCommands() {
+    let updateCommandOK = function() {
+        console.log(`tabhunter: shortcut changed`);
+    };
+    let updateCommandErr = function(err) {
+        dumpError(err, `Error updating command: ${err}`);
+        alert(`Error updating command: ${err}`);
+    };
+    browser.commands.update({ name: "_execute_browser_action",
+                              shortcut: prefSettings["_execute_browser_action"],
+                              description: commandDescriptionInput.value
+                            }).then(updateCommandOK, updateCommandErr);
+}
+
 function handleConfigKeyPress(event) {
     var target = event.target;
     try {
@@ -519,6 +533,7 @@ function handleConfigKeyPress(event) {
     }
     event.stopPropagation();
     event.preventDefault();
+    updateCommands();
 }
 
 return {
