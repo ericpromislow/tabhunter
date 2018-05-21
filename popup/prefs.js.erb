@@ -136,13 +136,7 @@ function checkSortByGroup(event) {
 }
 
 function getURLForLocalFile(fname) {
-    var head;
-<% if ENV['TARGET'] == 'firefox' %>
-    head = browser;
-<% else %>
-    head = chrome;
-<% end %>
-    return head.extension.getURL("popup/images/restore12.png");
+    return browser.extension.getURL("popup/images/restore12.png");
 }
 
 function initFields() {
