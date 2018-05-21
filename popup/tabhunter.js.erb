@@ -733,7 +733,14 @@ function makeListFromMatchedItems() {
         if (item.discarded) {
             $(el).addClass("discarded");
         }
+        if (sortBy == compareByWindowTab) {
+	    $(el).attr("draggable", true);
+	}
         list.appendChild(el);
+    }
+    if (sortBy == compareByWindowTab) {
+	$(list).attr("draggable", true);
+	$(list).on("dragstart", onTablistDragStartHandler);
     }
     $("ul li:eq(" + selectedIndex + ")").select();
     $("ul li").on("click", onListItemClick);
@@ -745,6 +752,29 @@ function makeListFromMatchedItems() {
 
 function getSelectedItemsJQ() {
     return $("ul#list li.selected").toArray();
+}
+
+function onTablistDragStartHandler(event) {
+    try {
+	console.log(`QQQ: >> onTablistDragStartHandler for node ${event.target.nodeType}`);
+    var selectedItems = getSelectedItemsJQ();
+    if (selectedItems.length == 0) {
+        return;
+    }
+    var tabIds = [], urls = [];
+    selectedItems.forEach(function(selectedItem) {
+	let item = items[selectedItem.actualIndex];
+	tabIds.push(item.tabID);
+	urls.push(item.url);
+    });
+    // Add the drag data
+    event.dataTransfer.setData("text/plain", tabIds.join(" "));
+    event.dataTransfer.setData("text/uri-list", urls.join("\n"));
+    event.dataTransfer.dropEffect = 'move';
+	console.log(`QQQ: starting drag on the list object: ${tabIds}`);
+    } catch(ex) {
+	console.log(`QQQ: awp on drag/drop: ${ex}`);
+    }
 }
 
 
