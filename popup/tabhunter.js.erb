@@ -48,7 +48,6 @@ function init() {
     mainPattern.addEventListener("input", onPatternChanged, false);
     document.addEventListener("keydown", processArrowKey, false);
     document.getElementById("go").addEventListener("mouseup", doGoButton, false);
-    document.getElementById("done").addEventListener("mouseup", doDoneButton, false);
     closeTabsButton = document.getElementById("closeTabs");
     closeTabsButton.addEventListener("mouseup", doCloseTabsButton, false);
     document.getElementById("copyURL").addEventListener("mouseup", doCopyURLButton, false);
@@ -752,7 +751,6 @@ function getSelectedItemsJQ() {
 function updateButtons() {
     var selectedItemLength = getSelectedItemsJQ().length;
     var matchedItemLength = matchedItems.length;
-    document.getElementById("done").disabled = false;
     var otherDisabled = selectedItemLength == 0;
     document.getElementById("go").disabled = selectedItemLength != 1 || matchedItemLength == 0;
     closeTabsButton.disabled = otherDisabled;
@@ -809,10 +807,6 @@ function updateActivity() {
         text = "Matched " + matchedItems.length + "/" + items.length + " tabs";
     }
     document.getElementById("activity").innerText = text;
-}
-
-function doDoneButton() {
-    close();
 }
 
 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl
