@@ -91,7 +91,7 @@ $(TDIR)/build.sh : build.sh.erb Makefile
 $(TDIR)/manifest.json : manifest.json.erb Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
-$(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill.min.js
+$(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill-0.2.1.min.js
 	cp $< $@
 
 $(TDIR)/popup/jquery-3.2.1.min.js: popup/jquery-3.2.1.min.js
