@@ -736,11 +736,12 @@ function makeListFromMatchedItems() {
         if (sortBy == compareByWindowTab) {
 	    $(el).attr("draggable", true);
 	}
-        list.appendChild(el);
+        tablist.appendChild(el);
     }
     if (sortBy == compareByWindowTab) {
-	$(list).attr("draggable", true);
-	$(list).on("dragstart", onTablistDragStartHandler);
+	tablist.addEventListener("dragstart", onTablistDragStartHandler);
+	tablist.addEventListener("dragover", onTablistDropOver);
+	tablist.addEventListener("drop", onTablistDropHandler);
     }
     $("ul li:eq(" + selectedIndex + ")").select();
     $("ul li").on("click", onListItemClick);
@@ -756,11 +757,12 @@ function getSelectedItemsJQ() {
 
 function onTablistDragStartHandler(event) {
     try {
-	console.log(`QQQ: >> onTablistDragStartHandler for node ${event.target.nodeType}`);
+	console.log(`QQQ: >> onTablistDragStartHandler for node ${event.target.nodeName}`);
     var selectedItems = getSelectedItemsJQ();
     if (selectedItems.length == 0) {
         return;
     }
+	//event.preventDefault();
     var tabIds = [], urls = [];
     selectedItems.forEach(function(selectedItem) {
 	let item = items[selectedItem.actualIndex];
@@ -768,10 +770,55 @@ function onTablistDragStartHandler(event) {
 	urls.push(item.url);
     });
     // Add the drag data
-    event.dataTransfer.setData("text/plain", tabIds.join(" "));
+    event.dataTransfer.setData("text/plain", tabIds.join(","));
     event.dataTransfer.setData("text/uri-list", urls.join("\n"));
-    event.dataTransfer.dropEffect = 'move';
 	console.log(`QQQ: starting drag on the list object: ${tabIds}`);
+	console.log(`QQQ: urls: ${urls}`);
+    } catch(ex) {
+	console.log(`QQQ: awp on drag/drop: ${ex}`);
+    }
+}
+
+function onTablistDropOver(event) {
+    console.log(`QQQ: >> onTablistDropOver for node ${event.target.nodeName}`);
+    try {
+    event.preventDefault();
+	if (event.target.nodeName == "LI") {
+	    event.dataTransfer.dropEffect = 'move';
+	} else {
+	    event.dataTransfer.dropEffect = 'none';
+	}
+    } catch(ex) {
+	console.log(`QQQ: awp on onTablistDropOver: ${ex}`);
+    }
+}
+
+function onTablistDropHandler(event) {
+    console.log(`QQQ: >> onTablistDropHandler for node ${event.target.nodeName}`);
+    try {
+	event.preventDefault();
+	var tabIds = event.dataTransfer.getData("text").split(/,/).map(parseInt);
+	console.log(`QQQ: got data ${tabIds}`);
+	if (event.target.nodeName == "LI") {
+	    let actualIndex = event.target.actualIndex;
+	    console.log(`QQQ: drop after index ${actualIndex}`);
+	    let targetItem = items[actualIndex];
+	    if (!targetItem) {
+		console.log(`tabhunter: drag/drop: no item at target index ${actualIndex}`);
+		return;
+	    }
+	    let moveProperties = { windowId: targetItem.windowID,
+				   index: targetItem.tabIndex };
+	    browser.tabs.move(tabIds, moveProperties).then(function() {
+		console.log(`QQQ: moved tabs`);
+		setTimeout(populateTabList, 10);
+		}).
+		catch(function(err) {
+                    console.log("Error moving tabs: " + err);
+		    });
+	} else {
+	    console.log(`QQQ: don\'t know how to drop tabs on ${event.target.nodeName}`);
+	}
     } catch(ex) {
 	console.log(`QQQ: awp on drag/drop: ${ex}`);
     }
