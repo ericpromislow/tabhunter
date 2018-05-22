@@ -124,13 +124,13 @@ label.checkbox {
 }
 
 .button {
-  padding-left: 70px;
+/*  padding-left: 70px; */
 }
 
 .button {
   margin-left: .5em;
   border: 1px solid rgb(218,218,218);
-  padding: 4px;
+  padding: 2px;
   background: white;
   border-radius: 3px;
 }
@@ -171,7 +171,10 @@ ul#list li {
     background-position-y: 0;
     background-size: 16px auto;
     background-repeat: no-repeat;
-    
+}
+
+ul#list li:-moz-drag-over {
+    border: 1px solid blue;
 }
 
 ul#list li.duplicate.discarded {
