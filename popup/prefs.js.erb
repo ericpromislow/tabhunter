@@ -53,7 +53,7 @@ function initPrefs() {
     prefFields = {};
     origPrefSettings = {};
     prefSettings = {};
-    for (prefName of PREF_FIELD_NAMES) {
+    for (var prefName of PREF_FIELD_NAMES) {
         prefFields[prefName] = document.getElementById(prefName);
         if (!prefFields[prefName]) {
             throw new Error(`Awp: no field for pref ${prefName}`);

@@ -173,8 +173,8 @@ ul#list li {
     background-repeat: no-repeat;
 }
 
-ul#list li:-moz-drag-over {
-    border: 1px solid blue;
+ul#list li.tabenter {
+    border: 1px dashed #cccccc;
 }
 
 ul#list li.duplicate.discarded {
