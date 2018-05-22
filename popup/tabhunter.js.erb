@@ -751,9 +751,11 @@ function makeListFromMatchedItems() {
         tablist.appendChild(el);
     }
     if (sortBy == compareByWindowTab) {
+	$(tablist).attr("draggable", true);
 	tablist.addEventListener("dragstart", onTablistDragStartHandler);
-	tablist.addEventListener("dragover", onTablistDropOver);
+	tablist.addEventListener("dragover", onTablistDragOver);
 	tablist.addEventListener("drop", onTablistDropHandler);
+	tablist.addEventListener("dragenter", function(event) { event.preventDefault(); });
     }
     $("ul li:eq(" + selectedIndex + ")").select();
     $("ul li").on("click", onListItemClick);
@@ -772,6 +774,7 @@ function onTablistDragStartHandler(event) {
 	console.log(`QQQ: >> onTablistDragStartHandler for node ${event.target.nodeName}`);
     var selectedItems = getSelectedItemsJQ();
     if (selectedItems.length == 0) {
+	console.log(`QQQ: >> onTablistDragStartHandler: no items selected`);
         return;
     }
 	//event.preventDefault();
@@ -791,17 +794,25 @@ function onTablistDragStartHandler(event) {
     }
 }
 
-function onTablistDropOver(event) {
-    console.log(`QQQ: >> onTablistDropOver for node ${event.target.nodeName}`);
+function onTablistDragOver(event) {
+    console.log(`QQQ: >> onTablistDragOver for node ${event.target.nodeName}`);
     try {
     event.preventDefault();
-	if (event.target.nodeName == "LI") {
+	if (["LI", "UL"].indexOf(event.target.nodeName) >= 0) {
 	    event.dataTransfer.dropEffect = 'move';
+	    console.log(`QQQ: drop-over ${event.target.nodeName} event.clientY:  ${event.clientY}`);
+	    console.log(`event.offsetY:  ${event.offsetY}`);
+	    console.log(`event.pageY:  ${event.pageY}`);
+	    console.log(`obj.scrollHeight:  ${event.target.scrollHeight}`);
+	    console.log(`obj.scrollTop:  ${event.target.scrollTop}`);
+	    if (event.target.nodeName == "LI") {
+	    } else {
+	    }
 	} else {
 	    event.dataTransfer.dropEffect = 'none';
 	}
     } catch(ex) {
-	console.log(`QQQ: awp on onTablistDropOver: ${ex}`);
+	console.log(`QQQ: awp on onTablistDragOver: ${ex}`);
     }
 }
 
@@ -828,6 +839,18 @@ function onTablistDropHandler(event) {
 		catch(function(err) {
                     console.log("Error moving tabs: " + err);
 		    });
+	} else if (event.target.nodeName == "UL") {
+/*
+	    console.log(`QQQ: UL event.clientY:  ${event.clientY}`);
+	    console.log(`event.layerY:  ${event.layerY}`);
+	    console.log(`event.offsetY:  ${event.offsetY}`);
+	    console.log(`event.pageY:  ${event.pageY}`);
+	    console.log(`event.screenY:  ${event.screenY}`);
+	    console.log(`UL.offsetHeight:  ${event.target.offsetHeight}`);
+	    console.log(`UL.offsetTop:  ${event.target.offsetTop}`);
+	    console.log(`UL.pageY:  ${event.target.pageY}`);
+	    console.log(`UL.screenY:  ${event.target.screenY}`);
+*/
 	} else {
 	    console.log(`QQQ: don\'t know how to drop tabs on ${event.target.nodeName}`);
 	}
