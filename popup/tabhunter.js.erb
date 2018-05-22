@@ -37,6 +37,15 @@ var closeOnGo = true;
 var sortBy = null;
 var sortByReverse = false;
 var controlVisitN = false;
+    var allowScrollDump = {a:true, b:true};
+
+    function waitabit(label, delay) {
+	if (typeof(label) == "undefined") label = 'a'; // msec
+	if (typeof(delay) == "undefined") delay = 1000; // msec
+	allowScrollDump[label] = false;
+	setTimeout(function() { allowScrollDump[label] = true }, delay);
+    }
+	
 
 const DEFAULT_BASE_FONT_SIZE = 12;
 
@@ -747,15 +756,16 @@ function makeListFromMatchedItems() {
         }
         if (sortBy == compareByWindowTab) {
 	    $(el).attr("draggable", true);
+	    el.addEventListener("dragenter", onTablistHandleDragEnter, true);
+	    el.addEventListener("dragleave", onTablistHandleDragLeave, true);
 	}
         tablist.appendChild(el);
     }
     if (sortBy == compareByWindowTab) {
 	$(tablist).attr("draggable", true);
-	tablist.addEventListener("dragstart", onTablistDragStartHandler);
+	tablist.addEventListener("dragstart", onTablistDragStartHandler, true);
 	tablist.addEventListener("dragover", onTablistDragOver);
 	tablist.addEventListener("drop", onTablistDropHandler);
-	tablist.addEventListener("dragenter", function(event) { event.preventDefault(); });
     }
     $("ul li:eq(" + selectedIndex + ")").select();
     $("ul li").on("click", onListItemClick);
@@ -786,9 +796,10 @@ function onTablistDragStartHandler(event) {
     });
     // Add the drag data
     event.dataTransfer.setData("text/plain", tabIds.join(","));
-    event.dataTransfer.setData("text/uri-list", urls.join("\n"));
+	// event.dataTransfer.setData("text/uri-list", urls.join("\n"));
 	console.log(`QQQ: starting drag on the list object: ${tabIds}`);
 	console.log(`QQQ: urls: ${urls}`);
+	waitabit('b', 400);
     } catch(ex) {
 	console.log(`QQQ: awp on drag/drop: ${ex}`);
     }
@@ -797,7 +808,9 @@ function onTablistDragStartHandler(event) {
 function onTablistDragOver(event) {
     console.log(`QQQ: >> onTablistDragOver for node ${event.target.nodeName}`);
     try {
-    event.preventDefault();
+	event.preventDefault();
+	if (!allowScrollDump.a) return;
+	waitabit('a', 3000);
 	if (["LI", "UL"].indexOf(event.target.nodeName) >= 0) {
 	    event.dataTransfer.dropEffect = 'move';
 	    console.log(`QQQ: drop-over ${event.target.nodeName} event.clientY:  ${event.clientY}`);
@@ -853,12 +866,24 @@ function onTablistDropHandler(event) {
 */
 	} else {
 	    console.log(`QQQ: don\'t know how to drop tabs on ${event.target.nodeName}`);
+	    return;
 	}
     } catch(ex) {
 	console.log(`QQQ: awp on drag/drop: ${ex}`);
     }
+    event.preventDefault();
+    event.stopPropagation();
 }
 
+    function onTablistHandleDragEnter(event) {
+	event.currentTarget.classList.add('tabenter');
+	event.preventDefault();
+    }
+
+    function onTablistHandleDragLeave(event) {
+	event.currentTarget.classList.remove('tabenter');
+	event.preventDefault();
+}
 
 function updateButtons() {
     var selectedItemLength = getSelectedItemsJQ().length;
