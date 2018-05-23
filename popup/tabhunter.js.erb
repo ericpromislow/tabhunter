@@ -30,6 +30,9 @@ var g_showAudio;
 var g_hideDiscardTabs;
 var g_activeTab;
 var g_windowInfoArray;
+<% if ENV['TARGET'] == 'chrome' %>
+var g_itemSupportsLastAccessed = null;
+<% end %>
 var closeOnGo = true;
 var sortBy = null;
 var sortByReverse = false;
@@ -364,9 +367,9 @@ function populateTabList() {
             var id = windowInfo.id;
             var tabs = windowInfo.tabs;
             for (var tab of tabs) {
-		if (tab.active && windowInfo.focused) {
-		    g_activeTab = tab.id;
-		}
+                if (tab.active && windowInfo.focused) {
+                    g_activeTab = tab.id;
+                }
                 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl
                 items.push(makeTabItem(id, tab));
             }
@@ -692,6 +695,11 @@ function makeListFromMatchedItems() {
     $("ul li").off("click", onListItemClick);
     selectedIndex = 0;
     lastClickedIndex = -1;
+<% if ENV['TARGET'] == 'chrome' %>
+    if (sortBy == compareByNeglect && g_itemSupportsLastAccessed === null && items.length > 0) {
+        g_itemSupportsLastAccessed = (items[0].lastAccessed !== undefined);
+    }
+<% end %>
     for (var i = 0; i < matchedItems.length; i++) {
         var idx = matchedItems[i];
         var item = items[idx];
@@ -703,7 +711,11 @@ function makeListFromMatchedItems() {
             el.textContent = '';
         }
         el.textContent += item.title + " - " + item.url;
-        if (sortBy == compareByNeglect) {
+        if (sortBy == compareByNeglect
+<% if ENV['TARGET'] == 'chrome' %>
+            && g_itemSupportsLastAccessed
+<% end %>
+            ) {
             el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
         }
         el.visibleIndex = i;
@@ -1136,7 +1148,7 @@ function getModifierMask(event) {
 
 return {
     init: function () {
-	return init();
+        return init();
     },
     reloadPrefsAndMatches: getCloseOnGoPref,
     __BOSCO__ : null
