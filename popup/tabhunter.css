@@ -174,7 +174,13 @@ ul#list li {
 }
 
 ul#list li.tabenter {
-    border: 1px dashed #cccccc;
+    border-top: 1px dotted green;
+    /* border-top: 1px dotted #cccccc; */
+}
+
+ul#list li.tabenter-after {
+    border-bottom: 1px dotted green;
+    /* border-bottom: 1px dotted #cccccc; */
 }
 
 ul#list li.duplicate.discarded {
