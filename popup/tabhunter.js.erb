@@ -34,7 +34,8 @@ var closeOnGo = true;
 var sortBy = null;
 var sortByReverse = false;
 var controlVisitN = false;
-    var allowScrollDump = {a:true, b:true};
+var currentDragTarget = null, currentDragTargetClassName = null;
+var allowScrollDump = {a:true, b:true};
 
     function waitabit(label, delay) {
 	if (typeof(label) == "undefined") label = 'a'; // msec
@@ -744,16 +745,14 @@ function makeListFromMatchedItems() {
         }
         if (sortBy == compareByWindowTab) {
 	    $(el).attr("draggable", true);
-	    el.addEventListener("dragenter", onTablistHandleDragEnter, true);
-	    el.addEventListener("dragleave", onTablistHandleDragLeave, true);
 	}
         tablist.appendChild(el);
     }
     if (sortBy == compareByWindowTab) {
 	$(tablist).attr("draggable", true);
 	tablist.addEventListener("dragstart", onTablistDragStartHandler, true);
-	tablist.addEventListener("dragover", onTablistDragOver);
-	tablist.addEventListener("drop", onTablistDropHandler);
+	tablist.addEventListener("dragover", onTablistDragOver, true);
+	tablist.addEventListener("drop", onTablistDropHandler, false);
     }
     $("ul li:eq(" + selectedIndex + ")").select();
     $("ul li").on("click", onListItemClick);
@@ -817,19 +816,18 @@ function getDropIndex(event) {
     if (["LI", "UL"].indexOf(target.nodeName) == -1) {
         return [null, undefined];
     }
-    let layerY = event.layerY;
+    let offsetY = event.offsetY;
     let liHeight = target.clientHeight;
     if (target.nodeName == "LI") {
-        let preferAfterOffset = (layerY < Math.ceil(liHeight / 2.0) ? 0 : 1);
-        let preferAfter = layerY < Math.ceil(liHeight / 2.0);
-        let actualIndex = event.target.actualIndex;
-        let finalIndex = null;
+        //let preferAfterOffset = (offsetY > Math.ceil(liHeight / 2.0) ? 0 : 1);
+        let preferAfter = offsetY > Math.ceil(liHeight / 2.0);
+        let actualIndex = target.actualIndex;
         if (preferAfter) {
             let nextNode = target.nextSibling;
             if (!nextNode) {
                 return [-1, target];
             } else {
-                return [actualIndex + 1, nextNode];
+                return [nextNode.actualIndex, nextNode];
             }
         } else {
             return [actualIndex, target];
@@ -837,19 +835,31 @@ function getDropIndex(event) {
     }
     return ['Need to do UL', undefined];
 }
-            
 
 function onTablistDragOver(event) {
-    console.log(`QQQ: >> onTablistDragOver for node ${event.target.nodeName}`);
+//    if (!allowScrollDump.b) return;
+//    waitabit('b', 1000);
+    // console.log(`QQQ: >> onTablistDragOver for node ${event.target.nodeName}`);
     try {
 	event.preventDefault();
+	if (event.shiftKey) {
+	    console.log('QQQ: break here');
+	}
+	var [actualIndex, newTargetNode] = getDropIndex(event);
+	if (newTargetNode == null) {
+	    return;
+	}
+	setDragTargetIndicator(newTargetNode, actualIndex);
+	if (event.target.nodeName == "LI") {
+	 //   console.log('break here');
+	}
 	if (["LI", "UL"].indexOf(event.target.nodeName) >= 0) {
 	    event.dataTransfer.dropEffect = 'move';
-        if (event.shiftKey) {
-            if (!allowScrollDump.a) return;
-            waitabit('a', 3000);
-            dump_coords(event);
-        }
+            if (event.shiftKey) {
+		if (!allowScrollDump.a) return;
+		waitabit('a', 3000);
+		dump_coords(event);
+            }
 	} else {
 	    event.dataTransfer.dropEffect = 'none';
 	}
@@ -862,17 +872,17 @@ function onTablistDropHandler(event) {
     console.log(`QQQ: >> onTablistDropHandler for node ${event.target.nodeName}`);
     try {
 	event.preventDefault();
+	removeDragTargetIndicator();
 	var tabIds = event.dataTransfer.getData("text").split(/,/).map(parseInt);
-    console.log(`QQQ: event.shiftKey:${event.shiftKey}, event.target.nodeName:${event.target.nodeName}`);
 	if (event.shiftKey && ["LI", "UL"].indexOf(event.target.nodeName) >= 0) {
-        dump_coords(event);
-        console.log(`QQQ: got data ${tabIds}`);
-    }
-    let [targetIndex, finalTargetNode] = getDropIndex(event);
-    console.log(`QQQ: getDropIndex => ${targetIndex}`);
+            dump_coords(event);
+            console.log(`QQQ: got data ${tabIds}`);
+	}
+	let [targetIndex, finalTargetNode] = getDropIndex(event);
     if (targetIndex == null || finalTargetNode == undefined) {
         return;
     }
+	console.log(`QQQ: getDropIndex => ${targetIndex} for event ${event.type}, target ${event.target.nodeName}, ${finalTargetNode.textContent}, ${finalTargetNode.visibleIndex}`);
     let target = event.target;
 	if (event.target.nodeName == "LI") {
 	    let actualIndex = event.target.actualIndex;
@@ -916,15 +926,20 @@ function onTablistDropHandler(event) {
     event.stopPropagation();
 }
 
-    function onTablistHandleDragEnter(event) {
-	event.currentTarget.classList.add('tabenter');
-	event.preventDefault();
+    function removeDragTargetIndicator() {
+	if (currentDragTarget) {
+	    console.log(`QQQ: >> removeDragTargetIndicator class ${currentDragTargetClassName} for ${currentDragTarget.actualIndex}`);
+	    currentDragTarget.classList.remove(currentDragTargetClassName);
+	    currentDragTargetClassName = currentDragTarget = null;
+	}
     }
 
-    function onTablistHandleDragLeave(event) {
-	event.currentTarget.classList.remove('tabenter');
-	event.preventDefault();
-}
+    function setDragTargetIndicator(targetNode, actualIndex) {
+	removeDragTargetIndicator();
+	currentDragTargetClassName = actualIndex == -1 ? 'tabenter-after' : 'tabenter';
+	(currentDragTarget = targetNode).classList.add(currentDragTargetClassName);
+	console.log(`QQQ: >> onTablistHandleDragEnter set class ${currentDragTargetClassName} for ${currentDragTarget.actualIndex}`);
+    }
 
 function updateButtons() {
     var selectedItemLength = getSelectedItemsJQ().length;
