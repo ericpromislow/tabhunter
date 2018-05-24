@@ -39,16 +39,6 @@ var sortByReverse = false;
 var controlVisitN = false;
 var g_currentDragTarget = null, g_currentDragTargetClassName = null;
 var g_currentItemHeight = null;
-var allowScrollDump = {a:true, b:true};
-
-    function waitabit(label, delay) {
-	if (typeof(label) == "undefined") label = 'a'; // msec
-	if (typeof(delay) == "undefined") delay = 1000; // msec
-	allowScrollDump[label] = false;
-	setTimeout(function() { allowScrollDump[label] = true }, delay);
-    }
-	
-
 const DEFAULT_BASE_FONT_SIZE = 12;
 
 function init() {
@@ -217,7 +207,6 @@ function getCloseOnGoPref() {
     };
     let gotPrefErr = function(err) {
         console.log(`tabhunter: getCloseOnGoPref.gotPrefErr: err: ${err}`);
-        console.log(err);
         populateTabList();
     };
     browser.storage.local.get().then(gotPrefOK, gotPrefErr);
@@ -357,13 +346,13 @@ function populateTabList() {
     const getAllProperties = {populate: true, windowTypes: ['normal']}
     const endTime = function(cmd) {
         t2 = (new Date()).valueOf();
-        console.log("Elapsed time to " + cmd + ": " + ((t2 - t1)/1000) + " msec");
+        //console.log("Elapsed time to " + cmd + ": " + ((t2 - t1)/1000) + " msec");
     }
     const errGetAllWindows = function(err) {
         if (showElapsedTimes) {
             endTime("getting windows");
         }
-        console.log(err);
+        console.log(`tabhunter: errGetAllWindows: err: ${err}`);
     }
     
     const doGetAllWindows = function (windowInfoArray) {
@@ -406,7 +395,7 @@ function populateTabList() {
             try {
                 selectPattern();
             } catch(e) {
-                console.log("* mainPattern.focus(): " + e);
+                console.log("tabhunter: * mainPattern.focus(): " + e);
             }
         }, 100);
     };
@@ -449,12 +438,12 @@ function doVisitSelectedURL() {
     var tabId = target.tabID;
 
     const getCurrentErr = function(err) {
-        console.log("Error getting current window: " + err);
+        console.log("tabhunter: Error getting current window: " + err);
     };
     const getCurrentCont = function(windowInfo) {
         if (windowInfo.id != windowId) {
             const showWindowErr = function(err) {
-                console.log("Error showing current window: " + err);
+                console.log("tabhunter: Error showing current window: " + err);
             };
             const showWindowCont = function(windowInfo) {
                 if (closeOnGo) {
@@ -471,7 +460,7 @@ function doVisitSelectedURL() {
     };
 
     const showTabErr = function(err) {
-        console.log("Error showing tab id " + tabId + ": " + err);
+        console.log("tabhunter: Error showing tab id " + tabId + ": " + err);
     };
     const showTabCont = function(tab) {
         browser.windows.getCurrent().then(getCurrentCont, getCurrentErr);
@@ -487,7 +476,7 @@ function processArrowKey(event) {
     try {
         processArrowKey_aux(event);
     } catch(e) {
-        console.log("*** processArrowKey: awp: " + e);
+        console.log("tabhunter: *** processArrowKey: awp: " + e);
     }
 }
 
@@ -509,7 +498,7 @@ function processKey(event) {
             }
         }
     } catch(e) {
-        console.log("*** processKey: awp: " + e);
+        console.log("tabhunter: *** processKey: awp: " + e);
     }
 }
 
@@ -524,7 +513,7 @@ function processArrowKey_aux(event) {
     var keyName = event.key;
     if (keyName == "Enter") {
         if (mask != 0) {
-            console.log("Enter can't be modified with shift, etc.");
+            console.log("tabhunter: Enter can't be modified with shift, etc.");
         } else {
             if (selectedItems.length > 1) {
                 // Keep existing behavior
@@ -652,7 +641,7 @@ function onPatternChanged(event, calledFromInit) {
                 return ptn.test(item.title) || ptn.test(item.url);
             }
         } catch(ex) {
-            console.log("not a valid javascript pattern: " + ex);
+            console.log("tabhunter: not a valid javascript pattern: " + ex);
             // just do a case-insensitive substring search
             ptn = pattern.toLowerCase();
             fn = function matchText(item) {
@@ -782,10 +771,8 @@ function getSelectedItemsJQ() {
 
 function onTablistDragStartHandler(event) {
     try {
-        console.log(`QQQ: >> onTablistDragStartHandler for node ${event.target.nodeName}`);
         var selectedItems = getSelectedItemsJQ();
         if (selectedItems.length == 0) {
-            console.log(`QQQ: >> onTablistDragStartHandler: no items selected`);
             return;
         }
         //event.preventDefault();
@@ -798,30 +785,8 @@ function onTablistDragStartHandler(event) {
         // Add the drag data
         event.dataTransfer.setData("text/plain", tabIds.join(","));
         event.dataTransfer.setData("text/uri-list", urls.join("\n"));
-        console.log(`QQQ: starting drag on the list object: ${tabIds}`);
-        console.log(`QQQ: urls: ${urls}`);
-        waitabit('b', 400);
     } catch(ex) {
-	console.log(`QQQ: awp on drag/drop: ${ex}`);
-    }
-}
-
-function dump_coords(event) {
-    console.log(`QQQ: stuff for ${event.type} event on ${event.target.nodeName}:`);
-    /*
-    ['clientY', 'layerY', 'offsetY', 'pageY'].forEach((prop) =>
-                                                      console.log(`QQQ: event.${prop}: ${event[prop]}`));
-    let target = event.target;
-    ["nodeName", "scrollHeight", "scrollTop", "clientHeight",
-     "clientTop"].forEach((prop) => {
-             console.log(`QQQ: target.${prop}: ${target[prop]}`);
-         });
-    */
-    if (event.target.nodeName == "UL") {
-        console.log(`event.layerY: ${event.layerY}`);
-        event.target.childNodes.forEach(function(child) {
-                console.log(`clientY:${child.clientY}, actualIndex: ${child.actualIndex}, visibleIndex:${child.visibleIndex}, text: ${child.textContent}`);
-        });
+        console.log(`tabhunter: error on drag/drop start handler: ${ex}`);
     }
 }
 
@@ -880,12 +845,11 @@ function onTablistDragOver(event) {
         }
         setDragTargetIndicator(newTargetNode, actualIndex);
     } catch(ex) {
-        console.log(`QQQ: awp on onTablistDragOver: ${ex}`);
+        console.log(`tabhunter: error on drag/drop over handler: ${ex}`);
     }
 }
 
 function onTablistDropHandler(event) {
-    console.log(`QQQ: >> onTablistDropHandler for node ${event.target.nodeName}`);
     try {
         event.preventDefault();
         removeDragTargetIndicator();
@@ -894,14 +858,11 @@ function onTablistDropHandler(event) {
             return;
         }
         var tabIds = event.dataTransfer.getData("text").split(/,/).map((x) => parseInt(x, 10));
-        console.log(`QQQ: getDropIndex => ${targetIndex} for event ${event.type}, target ${event.target.nodeName}, ${finalTargetNode.textContent}, ${finalTargetNode.visibleIndex}`);
         let moveProperties = { windowId: tabInfo.windowID,
                                index: targetIndex };
         console.table(moveProperties);
         browser.tabs.move(tabIds, moveProperties).then(function() {
-                console.log(`QQQ: moved tabs`);
                 tablist.querySelectorAll("li.selected").forEach(function(node) {
-                        console.log(`QQQ: unselect node ${node.textContent}`);
                         node.classList.remove('selected');
                     });
                 setTimeout(populateTabList, 10);
@@ -911,10 +872,10 @@ function onTablistDropHandler(event) {
                 
             }).
             catch(function(err) {
-                    console.log("Error moving tabs: " + err);
+                    console.log("tabhunter: Error moving tabs: " + err);
                 });
     } catch(ex) {
-        console.log(`QQQ: awp on drag/drop: ${ex}`);
+        console.log(`tabhunter: error on drag/drop drop handler: ${ex}`);
     }
     event.preventDefault();
     event.stopPropagation();
@@ -922,7 +883,6 @@ function onTablistDropHandler(event) {
 
     function removeDragTargetIndicator() {
 	if (g_currentDragTarget) {
-	    console.log(`QQQ: >> removeDragTargetIndicator class ${g_currentDragTargetClassName} for ${g_currentDragTarget.actualIndex}`);
 	    g_currentDragTarget.classList.remove(g_currentDragTargetClassName);
 	    g_currentDragTargetClassName = g_currentDragTarget = null;
 	}
@@ -932,7 +892,6 @@ function setDragTargetIndicator(targetNode, actualIndex) {
 	removeDragTargetIndicator();
 	g_currentDragTargetClassName = actualIndex == -1 ? 'tabenter-after' : 'tabenter';
 	(g_currentDragTarget = targetNode).classList.add(g_currentDragTargetClassName);
-	console.log(`QQQ: >> onTablistHandleDragEnter set class ${g_currentDragTargetClassName} for ${g_currentDragTarget.actualIndex}`);
 }
 
 function updateButtons() {
@@ -1038,7 +997,7 @@ function setClipboard(text) {
         textarea.select();
         document.execCommand("cut");
     } catch(ex) {
-        console.log("Error setting/copying text: " + text);
+        console.log("tabhunter: Error setting/copying text: " + text);
     }
     textarea.style.display = "none";
 }

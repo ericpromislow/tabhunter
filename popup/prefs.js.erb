@@ -260,11 +260,11 @@ function verifyShortcutFromEvent(event) {
     let count = validKeys.reduce(function(acc, name) {
         return acc + (event[name] ? 1 : 0) }, 0);
     if (count == 0 && FUNCTION_KEY_NAMES.indexOf(event.key) == -1) {
-        console.log(`${event.key} must have exactly one of the ${modifiers.join(", ")} modifier keys`);
+        console.log(`tabhunter prefs: ${event.key} must have exactly one of the ${modifiers.join(", ")} modifier keys`);
         throw new Error("bad modifiers");
     } else if (count > 1) {
         //XXX: What about the media keys?
-        console.log("The startup keybinding must have exactly one of the <" + modifiers.join(", ") + "> modifier keys");
+        console.log("tabhunter prefs: The startup keybinding must have exactly one of the <" + modifiers.join(", ") + "> modifier keys");
         throw new Error("bad modifiers");
     }
 }
@@ -359,7 +359,7 @@ function propertiesToUserAndAPIString(props) {
         s_api += props.key;
     } else {
         s_user += props.key;
-        console.log("Can't support a key sequence of '" + s_user + "'");
+        console.log("tabhunter prefs: Can't support a key sequence of '" + s_user + "'");
         alert("Can't support a key sequence of '" + s_user + "'");
         throw new Error("bad key sequence: " + s_user);
     }
