@@ -208,8 +208,11 @@ function getPrefs() {
     if ('prefs' in prefs) {
         let innerPrefs = prefs['prefs'];
         for (var p in innerPrefs) {
-        origPrefSettings[p] = innerPrefs[p];
+            origPrefSettings[p] = innerPrefs[p];
         }
+	if ('sortBy' in origPrefSettings) {
+	    prefSettings.sortBy = origPrefSettings.sortBy;
+	}
     }
     initFieldsWithPrefs();
         getIsMac();
@@ -453,6 +456,8 @@ function submitChanges() {
     innerPrefs["controlVisitN"] = controlVisitNCheckbox.checked;
     innerPrefs["fontSize"] = fontSizeInput.value;
     innerPrefs["sortBy"] = prefSettings['sortBy'];
+    console.log("QQQ: >> submitChanges prefs:")
+    console.table(innerPrefs);
     
     let updatePrefErr = function(err) {
         dumpError(err, `Error updating prefs`);

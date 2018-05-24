@@ -160,7 +160,9 @@ function px(size) {
 
 function getCloseOnGoPref() {
     let gotPrefOK = function(item) {
+	console.table(item);
         let prefs = item["prefs"];
+	console.log(`QQQ: prefs.sortBy: ${prefs.sortBy}`);
         if (prefs && 'sortBy' in prefs) {
             sortBy = comparisonFunctions[prefs['sortBy']];
         }
