@@ -795,7 +795,8 @@ function getDropIndexWithTabInfo(event) {
     if (actualIndex === null || targetNode === undefined) {
         return [actualIndex, targetNode, undefined];
     }
-    return [actualIndex, targetNode, actualIndex >= 0 ? items[actualIndex] : items[targetNode.actualIndex]];
+    let item = actualIndex >= 0 ? items[actualIndex] : items[targetNode.actualIndex];
+    return [item.tabIndex, targetNode, item];
 }
 
 function getDropIndex(event) {
@@ -860,8 +861,6 @@ function onTablistDropHandler(event) {
         var tabIds = event.dataTransfer.getData("text").split(/,/).map((x) => parseInt(x, 10));
         let moveProperties = { windowId: tabInfo.windowID,
                                index: targetIndex };
-        //QQQ:
-        console.table(moveProperties);
         browser.tabs.move(tabIds, moveProperties).then(function() {
                 tablist.querySelectorAll("li.selected").forEach(function(node) {
                         node.classList.remove('selected');
@@ -1173,7 +1172,7 @@ function doMoveToWindowButton() {
                        index: targetIndex
                       }
                      ).then(function(tabsList) {
-                         hideWindowMover();
+                         populateTabList();
                      }).catch(reportErr);
 }
 
