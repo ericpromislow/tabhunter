@@ -860,6 +860,7 @@ function onTablistDropHandler(event) {
         var tabIds = event.dataTransfer.getData("text").split(/,/).map((x) => parseInt(x, 10));
         let moveProperties = { windowId: tabInfo.windowID,
                                index: targetIndex };
+        //QQQ:
         console.table(moveProperties);
         browser.tabs.move(tabIds, moveProperties).then(function() {
                 tablist.querySelectorAll("li.selected").forEach(function(node) {
