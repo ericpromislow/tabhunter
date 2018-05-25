@@ -897,7 +897,8 @@ function onTablistDragOver(event) {
     }
 }
 
-function moveTabsToAnotherTab(tabIds, targetIndex, finalTargetNode, tabInfo) {
+    function moveTabsToAnotherTab(tabIds, targetIndex, finalTargetNode, tabInfo) {
+	try {
     // We're going to run from the last tab to the first, so reverse
     if (sortByReverse) {
         tabIds = tabIds.reverse();
@@ -907,32 +908,39 @@ function moveTabsToAnotherTab(tabIds, targetIndex, finalTargetNode, tabInfo) {
     let tabIdsToLeftOfTarget = windowInfo.tabs.filter((tabInfo) => tabInfo.index <= targetIndex).map((tabInfo) => tabInfo.id);
     let moveProperties = { windowId: targetWindowID,
                            index: targetIndex };
-    try {
-        let loop_err = null;
-        while (tabIds.length > 0) {
-            if (loop_err) {
-                throw Error.new(loop_err);
-            }
-            let tabIdToMove = tabIds.pop();
-            if (tabIdsToLeftOfTarget.indexOf(tabIdToMove)) {
-                moveProperties.index = targetIndex - 1;
-            } else {
-                moveProperties.index = targetIndex;
-            }
-            browser.tabs.move(tabIds, moveProperties).then(function() {
-                    // Nothing to do
-                }).catch(function(err) {
-                        loop_err = err;
-                    });
-        }
-        tablist.querySelectorAll("li.selected").forEach(function(node) {
+
+    var reportErr, moveNextTabFunc;
+    reportErr = function(err) {
+        console.log("tabhunter: error creating bookmark: " + err);
+    };
+    var currentTabIndex = -1;
+    moveNextTabFunc = function() {
+	if (currentTabIndex >= tabIds.length - 1) {
+	    // All done
+            let s = `Moved ${pluralize(tabIds.length, "tab")} to tab ${tabInfo.title}`;
+            setStatusBarMessage(s);
+            tablist.querySelectorAll("li.selected").forEach(function(node) {
                 node.classList.remove('selected');
             });
-        setTimeout(populateTabList, 10);
-        if (finalTargetNode.nodeName == "LI") {
-            finalTargetNode.classList.add('selected');
+            setTimeout(function() {
+		populateTabList();
+		if (finalTargetNode.nodeName == "LI") {
+		    finalTargetNode.classList.add('selected');
+		}
+	    }, 10);
+	    return;
+	}
+	currentTabIndex += 1;
+        let tabIdToMove = tabIds[currentTabIndex];
+        if (tabIdsToLeftOfTarget.indexOf(tabIdToMove) >= 0) {
+            moveProperties.index = targetIndex - 1;
+        } else {
+            moveProperties.index = targetIndex;
         }
-    } catch(ex) {
+        browser.tabs.move(tabIdToMove, moveProperties).then(moveNextTabFunc, reportErr);
+    };
+	    moveNextTabFunc();
+} catch(ex) {
         console.log("tabhunter: Error moving tabs: " + ex);
     }
 }
