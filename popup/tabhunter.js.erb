@@ -897,6 +897,46 @@ function onTablistDragOver(event) {
     }
 }
 
+function moveTabsToAnotherTab(tabIds, targetIndex, finalTargetNode, tabInfo) {
+    // We're going to run from the last tab to the first, so reverse
+    if (sortByReverse) {
+        tabIds = tabIds.reverse();
+    }
+    let targetWindowID = tabInfo.windowID;
+    let windowInfo = g_windowInfoArray.find((win) => win.id == targetWindowID);
+    let tabIdsToLeftOfTarget = windowInfo.tabs.filter((tabInfo) => tabInfo.index <= targetIndex).map((tabInfo) => tabInfo.id);
+    let moveProperties = { windowId: targetWindowID,
+                           index: targetIndex };
+    try {
+        let loop_err = null;
+        while (tabIds.length > 0) {
+            if (loop_err) {
+                throw Error.new(loop_err);
+            }
+            let tabIdToMove = tabIds.pop();
+            if (tabIdsToLeftOfTarget.indexOf(tabIdToMove)) {
+                moveProperties.index = targetIndex - 1;
+            } else {
+                moveProperties.index = targetIndex;
+            }
+            browser.tabs.move(tabIds, moveProperties).then(function() {
+                    // Nothing to do
+                }).catch(function(err) {
+                        loop_err = err;
+                    });
+        }
+        tablist.querySelectorAll("li.selected").forEach(function(node) {
+                node.classList.remove('selected');
+            });
+        setTimeout(populateTabList, 10);
+        if (finalTargetNode.nodeName == "LI") {
+            finalTargetNode.classList.add('selected');
+        }
+    } catch(ex) {
+        console.log("tabhunter: Error moving tabs: " + ex);
+    }
+}
+
 function onTablistDropHandler(event) {
     try {
         event.preventDefault();
@@ -906,24 +946,7 @@ function onTablistDropHandler(event) {
             return;
         }
         var tabIds = event.dataTransfer.getData("text").split(/,/).map((x) => parseInt(x, 10));
-        if (sortByReverse && sortBy == compareByWindowTab) {
-            tabIds = tabIds.reverse();
-        }
-        let moveProperties = { windowId: tabInfo.windowID,
-                               index: targetIndex };
-        browser.tabs.move(tabIds, moveProperties).then(function() {
-                tablist.querySelectorAll("li.selected").forEach(function(node) {
-                        node.classList.remove('selected');
-                    });
-                setTimeout(populateTabList, 10);
-                if (finalTargetNode.nodeName == "LI") {
-                    finalTargetNode.classList.add('selected');
-                }
-                
-            }).
-        catch(function(err) {
-                console.log("tabhunter: Error moving tabs: " + err);
-            });
+        moveTabsToAnotherTab(tabIds, targetIndex, finalTargetNode, tabInfo);
     } catch(ex) {
         console.log(`tabhunter: error on drag/drop drop handler: ${ex}`);
     }
