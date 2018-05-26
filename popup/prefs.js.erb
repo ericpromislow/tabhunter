@@ -53,7 +53,7 @@ function initPrefs() {
     prefFields = {};
     origPrefSettings = {};
     prefSettings = {};
-    for (prefName of PREF_FIELD_NAMES) {
+    for (var prefName of PREF_FIELD_NAMES) {
         prefFields[prefName] = document.getElementById(prefName);
         if (!prefFields[prefName]) {
             throw new Error(`Awp: no field for pref ${prefName}`);
@@ -208,8 +208,11 @@ function getPrefs() {
     if ('prefs' in prefs) {
         let innerPrefs = prefs['prefs'];
         for (var p in innerPrefs) {
-        origPrefSettings[p] = innerPrefs[p];
+            origPrefSettings[p] = innerPrefs[p];
         }
+	if ('sortBy' in origPrefSettings) {
+	    prefSettings.sortBy = origPrefSettings.sortBy;
+	}
     }
     initFieldsWithPrefs();
         getIsMac();
@@ -260,11 +263,11 @@ function verifyShortcutFromEvent(event) {
     let count = validKeys.reduce(function(acc, name) {
         return acc + (event[name] ? 1 : 0) }, 0);
     if (count == 0 && FUNCTION_KEY_NAMES.indexOf(event.key) == -1) {
-        console.log(`${event.key} must have exactly one of the ${modifiers.join(", ")} modifier keys`);
+        console.log(`tabhunter prefs: ${event.key} must have exactly one of the ${modifiers.join(", ")} modifier keys`);
         throw new Error("bad modifiers");
     } else if (count > 1) {
         //XXX: What about the media keys?
-        console.log("The startup keybinding must have exactly one of the <" + modifiers.join(", ") + "> modifier keys");
+        console.log("tabhunter prefs: The startup keybinding must have exactly one of the <" + modifiers.join(", ") + "> modifier keys");
         throw new Error("bad modifiers");
     }
 }
@@ -359,7 +362,7 @@ function propertiesToUserAndAPIString(props) {
         s_api += props.key;
     } else {
         s_user += props.key;
-        console.log("Can't support a key sequence of '" + s_user + "'");
+        console.log("tabhunter prefs: Can't support a key sequence of '" + s_user + "'");
         alert("Can't support a key sequence of '" + s_user + "'");
         throw new Error("bad key sequence: " + s_user);
     }
@@ -453,6 +456,8 @@ function submitChanges() {
     innerPrefs["controlVisitN"] = controlVisitNCheckbox.checked;
     innerPrefs["fontSize"] = fontSizeInput.value;
     innerPrefs["sortBy"] = prefSettings['sortBy'];
+    console.log("QQQ: >> submitChanges prefs:")
+    console.table(innerPrefs);
     
     let updatePrefErr = function(err) {
         dumpError(err, `Error updating prefs`);

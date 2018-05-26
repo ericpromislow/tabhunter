@@ -37,7 +37,8 @@ var closeOnGo = true;
 var sortBy = null;
 var sortByReverse = false;
 var controlVisitN = false;
-
+var g_currentDragTarget = null, g_currentDragTargetClassName = null;
+var g_currentItemHeight = null;
 const DEFAULT_BASE_FONT_SIZE = 12;
 
 function init() {
@@ -148,9 +149,9 @@ function depx(pref) {
     let p = /^(\d+).*/;
     let m = p.exec(pref);
     if (m) {
-        return parseInt(m[1]);
+        return parseInt(m[1], 10);
     }
-    return parseInt(pref);
+    return parseInt(pref, 10);
 }
 
 function px(size) {
@@ -206,7 +207,6 @@ function getCloseOnGoPref() {
     };
     let gotPrefErr = function(err) {
         console.log(`tabhunter: getCloseOnGoPref.gotPrefErr: err: ${err}`);
-        console.log(err);
         populateTabList();
     };
     browser.storage.local.get().then(gotPrefOK, gotPrefErr);
@@ -341,17 +341,18 @@ function pluralize(amt, term) {
 function populateTabList() {
     selectedIndex = 0;
     lastClickedIndex = -1;
+    g_currentItemHeight = null;
     matchedItems = [];
     const getAllProperties = {populate: true, windowTypes: ['normal']}
     const endTime = function(cmd) {
         t2 = (new Date()).valueOf();
-        console.log("Elapsed time to " + cmd + ": " + ((t2 - t1)/1000) + " msec");
+        //console.log("Elapsed time to " + cmd + ": " + ((t2 - t1)/1000) + " msec");
     }
     const errGetAllWindows = function(err) {
         if (showElapsedTimes) {
             endTime("getting windows");
         }
-        console.log(err);
+        console.log(`tabhunter: errGetAllWindows: err: ${err}`);
     }
     
     const doGetAllWindows = function (windowInfoArray) {
@@ -394,7 +395,7 @@ function populateTabList() {
             try {
                 selectPattern();
             } catch(e) {
-                console.log("* mainPattern.focus(): " + e);
+                console.log("tabhunter: * mainPattern.focus(): " + e);
             }
         }, 100);
     };
@@ -437,12 +438,12 @@ function doVisitSelectedURL() {
     var tabId = target.tabID;
 
     const getCurrentErr = function(err) {
-        console.log("Error getting current window: " + err);
+        console.log("tabhunter: Error getting current window: " + err);
     };
     const getCurrentCont = function(windowInfo) {
         if (windowInfo.id != windowId) {
             const showWindowErr = function(err) {
-                console.log("Error showing current window: " + err);
+                console.log("tabhunter: Error showing current window: " + err);
             };
             const showWindowCont = function(windowInfo) {
                 if (closeOnGo) {
@@ -459,7 +460,7 @@ function doVisitSelectedURL() {
     };
 
     const showTabErr = function(err) {
-        console.log("Error showing tab id " + tabId + ": " + err);
+        console.log("tabhunter: Error showing tab id " + tabId + ": " + err);
     };
     const showTabCont = function(tab) {
         browser.windows.getCurrent().then(getCurrentCont, getCurrentErr);
@@ -475,7 +476,7 @@ function processArrowKey(event) {
     try {
         processArrowKey_aux(event);
     } catch(e) {
-        console.log("*** processArrowKey: awp: " + e);
+        console.log("tabhunter: *** processArrowKey: awp: " + e);
     }
 }
 
@@ -497,7 +498,7 @@ function processKey(event) {
             }
         }
     } catch(e) {
-        console.log("*** processKey: awp: " + e);
+        console.log("tabhunter: *** processKey: awp: " + e);
     }
 }
 
@@ -512,7 +513,7 @@ function processArrowKey_aux(event) {
     var keyName = event.key;
     if (keyName == "Enter") {
         if (mask != 0) {
-            console.log("Enter can't be modified with shift, etc.");
+            console.log("tabhunter: Enter can't be modified with shift, etc.");
         } else {
             if (selectedItems.length > 1) {
                 // Keep existing behavior
@@ -640,7 +641,7 @@ function onPatternChanged(event, calledFromInit) {
                 return ptn.test(item.title) || ptn.test(item.url);
             }
         } catch(ex) {
-            console.log("not a valid javascript pattern: " + ex);
+            console.log("tabhunter: not a valid javascript pattern: " + ex);
             // just do a case-insensitive substring search
             ptn = pattern.toLowerCase();
             fn = function matchText(item) {
@@ -745,7 +746,16 @@ function makeListFromMatchedItems() {
         if (item.discarded) {
             $(el).addClass("discarded");
         }
-        list.appendChild(el);
+        if (sortBy == compareByWindowTab) {
+            $(el).attr("draggable", true);
+        }
+        tablist.appendChild(el);
+    }
+    if (sortBy == compareByWindowTab) {
+        $(tablist).attr("draggable", true);
+        tablist.addEventListener("dragstart", onTablistDragStartHandler, true);
+        tablist.addEventListener("dragover", onTablistDragOver, true);
+        tablist.addEventListener("drop", onTablistDropHandler, false);
     }
     $("ul li:eq(" + selectedIndex + ")").select();
     $("ul li").on("click", onListItemClick);
@@ -759,6 +769,227 @@ function getSelectedItemsJQ() {
     return $("ul#list li.selected").toArray();
 }
 
+function onTablistDragStartHandler(event) {
+    try {
+        var selectedItems = getSelectedItemsJQ();
+        if (selectedItems.length == 0) {
+            return;
+        }
+        //event.preventDefault();
+        var tabIds = [], urls = [];
+        selectedItems.forEach(function(selectedItem) {
+                let item = items[selectedItem.actualIndex];
+                tabIds.push(item.tabID);
+                urls.push(item.url);
+            });
+        // Add the drag data
+        event.dataTransfer.setData("text/plain", tabIds.join(","));
+        event.dataTransfer.setData("text/uri-list", urls.join("\n"));
+    } catch(ex) {
+        console.log(`tabhunter: error on drag/drop start handler: ${ex}`);
+    }
+}
+
+function getDropIndexWithTabInfo(event) {
+    let [actualIndex, targetNode] = getDropIndex(event);
+    if (actualIndex === null || targetNode === undefined) {
+        return [actualIndex, targetNode, undefined];
+    }
+    let actualListItem = null, fixedTabIndex = 0, actualTab;
+    if (sortByReverse) {
+        // Gravity flows up in this case
+        if (actualIndex == -1) {
+            actualListItem = tablist.lastChild;
+            actualTab = items[actualListItem.actualIndex];
+            fixedTabIndex = actualTab.tabIndex;
+        } else if (actualIndex == 0) {
+            actualListItem = tablist.firstChild;
+            actualListItem = targetNode;
+            actualTab = items[actualListItem.actualIndex];
+            fixedTabIndex = -1;
+        } else {
+            // In list say we push between nodes 2 and 1 (so we're near the right)
+            //       [8]
+            //        v
+            //     [2]  [1]  [0]  <
+            // getDropIndex wants to put it before [1]
+            // but in reality we're looking at this:
+            //
+            //            [8]
+            //             v
+            //   > [0]  [1]  [2]   ==>
+            //   > [0]  [1]  [8]  [2] which reversed will look like
+            //     [2]  [8]  [1]  [0]
+            //   so we want to insert it just before node [2]
+            //   so in reverse mode the desired tab-index is the previous sibling's.
+            actualListItem = targetNode.previousSibling;
+            actualTab = items[actualListItem.actualIndex];
+            fixedTabIndex = actualTab.tabIndex;
+        }
+    } else {
+        if (actualIndex == -1) {
+            actualListItem = tablist.lastChild;
+            actualTab = items[actualListItem.actualIndex];
+            fixedTabIndex = -1;
+        } else if (actualIndex == 0) {
+            actualListItem = targetNode;
+            actualTab = items[targetNode.actualIndex];
+            fixedTabIndex = actualTab.tabIndex;
+        } else {
+            actualListItem = targetNode;
+            actualTab = items[actualListItem.actualIndex];
+            fixedTabIndex = actualTab.tabIndex;
+        }
+    }
+    return [fixedTabIndex, actualListItem, actualTab];
+}
+
+function getDropIndex(event) {
+    var target = event.target;
+    if (["LI", "UL"].indexOf(target.nodeName) == -1) {
+        return [null, undefined];
+    }
+    let offsetY = event.offsetY;
+    let liHeight = target.clientHeight;
+    if (target.nodeName == "LI") {
+        //let preferAfterOffset = (offsetY > Math.ceil(liHeight / 2.0) ? 0 : 1);
+        let preferAfter = offsetY > Math.ceil(liHeight / 2.0);
+        if (preferAfter) {
+            let nextNode = target.nextSibling;
+            if (!nextNode) {
+                return [-1, target];
+            } else {
+                return [nextNode.actualIndex, nextNode];
+            }
+        } else {
+            return [target.actualIndex, target];
+        }
+    } else {
+        let actualOffset = offsetY + target.scrollTop;
+        let firstChild = target.firstChild;
+        if (g_currentItemHeight === null) {
+            let nextChild = target.firstChild.nextSibling;
+            g_currentItemHeight = nextChild.offsetTop - firstChild.offsetTop;
+        }
+        let initialMargin = firstChild.offsetTop - target.offsetTop;
+        let numBefore = Math.floor((actualOffset - initialMargin) / g_currentItemHeight + 0.3);
+        if (numBefore < target.childNodes.length) {
+            let node = target.childNodes[numBefore];
+            return [node.actualIndex, node];
+        }
+        // We're at the end
+        return [-1, target.lastChild];
+    }
+}
+
+function onTablistDragOver(event) {
+    try {
+        event.preventDefault();
+        var [actualIndex, newTargetNode] = getDropIndex(event);
+        if (newTargetNode == null) {
+            return;
+        }
+        setDragTargetIndicator(newTargetNode, actualIndex);
+    } catch(ex) {
+        console.log(`tabhunter: error on drag/drop over handler: ${ex}`);
+    }
+}
+
+function moveTabsToAnotherTab(origTabIds, targetIndex, finalTargetNode, tabInfo) {
+    try {
+        // We're going to run from the last tab to the first, so reverse if the tabs are reversed
+        // Reverse if:
+        // not reverse-sort, not targetting end of table
+        // reverse-sort, but targetting end of table
+        // In all other cases, don't reverse
+        //
+        // And use `[].concat` to make a copy
+        let tabIds = [].concat((!!sortByReverse != (targetIndex == -1)) ? origTabIds.reverse() : origTabIds);
+        let targetWindowID = tabInfo.windowID;
+        let windowInfo = g_windowInfoArray.find((win) => win.id == targetWindowID);
+        let tabIdsToLeftOfTarget = windowInfo.tabs.filter((tabInfo) => tabInfo.index <= targetIndex).map((tabInfo) => tabInfo.id);
+        let moveProperties = { windowId: targetWindowID,
+                               index: targetIndex };
+
+        var reportErr, moveNextTabFunc;
+        reportErr = function(err) {
+            console.log("tabhunter: error creating bookmark: " + err);
+        };
+        
+        let selectMovedTargetNode = function(attempt) {
+            let firstTabId = sortByReverse ? origTabIds[origTabIds.length - 1] : origTabIds[0];
+            let itemIndex = items.findIndex((item) => item.tabID == firstTabId);
+            let matchedItemIndex = matchedItems.indexOf(itemIndex);
+            if (matchedItemIndex >= 0) {
+                tablist.childNodes[matchedItemIndex].classList.add('selected');
+            } else if (attempt <= 10) {
+                // Sometimes we haven't finished the various promises while updating
+                // the node list, so retry
+                setTimeout(selectMovedTargetNode, attempt * 10, attempt + 1);
+            }
+        };
+        let populateTabListAndReselect = function() {
+            populateTabList();
+            setTimeout(selectMovedTargetNode, 10, 1);
+        };
+        let deferredMoveNextTabFunc = function() {
+            setTimeout(moveNextTabFunc, 1);
+        };
+        moveNextTabFunc = function() {
+            if (tabIds.length == 0) {
+                // All done
+                let s = `Moved ${pluralize(tabIds.length, "tab")} to tab ${tabInfo.title}`;
+                setStatusBarMessage(s);
+                tablist.querySelectorAll("li.selected").forEach(function(node) {
+                    node.classList.remove('selected');
+                });
+                setTimeout(populateTabListAndReselect, 10);
+                return;
+            }
+            let tabIdToMove = tabIds.pop();
+            if (targetIndex != -1 && tabIdsToLeftOfTarget.indexOf(tabIdToMove) >= 0) {
+                targetIndex -= 1;
+            }
+            moveProperties.index = targetIndex;
+            browser.tabs.move(tabIdToMove, moveProperties).then(deferredMoveNextTabFunc, reportErr);
+            //browser.tabs.move(tabIdToMove, moveProperties).then(moveNextTabFunc, reportErr);
+
+        };
+        moveNextTabFunc();
+    } catch(ex) {
+        console.log("tabhunter: Error moving tabs: " + ex);
+    }
+}
+
+function onTablistDropHandler(event) {
+    try {
+        event.preventDefault();
+        removeDragTargetIndicator();
+        let [targetIndex, finalTargetNode, tabInfo] = getDropIndexWithTabInfo(event);
+        if (targetIndex === null || finalTargetNode === undefined) {
+            return;
+        }
+        var tabIds = event.dataTransfer.getData("text").split(/,/).map((x) => parseInt(x, 10));
+        moveTabsToAnotherTab(tabIds, targetIndex, finalTargetNode, tabInfo);
+    } catch(ex) {
+        console.log(`tabhunter: error on drag/drop drop handler: ${ex}`);
+    }
+    event.preventDefault();
+    event.stopPropagation();
+}
+
+function removeDragTargetIndicator() {
+    if (g_currentDragTarget) {
+        g_currentDragTarget.classList.remove(g_currentDragTargetClassName);
+        g_currentDragTargetClassName = g_currentDragTarget = null;
+    }
+}
+
+function setDragTargetIndicator(targetNode, actualIndex) {
+    removeDragTargetIndicator();
+    g_currentDragTargetClassName = actualIndex == -1 ? 'tabenter-after' : 'tabenter';
+    (g_currentDragTarget = targetNode).classList.add(g_currentDragTargetClassName);
+}
 
 function updateButtons() {
     var selectedItemLength = getSelectedItemsJQ().length;
@@ -863,7 +1094,7 @@ function setClipboard(text) {
         textarea.select();
         document.execCommand("cut");
     } catch(ex) {
-        console.log("Error setting/copying text: " + text);
+        console.log("tabhunter: Error setting/copying text: " + text);
     }
     textarea.style.display = "none";
 }
@@ -1038,7 +1269,7 @@ function doMoveToWindowButton() {
                        index: targetIndex
                       }
                      ).then(function(tabsList) {
-                         hideWindowMover();
+                         populateTabList();
                      }).catch(reportErr);
 }
 
@@ -1070,7 +1301,7 @@ function populateBookmarkPicker() {
             }
                 
             if (bookmarkItem.children) {
-                for (child of bookmarkItem.children) {
+                for (var child of bookmarkItem.children) {
                     extractTitlesFromItem(child, nextPath);
                 }
             }
