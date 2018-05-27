@@ -325,8 +325,13 @@ function getReadableAge(ts) {
     if (age <= 366) {
         return `${Math.round(age / 7)} weeks`;
     }
-    let years = Math.round(age / 365);
-    let months = Math.round((age % 365) / 12);
+    let daysPerMonth = 365.25 / 12;
+    let months = Math.round(age / daysPerMonth);
+    if (months < 12) {
+	return `${pluralize(months, 'mo')}`;
+    }
+    let years = Math.floor(months / 12);
+    months = months % 12;
     if (months > 0) {
         return `${pluralize(years, 'yr')} ${pluralize(months, 'mo')}`;
     }
