@@ -467,8 +467,6 @@ function submitChanges() {
     innerPrefs["controlVisitN"] = controlVisitNCheckbox.checked;
     innerPrefs["fontSize"] = fontSizeInput.value;
     innerPrefs["sortBy"] = prefSettings['sortBy'];
-    console.log("QQQ: >> submitChanges prefs:")
-    console.table(innerPrefs);
     
     let updatePrefErr = function(err) {
         dumpError(err, `Error updating prefs`);
