@@ -921,21 +921,26 @@ function moveTabsToAnotherTab(origTabIds, targetIndex, finalTargetNode, tabInfo)
             console.log("tabhunter: error creating bookmark: " + err);
         };
         
-        let selectMovedTargetNode = function(attempt) {
-            let firstTabId = sortByReverse ? origTabIds[origTabIds.length - 1] : origTabIds[0];
-            let itemIndex = items.findIndex((item) => item.tabID == firstTabId);
-            let matchedItemIndex = matchedItems.indexOf(itemIndex);
-            if (matchedItemIndex >= 0) {
-                tablist.childNodes[matchedItemIndex].classList.add('selected');
+        let selectMovedTargetNodes = function(attempt) {
+	    let itemIndices = origTabIds.map((origTabId) => (
+		items.findIndex((item) => item.tabID == origTabId)));
+	    // console.log(`QQQ: origTabIds:${origTabIds}, itemIndices:${itemIndices}`);
+	    let matchedItemIndices = itemIndices.map((matchedItemIndex) =>
+						     matchedItems.indexOf(matchedItemIndex));
+	    // console.log(`QQQ: matchedItemIndices:${matchedItemIndices}`);
+	    if (matchedItemIndices.every((index) => index >= 0)) {
+		matchedItemIndices.forEach((matchedItemIndex) => {
+                    tablist.childNodes[matchedItemIndex].classList.add('selected');
+		});
             } else if (attempt <= 10) {
                 // Sometimes we haven't finished the various promises while updating
                 // the node list, so retry
-                setTimeout(selectMovedTargetNode, attempt * 10, attempt + 1);
+                setTimeout(selectMovedTargetNodes, attempt * 10, attempt + 1);
             }
         };
         let populateTabListAndReselect = function() {
             populateTabList();
-            setTimeout(selectMovedTargetNode, 10, 1);
+            setTimeout(selectMovedTargetNodes, 10, 1);
         };
         let deferredMoveNextTabFunc = function() {
             setTimeout(moveNextTabFunc, 1);
@@ -943,12 +948,12 @@ function moveTabsToAnotherTab(origTabIds, targetIndex, finalTargetNode, tabInfo)
         moveNextTabFunc = function() {
             if (tabIds.length == 0) {
                 // All done
-                let s = `Moved ${pluralize(tabIds.length, "tab")} to tab ${tabInfo.title}`;
+                let s = `Moved ${pluralize(origTabIds.length, "tab")} to tab ${tabInfo.title}`;
                 setStatusBarMessage(s);
                 tablist.querySelectorAll("li.selected").forEach(function(node) {
                     node.classList.remove('selected');
                 });
-                setTimeout(populateTabListAndReselect, 10);
+                setTimeout(populateTabListAndReselect, 50);
                 return;
             }
             let tabIdToMove = tabIds.pop();
@@ -956,8 +961,8 @@ function moveTabsToAnotherTab(origTabIds, targetIndex, finalTargetNode, tabInfo)
                 targetIndex -= 1;
             }
             moveProperties.index = targetIndex;
+	    // console.log(`QQQ: move tab ${tabIdToMove} to index ${targetIndex}`);
             browser.tabs.move(tabIdToMove, moveProperties).then(deferredMoveNextTabFunc, reportErr);
-            //browser.tabs.move(tabIdToMove, moveProperties).then(moveNextTabFunc, reportErr);
 
         };
         moveNextTabFunc();
