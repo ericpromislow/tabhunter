@@ -16,7 +16,7 @@
   <article>
   <h1>Tabhunter Preferences</h1>
   <div>
-    <%= File.read(File.expand_path("../_prefs.html", __FILE__)) %>
+    <%= ERB.new(File.read(File.expand_path("../_prefs.html.erb", __FILE__))).result(binding) %>
   </div>
   </article>
 </html>

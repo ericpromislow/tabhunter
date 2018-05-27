@@ -60,9 +60,11 @@
     <input type="radio" id="sortByPosition" name="sortBy"
            value="Position" />
     <label for="sortByPosition">Window/Tab</label>
+<% if ENV['TARGET'] == 'firefox' %>
     <input type="radio" id="sortByNeglect" name="sortBy"
            value="Neglect" />
     <label for="sortByNeglect">Neglect</label>
+<% end %>
     <br />
     <button type="button" class="restoreButton"
             title="Restore Setting"

@@ -7,7 +7,9 @@ var fontSizeInput;
 var sortByTitleButton;
 var sortByURLButton;
 var sortByPositionButton;
+<% if ENV['TARGET'] == 'firefox' %>
 var sortByNeglectButton;
+<% end %>
 var sortByReverseCheckbox;
 var controlVisitNCheckbox;
 var originalCommandKey;
@@ -122,8 +124,10 @@ function getCheckSortByGroup() {
         return 'URL';
     } else if (sortByPositionButton.checked) {
         return 'Position';
+<% if ENV['TARGET'] == 'firefox' %>
     } else if (sortByNeglectButton.checked) {
         return 'Neglect';
+<% end %>
     } else {
         alert("Hey -- no sort button checked");
         return 'Title';
@@ -173,9 +177,14 @@ function initFields() {
     sortByTitleButton = document.getElementById("sortByTitle");
     sortByURLButton = document.getElementById("sortByURL");
     sortByPositionButton = document.getElementById("sortByPosition");
+<% if ENV['TARGET'] == 'firefox' %>
     sortByNeglectButton = document.getElementById("sortByNeglect");
+<% end %>
     [sortByTitleButton, sortByURLButton,
-     sortByPositionButton, sortByNeglectButton].forEach(function(e) {
+<% if ENV['TARGET'] == 'firefox' %>
+     sortByNeglectButton,
+<% end %>
+     sortByPositionButton].forEach(function(e) {
 	 e.addEventListener('change', checkSortByGroup, false);
     });
     var gotCommandsOK = function(commands) {
@@ -407,9 +416,11 @@ function initFieldsWithPrefs() {
         case 'Position':
             sortByPositionButton.checked = true;
             break;
+<% if ENV['TARGET'] == 'firefox' %>
         case 'Neglect':
             sortByNeglectButton.checked = true;
             break;
+<% end %>
         default:
             //console.log(`tabhunter prefs: ignoring sortBy pref ${sortByValue}`);
             sortByTitleButton.checked = true;

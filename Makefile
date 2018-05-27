@@ -107,14 +107,14 @@ $(TDIR)/popup/prefs.js: popup/prefs.js.erb
 $(TDIR)/popup/tabhunter.css: popup/tabhunter.css
 	cp $< $@
 
-$(TDIR)/popup/tabhunter.html: popup/tabhunter.html.erb popup/_prefs.html
+$(TDIR)/popup/tabhunter.html: popup/tabhunter.html.erb popup/_prefs.html.erb
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
 $(TDIR)/popup/tabhunter.js: popup/tabhunter.js.erb
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 	node -c $@
 
-$(TDIR)/popup/prefs.html: popup/prefs.html.erb popup/_prefs.html
+$(TDIR)/popup/prefs.html: popup/prefs.html.erb popup/_prefs.html.erb
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
 $(TDIR)/popup/images/restore12.png: popup/images/restore12.png

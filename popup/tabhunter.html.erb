@@ -63,7 +63,8 @@
         <button type="button" class="button" id="activateSelectedTabs">Activate Tabs</button>
       </div>
       <div id="prefsContainer">
-        <%= File.read(File.expand_path("../_prefs.html", __FILE__)) %>
+        <%= ERB.new(File.read(File.expand_path("../_prefs.html.erb", __FILE__)),
+	            nil, nil, eoutvar='_sub01').result(binding) %>
       </div>
       <div id="statusbar" class="hide">
         <p id="statusbar-p">
