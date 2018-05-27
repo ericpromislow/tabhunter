@@ -1224,10 +1224,8 @@ function discardTheTabs() {
     browser.tabs.discard(tabIDs).then(discardTabOK, discardTabError);
 <% else %>
     new TabChanger(tabIDs, "discard", function(tabID, onResolve, onReject) {
-                                         browser.tabs.discard(tabID).
-                                         then(onResolve).
-                                         catch(onReject);
-              }, actualItems).next();
+        browser.tabs.discard(tabID, onResolve)
+    }, actualItems).next();
 <% end %>
 }
 
