@@ -585,8 +585,9 @@ function selectRange(lastClickedIndex, currentIndex) {
     }
 }
 
-function onListItemDoubleClick() {
+function onListItemDoubleClick(event) {
     doVisitSelectedURL();
+    event.preventDefault();
 }
 
 function allowAll() {
