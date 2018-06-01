@@ -782,14 +782,14 @@ function onTablistDragStartHandler(event) {
             return;
         }
         //event.preventDefault();
-        var tabIds = [], urls = [];
+        var urls = [], indices = [];
         selectedItems.forEach(function(selectedItem) {
-                let item = items[selectedItem.actualIndex];
-                tabIds.push(item.tabID);
-                urls.push(item.url);
-            });
+	    let index = selectedItem.actualIndex;
+	    indices.push(index);
+            urls.push(items[index].url);
+        });
         // Add the drag data
-        event.dataTransfer.setData("text/plain", tabIds.join(","));
+        event.dataTransfer.setData("text/plain", indices.join(","));
         event.dataTransfer.setData("text/uri-list", urls.join("\n"));
     } catch(ex) {
         console.log(`tabhunter: error on drag/drop start handler: ${ex}`);
@@ -901,7 +901,66 @@ function onTablistDragOver(event) {
     }
 }
 
-function moveTabsToAnotherTab(origTabIds, targetIndex, finalTargetNode, tabInfo) {
+async function moveTabsToAnotherTab(origTabIds, targetIndex, finalTargetNode, tabInfo) {
+    // Split the source tabs into 3 groups:
+    // from windows with windowIndex < target window windowIndex,
+    // from the current window,
+    // and from windows with windowIndex > target window windowIndex
+
+    // Don't optimize the for-loop that partitions the tabs -- this is done
+    // on the drop event of a drag/drop session, and if anyone is dragging
+    // a huge number of tabs they're used to waiting.
+
+    let targetWindowID = tabInfo.windowID;
+    var targetWindowIndex = windowCounter.index(targetWindowID);
+    var earlierWindowTabs = [],
+	currentWindowTabsBeforeOrAtTargetIndex = [],
+	currentWindowTabsAfterTargetIndex = [],
+	laterWindowTabs = [];
+    var tabItems = origTabIds.map((tabId) => items.find((item) => item.tabID == tabId));
+    tabItems.forEach((item) => {
+	let windowIndex = windowCounter.index(item.windowID);
+	if (windowIndex < targetWindowIndex) {
+	    earlierWindowTabs.push(item);
+	} else if (windowIndex == targetWindowIndex) {
+	    let tabIndex = item.tabIndex;
+	    if (tabIndex <= targetIndex) {
+		// Make sure we aren't trying to insert into a point in the selection
+		currentWindowTabsBeforeOrAtTargetIndex.push(item);
+	    } else {
+		currentWindowTabsAfterTargetIndex.push(item);
+	    }
+	} else {
+	    laterWindowTabs.push(item);
+	}
+    });
+    let moveProperties = { windowId: targetWindowID,
+                           index: targetIndex };
+    if (currentWindowTabsBeforeOrAtTargetIndex.length == 0) {
+	await browser.tabs.move(origTabIds, moveProperties);
+	populateTabList();
+	return;
+    }
+    // Push the tabs in 3 parts:
+    if (earlierWindowTabs.length > 0) {
+	await browser.tabs.move(earlierWindowTabs.map((item) => item.tabID), moveProperties)
+	moveProperties.targetIndex += earlierWindowTabs.length;
+    }
+    moveProperties.targetIndex -= currentWindowTabsBeforeOrAtTargetIndex.length;
+    await browser.tabs.move(currentWindowTabsBeforeOrAtTargetIndex.map((item) => item.tabID), moveProperties);
+    
+    let remainingTabs = currentWindowTabsAfterTargetIndex.concat(laterWindowTabs);
+    if (remainingTabs.length > 0) {
+	moveProperties.targetIndex += currentWindowTabsBeforeOrAtTargetIndex.length;
+	await browser.tabs.move(currentTabs.map((item) => item.tabID), moveProperties);
+    }
+    populateTabList();
+}
+	
+	
+	
+	
+function old_moveTabsToAnotherTab(origTabIds, targetIndex, finalTargetNode, tabInfo) {
     try {
         // We're going to run from the last tab to the first, so reverse if the tabs are reversed
         // Reverse if:
