@@ -806,6 +806,7 @@ function onTablistDragStartHandler(event) {
 }
 
 function getDropIndexWithTabInfo(event, actualIndices) {
+    // return [tabIndex, HTMLListItem, tabItem]
     let [actualIndex, targetNode] = getDropIndex(event, actualIndices);
     if (actualIndex === null || targetNode === undefined) {
         return [actualIndex, targetNode, undefined];
@@ -830,18 +831,16 @@ function getDropIndexWithTabInfo(event, actualIndices) {
 
 // returns [tabIndex, listItem]
 // If we're pointing into a block of selected items, find the first one in the list
-function getDropIndexAtStartOfRun(listItem, actualIndices) {
-    console.log(`QQQ: getDropIndexAtStartOfRun start at line ${listItem.actualIndex}`);
+// Always return [index, node]
+function getDropIndexAtStartOfRun(listItem) {
     let isSelected = function(elt) {
         return elt.classList.contains('selected');
     };
     if (isSelected(listItem)) {
         while (listItem.previousSibling && isSelected(listItem.previousSibling)) {
             listItem = listItem.previousSibling;
-            console.log(`QQQ: getDropIndexAtStartOfRun move to line ${listItem.actualIndex}`);
         }
     }
-    console.log(`QQQ: getDropIndexAtStartOfRun settle for line ${listItem.actualIndex}`);
     return [listItem.actualIndex, listItem];
 }
 
@@ -860,10 +859,10 @@ function getDropIndex(event, actualIndices) {
             if (!nextNode) {
                 return [-1, target];
             } else {
-                return getDropIndexAtStartOfRun(nextNode, actualIndices);
+                return getDropIndexAtStartOfRun(nextNode);
             }
         } else {
-            return getDropIndexAtStartOfRun(target, actualIndices);
+            return getDropIndexAtStartOfRun(target);
         }
     } else {
         let actualOffset = offsetY + target.scrollTop;
@@ -875,10 +874,11 @@ function getDropIndex(event, actualIndices) {
         let initialMargin = firstChild.offsetTop - target.offsetTop;
         let numBefore = Math.floor((actualOffset - initialMargin) / g_currentItemHeight + 0.3);
         if (numBefore < target.childNodes.length) {
-            return getDropIndexAtStartOfRun(target.childNodes[numBefore], actualIndices);
-        }
-        // We're at the end
-        return [-1, target.lastChild];
+            return getDropIndexAtStartOfRun(target.childNodes[numBefore]);
+        } else {
+            // We're at the end
+            return [-1, target.lastChild];
+	}
     }
 }
 
@@ -896,6 +896,10 @@ function onTablistDragOver(event) {
     }
 }
 
+function tabsFromItems(items) {
+    return items.map((item) => item.tabID);
+}
+
 async function moveTabsToAnotherTab(actualIndices, targetIndex, finalTargetNode, targetTabInfo) {
     // Split the source tabs into 3 groups:
     // from windows with windowIndex < target window windowIndex,
@@ -908,46 +912,58 @@ async function moveTabsToAnotherTab(actualIndices, targetIndex, finalTargetNode,
 
     let targetWindowID = targetTabInfo.windowID;
     var targetWindowIndex = windowCounter.index(targetWindowID);
-    var earlierWindowTabs = [],
-    	currentWindowTabsBeforeOrAtTargetIndex = [],
-    	laterWindowTabs = [];
     var tabItems = actualIndices.map((index) => items[index]);
-    tabItems.forEach((item) => {
-            let windowIndex = windowCounter.index(item.windowID);
-            if (windowIndex < targetWindowIndex) {
-                earlierWindowTabs.push(item);
-            } else if (windowIndex == targetWindowIndex) {
-                //XXX: Watch out for off-by-one error here
-                if (item.tabIndex <= targetIndex) {
-                    currentWindowTabsBeforeOrAtTargetIndex.push(item);
-                } else {
-                    laterWindowTabs.push(item);
-                }
-            } else {
-                laterWindowTabs.push(item);
-            }
-        });
+    let earlierWindowTabs, currentWindowTabsBeforeOrAtTargetIndex, laterWindowTabs;
+    //let leftTabIDs = centralTabIDs = [], rightTabIDs = [];
+    let borderIndex = tabItems.findIndex((item) => windowCounter.index(item.windowID) >= targetWindowIndex);
+    if (borderIndex == -1) {
+	//leftTabIDs = tabItems;
+	earlierWindowTabs = tabItems;
+	currentWindowTabsBeforeOrAtTargetIndex = laterWindowTabs = [];
+    } else {
+	earlierWindowTabs = tabItems.splice(0, borderIndex);
+	borderIndex = tabItems.findIndex((item) => (windowCounter.index(item.windowID) > targetWindowIndex ||
+						    (windowCounter.index(item.windowID) == targetWindowIndex &&
+						     item.tabIndex >= targetIndex)));
+	if (borderIndex == -1) {
+	    // All the remaining tabs are to the left of the target
+	    currentWindowTabsBeforeOrAtTargetIndex = tabItems;
+	    laterWindowTabs = [];
+	} else {
+	    currentWindowTabsBeforeOrAtTargetIndex = tabItems.splice(0, borderIndex);
+	    laterWindowTabs = tabItems;
+	}
+    }
+    let populateTabListAndReselect = function() {
+	populateTabList();
+	setTimeout(selectMovedTargetNodes, 10, 1, actualIndices);
+    }
     let moveProperties = { windowId: targetWindowID,
                            index: targetIndex };
     if (currentWindowTabsBeforeOrAtTargetIndex.length == 0) {
-        await browser.tabs.move(origTabIds, moveProperties);
-        populateTabList();
+        await browser.tabs.move(tabsFromItems(earlierWindowTabs).concat(tabsFromItems(laterWindowTabs)),
+				moveProperties);
+        populateTabListAndReselect();
         return;
     }
     // Push the tabs in 3 parts:
     if (earlierWindowTabs.length > 0) {
-        await browser.tabs.move(earlierWindowTabs.map((item) => item.tabID), moveProperties)
-        moveProperties.targetIndex += earlierWindowTabs.length;
+        await browser.tabs.move(tabsFromItems(earlierWindowTabs), moveProperties)
+        moveProperties.index += earlierWindowTabs.length;
     }
-    moveProperties.targetIndex -= currentWindowTabsBeforeOrAtTargetIndex.length;
-    await browser.tabs.move(currentWindowTabsBeforeOrAtTargetIndex.map((item) => item.tabID), moveProperties);
+    // grrr --- move them to the end, and then bounce them to their final spot
+    
+    let eventualIndex = moveProperties.index - currentWindowTabsBeforeOrAtTargetIndex.length;
+    moveProperties.index = -1;
+    await browser.tabs.move(tabsFromItems(currentWindowTabsBeforeOrAtTargetIndex), moveProperties);
+    moveProperties.index = eventualIndex;
+    await browser.tabs.move(tabsFromItems(currentWindowTabsBeforeOrAtTargetIndex), moveProperties);
     
     if (laterWindowTabs.length > 0) {
-        moveProperties.targetIndex += laterWindowTabs.length;
-        await browser.tabs.move(remainingTabs.map((item) => item.tabID), moveProperties);
+        moveProperties.index += currentWindowTabsBeforeOrAtTargetIndex.length;
+        await browser.tabs.move(tabsFromItems(laterWindowTabs), moveProperties);
     }
-    populateTabList();
-    setTimeout(selectMovedTargetNodes, 10, 1, actualIndices);
+    populateTabListAndReselect();
 }
 
 function selectMovedTargetNodes(attempt, actualIndices) {
