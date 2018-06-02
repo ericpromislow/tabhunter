@@ -325,7 +325,7 @@ function getReadableAge(ts) {
     let daysPerMonth = 365.25 / 12;
     let months = Math.round(age / daysPerMonth);
     if (months < 12) {
-	return `${pluralize(months, 'mo')}`;
+        return `${pluralize(months, 'mo')}`;
     }
     let years = Math.floor(months / 12);
     months = months % 12;
@@ -774,18 +774,18 @@ function getSelectedItemsJQ() {
 
 function onTablistDragStartHandler(event) {
     try {
-	if (sortByReverse) {
-	    let msg = document.getElementById("activity").innerText;
-	    let extra = ". Drag/drop disabled when viewing tabs in reverse-order.-- It's just too weird";
-	    if (msg.indexOf(extra) == -1) {
-		msg += extra;
-	    }
-	    document.getElementById("activity").innerText = msg;
-	    setTimeout(updateActivity, 15 * 1000);
+        if (sortByReverse) {
+            let msg = document.getElementById("activity").innerText;
+            let extra = ". Drag/drop disabled when viewing tabs in reverse-order.-- It's just too weird";
+            if (msg.indexOf(extra) == -1) {
+                msg += extra;
+            }
+            document.getElementById("activity").innerText = msg;
+            setTimeout(updateActivity, 15 * 1000);
             event.stopPropagation();
-	    event.preventDefault();
-	    return false;
-	}
+            event.preventDefault();
+            return false;
+        }
         var selectedItems = getSelectedItemsJQ();
         if (selectedItems.length == 0) {
             return;
@@ -793,8 +793,8 @@ function onTablistDragStartHandler(event) {
         //event.preventDefault();
         var urls = [], indices = [];
         selectedItems.forEach(function(selectedItem) {
-	    let index = selectedItem.actualIndex;
-	    indices.push(index);
+            let index = selectedItem.actualIndex;
+            indices.push(index);
             urls.push(items[index].url);
         });
         // Add the drag data
@@ -878,7 +878,7 @@ function getDropIndex(event, actualIndices) {
         } else {
             // We're at the end
             return [-1, target.lastChild];
-	}
+        }
     }
 }
 
@@ -918,34 +918,34 @@ async function moveTabsToAnotherTab(actualIndices, targetIndex, finalTargetNode,
 
     let borderIndex = tabItems.findIndex((item) => windowCounter.index(item.windowID) >= targetWindowIndex);
     if (borderIndex == -1) {
-	//leftTabIDs = tabItems;
-	currentWindowTabsBeforeOrAtTargetIndex = [];
+        //leftTabIDs = tabItems;
+        currentWindowTabsBeforeOrAtTargetIndex = [];
     } else {
-	tabItems.splice(0, borderIndex);
-	borderIndex = tabItems.findIndex((item) => (windowCounter.index(item.windowID) > targetWindowIndex ||
-						    (windowCounter.index(item.windowID) == targetWindowIndex &&
-						     item.tabIndex >= targetIndex)));
-	if (borderIndex == -1) {
-	    // All the remaining tabs are to the left of the target
-	    currentWindowTabsBeforeOrAtTargetIndex = tabItems;
-	} else {
-	    currentWindowTabsBeforeOrAtTargetIndex = tabItems.splice(0, borderIndex);
-	}
+        tabItems.splice(0, borderIndex);
+        borderIndex = tabItems.findIndex((item) => (windowCounter.index(item.windowID) > targetWindowIndex ||
+                                                    (windowCounter.index(item.windowID) == targetWindowIndex &&
+                                                     item.tabIndex >= targetIndex)));
+        if (borderIndex == -1) {
+            // All the remaining tabs are to the left of the target
+            currentWindowTabsBeforeOrAtTargetIndex = tabItems;
+        } else {
+            currentWindowTabsBeforeOrAtTargetIndex = tabItems.splice(0, borderIndex);
+        }
     }
     let populateTabListAndReselect = function() {
-	populateTabList();
-	setTimeout(selectMovedTargetNodes, 10, 1, actualIndices);
+        populateTabList();
+        setTimeout(selectMovedTargetNodes, 10, 1, actualIndices);
     }
     let moveProperties = { windowId: targetWindowID,
                            index: targetIndex };
     if (currentWindowTabsBeforeOrAtTargetIndex.length == 0) {
         await browser.tabs.move(tabIDs, moveProperties);
     } else {
-	// Move all the tabs to the end of the target window,
-	// and then bounce them back to the desired slot.
-	moveProperties.index = -1;
+        // Move all the tabs to the end of the target window,
+        // and then bounce them back to the desired slot.
+        moveProperties.index = -1;
         await browser.tabs.move(tabIDs, moveProperties);
-	moveProperties.index = targetIndex - currentWindowTabsBeforeOrAtTargetIndex.length;
+        moveProperties.index = targetIndex - currentWindowTabsBeforeOrAtTargetIndex.length;
         await browser.tabs.move(tabIDs, moveProperties);
     }
     populateTabListAndReselect();
