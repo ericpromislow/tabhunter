@@ -806,26 +806,23 @@ function onTablistDragStartHandler(event) {
 }
 
 function getDropIndexWithTabInfo(event, actualIndices) {
-    // return [tabIndex, HTMLListItem, tabItem]
+    // return [tabIndex, tabItem]
     let [actualIndex, targetNode] = getDropIndex(event, actualIndices);
     if (actualIndex === null || targetNode === undefined) {
-        return [actualIndex, targetNode, undefined];
+        return [actualIndex, undefined];
     }
-    let actualListItem = null, fixedTabIndex = 0, actualTab;
+    let fixedTabIndex = 0, actualTab;
     if (actualIndex == -1) {
-        actualListItem = tablist.lastChild;
-        actualTab = items[actualListItem.actualIndex];
+        actualTab = items[tablist.lastChild.actualIndex];
         fixedTabIndex = -1;
     } else if (actualIndex == 0) {
-        actualListItem = targetNode;
         actualTab = items[targetNode.actualIndex];
         fixedTabIndex = actualTab.tabIndex;
     } else {
-        actualListItem = targetNode;
-        actualTab = items[actualListItem.actualIndex];
+        actualTab = items[targetNode.actualIndex];
         fixedTabIndex = actualTab.tabIndex;
     }
-    return [fixedTabIndex, actualListItem, actualTab];
+    return [fixedTabIndex, actualTab];
 }
 
 
@@ -900,55 +897,74 @@ function tabsFromItems(items) {
     return items.map((item) => item.tabID);
 }
 
-async function moveTabsToAnotherTab(actualIndices, targetIndex, finalTargetNode, targetTabInfo) {
-    // Split the source tabs into 3 groups:
-    // from windows with windowIndex < target window windowIndex,
-    // from the current window,
-    // and from windows with windowIndex > target window windowIndex
+function moveTabsToAnotherTab(actualIndices, targetIndex, targetTabInfo) {
+    var result = {repopulate:true};
+    moveTabsToAnotherTabAux(actualIndices, targetIndex, targetTabInfo, result);
+    if (result.repopulate) {
+	populateTabList();
+    }
+}
 
-    // Don't optimize the for-loop that partitions the tabs -- this is done
-    // on the drop event of a drag/drop session, and if anyone is dragging
-    // a huge number of tabs they're used to waiting.
-
+async function moveTabsToAnotherTabAux(actualIndices, targetIndex, targetTabInfo, result) {
     let targetWindowID = targetTabInfo.windowID;
-    var targetWindowIndex = windowCounter.index(targetWindowID);
     var tabItems = actualIndices.map((index) => items[index]);
     let tabIDs = tabsFromItems(tabItems);
-    let currentWindowTabsBeforeOrAtTargetIndex;
-
-    let borderIndex = tabItems.findIndex((item) => windowCounter.index(item.windowID) >= targetWindowIndex);
-    if (borderIndex == -1) {
-        //leftTabIDs = tabItems;
-        currentWindowTabsBeforeOrAtTargetIndex = [];
-    } else {
-        tabItems.splice(0, borderIndex);
-        borderIndex = tabItems.findIndex((item) => (windowCounter.index(item.windowID) > targetWindowIndex ||
-                                                    (windowCounter.index(item.windowID) == targetWindowIndex &&
-                                                     item.tabIndex >= targetIndex)));
-        if (borderIndex == -1) {
-            // All the remaining tabs are to the left of the target
-            currentWindowTabsBeforeOrAtTargetIndex = tabItems;
-        } else {
-            currentWindowTabsBeforeOrAtTargetIndex = tabItems.splice(0, borderIndex);
-        }
-    }
-    let populateTabListAndReselect = function() {
-        populateTabList();
-        setTimeout(selectMovedTargetNodes, 10, 1, actualIndices);
-    }
     let moveProperties = { windowId: targetWindowID,
                            index: targetIndex };
-    if (currentWindowTabsBeforeOrAtTargetIndex.length == 0) {
+    
+    if (targetIndex == -1) {
+	// move to end of last window: easy
+        await browser.tabs.move(tabIDs, moveProperties);
+	return;
+    }
+    
+    var targetWindowIndex = windowCounter.index(targetWindowID);
+    let startOfTargetWindowIndex = tabItems.findIndex((item) => windowCounter.index(item.windowID) >= targetWindowIndex);
+    if (startOfTargetWindowIndex == -1) {
+	// no source tabs on target tab's window: tab.move handles this fine
+        await browser.tabs.move(tabIDs, moveProperties);
+	return;
+    }
+    // Scenario #1, moving 5 tabs from 3 windows to right of 2 tabs on window2:
+    // w1t1 w2[0] w2[1] w2[3] w3t4 => {window:W2, index:2}
+    // startOfTargetWindowIndex = 1
+    // postTargetTabIndex = 3
+    // numberOfWindowTabsBeforeTarget = 3 - 1
+    
+    // Scenario #2, moving 3 tabs from 2 windows to right of 2 tabs on window2:
+    // w1t1 w2[0] w2[1] => {window:W2, index:2}
+    // startOfTargetWindowIndex = 1
+    // postTargetTabIndex = -1
+    // numberOfWindowTabsBeforeTarget = 3 - 1 == 2
+    
+    let postTargetTabIndex = tabItems.slice(startOfTargetWindowIndex).
+	findIndex((item) => (windowCounter.index(item.windowID) > targetWindowIndex ||
+                             (windowCounter.index(item.windowID) == targetWindowIndex &&
+                              item.tabIndex >= targetIndex)));
+    let numberOfWindowTabsBeforeTarget = (postTargetTabIndex == -1 ?
+					  tabItems.length - startOfTargetWindowIndex :
+					  postTargetTabIndex - startOfTargetWindowIndex);
+    if (numberOfWindowTabsBeforeTarget == 0) {
+	// source tabs on target tab's window, but only to right of target - tabs.move ok
         await browser.tabs.move(tabIDs, moveProperties);
     } else {
+	// tabs.move has trouble inserting on same window to right of source tabs,
+	// so workaround:
         // Move all the tabs to the end of the target window,
         // and then bounce them back to the desired slot.
+	result.repopulate = false;
         moveProperties.index = -1;
         await browser.tabs.move(tabIDs, moveProperties);
-        moveProperties.index = targetIndex - currentWindowTabsBeforeOrAtTargetIndex.length;
-        await browser.tabs.move(tabIDs, moveProperties);
+	// Don't know why, but this only works if the tabbars sync up before the second move
+	setTimeout(function() {
+	    moveProperties.index = targetIndex - numberOfWindowTabsBeforeTarget;
+            browser.tabs.move(tabIDs, moveProperties).
+		then(populateTabList).
+		catch(function(err) {
+		    console.log("tabhunter: moving tabs back: " + err);
+		});
+	}, 1);
     }
-    populateTabListAndReselect();
 }
 
 function selectMovedTargetNodes(attempt, actualIndices) {
@@ -978,11 +994,11 @@ function onTablistDropHandler(event) {
         event.preventDefault();
         removeDragTargetIndicator();
         var actualIndices = event.dataTransfer.getData("text").split(/,/).map((x) => parseInt(x, 10));
-        let [targetIndex, finalTargetNode, targetTabInfo] = getDropIndexWithTabInfo(event, actualIndices);
-        if (targetIndex === null || finalTargetNode === undefined) {
+        let [targetIndex, targetTabInfo] = getDropIndexWithTabInfo(event, actualIndices);
+        if (targetIndex === null) {
             return;
         }
-        moveTabsToAnotherTab(actualIndices, targetIndex, finalTargetNode, targetTabInfo);
+        moveTabsToAnotherTab(actualIndices, targetIndex, targetTabInfo);
     } catch(ex) {
         console.log(`tabhunter: error on drag/drop drop handler: ${ex}`);
     }
