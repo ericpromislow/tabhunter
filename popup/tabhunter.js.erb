@@ -299,10 +299,7 @@ const comparisonFunctions = {'Title': compareByTitle,
                              'Position': compareByWindowTab};
 
 function sortByWithReverseCheck(tab1, tab2) {
-    var negateResult = sortByReverse ? -1 : 1;
-    var res = sortBy(tab1, tab2);
-    return res * negateResult;
-    // return (sortByReverse ? -1 : 1) * sortBy(tab1, tab2);
+    return (sortByReverse ? -1 : 1) * sortBy(tab1, tab2);
 }
 
 function getReadableAge(ts) {
@@ -777,6 +774,18 @@ function getSelectedItemsJQ() {
 
 function onTablistDragStartHandler(event) {
     try {
+	if (sortByReverse) {
+	    let msg = document.getElementById("activity").innerText;
+	    let extra = ". Drag/drop disabled when viewing tabs in reverse-order.-- It's just too weird";
+	    if (msg.indexOf(extra) == -1) {
+		msg += extra;
+	    }
+	    document.getElementById("activity").innerText = msg;
+	    setTimeout(updateActivity, 15 * 1000);
+            event.stopPropagation();
+	    event.preventDefault();
+	    return false;
+	}
         var selectedItems = getSelectedItemsJQ();
         if (selectedItems.length == 0) {
             return;
@@ -802,50 +811,18 @@ function getDropIndexWithTabInfo(event, actualIndices) {
         return [actualIndex, targetNode, undefined];
     }
     let actualListItem = null, fixedTabIndex = 0, actualTab;
-    if (sortByReverse) {
-        // Gravity flows up in this case
-        if (actualIndex == -1) {
-            actualListItem = tablist.lastChild;
-            actualTab = items[actualListItem.actualIndex];
-            fixedTabIndex = actualTab.tabIndex;
-        } else if (actualIndex == 0) {
-            actualListItem = tablist.firstChild;
-            actualListItem = targetNode;
-            actualTab = items[actualListItem.actualIndex];
-            fixedTabIndex = -1;
-        } else {
-            // In list say we push between nodes 2 and 1 (so we're near the right)
-            //       [8]
-            //        v
-            //     [2]  [1]  [0]  <
-            // getDropIndex wants to put it before [1]
-            // but in reality we're looking at this:
-            //
-            //            [8]
-            //             v
-            //   > [0]  [1]  [2]   ==>
-            //   > [0]  [1]  [8]  [2] which reversed will look like
-            //     [2]  [8]  [1]  [0]
-            //   so we want to insert it just before node [2]
-            //   so in reverse mode the desired tab-index is the previous sibling's.
-            actualListItem = targetNode.previousSibling;
-            actualTab = items[actualListItem.actualIndex];
-            fixedTabIndex = actualTab.tabIndex;
-        }
+    if (actualIndex == -1) {
+        actualListItem = tablist.lastChild;
+        actualTab = items[actualListItem.actualIndex];
+        fixedTabIndex = -1;
+    } else if (actualIndex == 0) {
+        actualListItem = targetNode;
+        actualTab = items[targetNode.actualIndex];
+        fixedTabIndex = actualTab.tabIndex;
     } else {
-        if (actualIndex == -1) {
-            actualListItem = tablist.lastChild;
-            actualTab = items[actualListItem.actualIndex];
-            fixedTabIndex = -1;
-        } else if (actualIndex == 0) {
-            actualListItem = targetNode;
-            actualTab = items[targetNode.actualIndex];
-            fixedTabIndex = actualTab.tabIndex;
-        } else {
-            actualListItem = targetNode;
-            actualTab = items[actualListItem.actualIndex];
-            fixedTabIndex = actualTab.tabIndex;
-        }
+        actualListItem = targetNode;
+        actualTab = items[actualListItem.actualIndex];
+        fixedTabIndex = actualTab.tabIndex;
     }
     return [fixedTabIndex, actualListItem, actualTab];
 }
@@ -854,25 +831,13 @@ function getDropIndexWithTabInfo(event, actualIndices) {
 // returns [tabIndex, listItem]
 // If we're pointing into a block of selected items, find the first one in the list
 function getDropIndexAtStartOfRun(listItem, actualIndices) {
-/*
-    if (actualIndices.indexOf(listItem.actualIndex) != -1) {
-        while (listItem.previousSibling &&
-               actualIndices.indexOf(listItem.previousSibling.actualIndex) != -1) {
-            listItem = listItem.previousSibling;
-        }
-    }
-*/
     console.log(`QQQ: getDropIndexAtStartOfRun start at line ${listItem.actualIndex}`);
     let isSelected = function(elt) {
         return elt.classList.contains('selected');
     };
-    // Insertion goes at the start (end if reversed) of a sequence of selected items --
-    // doesn't make sense to try to drop a bunch of tabs right in the middle of two
-    // selected tabs in the same list.
-    var method = sortByReverse ? 'nextSibling' : 'previousSibling';
     if (isSelected(listItem)) {
-        while (listItem[method] && isSelected(listItem[method])) {
-            listItem = listItem[method];
+        while (listItem.previousSibling && isSelected(listItem.previousSibling)) {
+            listItem = listItem.previousSibling;
             console.log(`QQQ: getDropIndexAtStartOfRun move to line ${listItem.actualIndex}`);
         }
     }
