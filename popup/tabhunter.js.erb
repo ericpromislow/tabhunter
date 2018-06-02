@@ -913,25 +913,23 @@ async function moveTabsToAnotherTab(actualIndices, targetIndex, finalTargetNode,
     let targetWindowID = targetTabInfo.windowID;
     var targetWindowIndex = windowCounter.index(targetWindowID);
     var tabItems = actualIndices.map((index) => items[index]);
-    let earlierWindowTabs, currentWindowTabsBeforeOrAtTargetIndex, laterWindowTabs;
-    //let leftTabIDs = centralTabIDs = [], rightTabIDs = [];
+    let tabIDs = tabsFromItems(tabItems);
+    let currentWindowTabsBeforeOrAtTargetIndex;
+
     let borderIndex = tabItems.findIndex((item) => windowCounter.index(item.windowID) >= targetWindowIndex);
     if (borderIndex == -1) {
 	//leftTabIDs = tabItems;
-	earlierWindowTabs = tabItems;
-	currentWindowTabsBeforeOrAtTargetIndex = laterWindowTabs = [];
+	currentWindowTabsBeforeOrAtTargetIndex = [];
     } else {
-	earlierWindowTabs = tabItems.splice(0, borderIndex);
+	tabItems.splice(0, borderIndex);
 	borderIndex = tabItems.findIndex((item) => (windowCounter.index(item.windowID) > targetWindowIndex ||
 						    (windowCounter.index(item.windowID) == targetWindowIndex &&
 						     item.tabIndex >= targetIndex)));
 	if (borderIndex == -1) {
 	    // All the remaining tabs are to the left of the target
 	    currentWindowTabsBeforeOrAtTargetIndex = tabItems;
-	    laterWindowTabs = [];
 	} else {
 	    currentWindowTabsBeforeOrAtTargetIndex = tabItems.splice(0, borderIndex);
-	    laterWindowTabs = tabItems;
 	}
     }
     let populateTabListAndReselect = function() {
@@ -941,27 +939,14 @@ async function moveTabsToAnotherTab(actualIndices, targetIndex, finalTargetNode,
     let moveProperties = { windowId: targetWindowID,
                            index: targetIndex };
     if (currentWindowTabsBeforeOrAtTargetIndex.length == 0) {
-        await browser.tabs.move(tabsFromItems(earlierWindowTabs).concat(tabsFromItems(laterWindowTabs)),
-				moveProperties);
-        populateTabListAndReselect();
-        return;
-    }
-    // Push the tabs in 3 parts:
-    if (earlierWindowTabs.length > 0) {
-        await browser.tabs.move(tabsFromItems(earlierWindowTabs), moveProperties)
-        moveProperties.index += earlierWindowTabs.length;
-    }
-    // grrr --- move them to the end, and then bounce them to their final spot
-    
-    let eventualIndex = moveProperties.index - currentWindowTabsBeforeOrAtTargetIndex.length;
-    moveProperties.index = -1;
-    await browser.tabs.move(tabsFromItems(currentWindowTabsBeforeOrAtTargetIndex), moveProperties);
-    moveProperties.index = eventualIndex;
-    await browser.tabs.move(tabsFromItems(currentWindowTabsBeforeOrAtTargetIndex), moveProperties);
-    
-    if (laterWindowTabs.length > 0) {
-        moveProperties.index += currentWindowTabsBeforeOrAtTargetIndex.length;
-        await browser.tabs.move(tabsFromItems(laterWindowTabs), moveProperties);
+        await browser.tabs.move(tabIDs, moveProperties);
+    } else {
+	// Move all the tabs to the end of the target window,
+	// and then bounce them back to the desired slot.
+	moveProperties.index = -1;
+        await browser.tabs.move(tabIDs, moveProperties);
+	moveProperties.index = targetIndex - currentWindowTabsBeforeOrAtTargetIndex.length;
+        await browser.tabs.move(tabIDs, moveProperties);
     }
     populateTabListAndReselect();
 }
