@@ -1080,28 +1080,58 @@ function updateActivity() {
     document.getElementById("activity").innerText = text;
 }
 
+function doRemoveFromList(selectedItems, cb) {
+    var clientWidth = selectedItems[0].clientWidth - 100;
+    const widthToTraverse = 0.8 * clientWidth;
+    const timeForAnimation = 20; //ticks
+    const a = 2.0 * widthToTraverse / (timeForAnimation * timeForAnimation);
+    const delay = 10;
+    let dx = 0;
+    let doDeleteItems = function(i) {
+        if (i > timeForAnimation) {
+	    for (let item of selectedItems) {
+		item.parentNode.removeChild(item);
+	    }
+	    cb();
+        } else {
+	    // i^2 - (i - 1)^2 = - (-2i + 1) == 2i - 1
+	    let delta = (a / 2.0) * (2 * i - 1);
+	    dx += delta;
+	    for (let item of selectedItems) {
+		item.style.paddingLeft = (20 + dx) + 'px';
+		item.style.backgroundPositionX = dx + 'px';
+	    }
+            setTimeout(doDeleteItems, delay, i + 1);
+        }
+    };
+    doDeleteItems(1);
+}
+
+
 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl
 function doCloseTabsButton() {
     var selectedItems = getSelectedItemsJQ();
     if (selectedItems.length == 0) {
         return;
     }
-    var tabIds = selectedItems.map(function(selectedItem) {
-        return items[selectedItem.actualIndex].tabID;
+    doRemoveFromList(selectedItems, function() {
+	let tabIds = selectedItems.map(function(selectedItem) {
+            return items[selectedItem.actualIndex].tabID;
+	});
+	let removeTabError = function(err) {
+            let msg = "Error removing tab: ";
+            if (typeof(err) == "string") {
+		msg += err;
+            } else {
+		msg += err.message;
+            }
+            alert("Error removing tab: " + msg);
+	}
+	let removeTabOK = function() {
+            setTimeout(populateTabList, 10);
+	}
+	browser.tabs.remove(tabIds).then(removeTabOK, removeTabError);
     });
-    var removeTabError = function(err) {
-        var msg = "Error removing tab: ";
-        if (typeof(err) == "string") {
-            msg += err;
-        } else {
-            msg += err.message;
-        }
-        alert("Error removing tab: " + msg);
-    }
-    var removeTabOK = function() {
-        setTimeout(populateTabList, 10);
-    }
-    browser.tabs.remove(tabIds).then(removeTabOK, removeTabError);
 }
 
 function gatherText(fn) {
