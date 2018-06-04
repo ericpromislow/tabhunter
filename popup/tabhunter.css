@@ -72,16 +72,17 @@ span.show {
     visibility: visible;
 }
 
-div#moveToWindowArea {
+div.subarea {
     padding-left: 6pt;
+    padding-bottom: 2pt;
 }
 
-div#moveToWindowArea.hide {
+div.subarea.hide {
     display: none;
     visibility: hidden;
 }
 
-div#moveToWindowArea.show {
+div.subarea.show {
     border-top: 1px solid;
     padding-top: 2pt;
     display: block;
@@ -96,10 +97,6 @@ div#statusbar.hide {
 div#statusbar.show {
     display: block;
     visibility: visible;
-}
-
-div#moveToWindowArea {
-    padding-bottom: 2pt;
 }
 
 div#moveToBookmarkContainer {
@@ -206,4 +203,14 @@ span#activity {
 
 #textarea {
     display: none;
+}
+
+div#statusbar-text.hide {
+    display: none;
+    visibility: hidden;
+}
+
+div#statusbar-text.show {
+    display: block;
+    visibility: visible;
 }

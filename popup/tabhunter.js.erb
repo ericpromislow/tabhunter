@@ -1,6 +1,6 @@
 // tabhunter.js -- See LICENSE.txt for copyright and license details. 
 
-var thMainFunc = (function() {
+var thMainFunc = (function() {  //    })
 
 var items = [];
 var selectedIndex;    // visible
@@ -16,6 +16,9 @@ var matchCloseTabs;
 var showAudioButton;
 var hideDiscardedTabsButton;
 var moveToWindowButton;
+var showSearchTextAreaButton;
+var searchTextField;
+var searchTextSearchButton;
 var discardTabsButton;
 var activateTabsButton;
 var hasDiscardedTabs;
@@ -44,12 +47,15 @@ const DEFAULT_BASE_FONT_SIZE = 12;
 function init() {
     var list = document.getElementById("list");
     mainPattern = document.getElementById("pattern");
+    searchTextField = document.getElementById("searchText");
     textarea = document.getElementById("textarea");
     g_activeTab = -1;
 
     tablist = list;
 
     mainPattern.addEventListener("input", onPatternChanged, false);
+    searchTextField.addEventListener("input", onSearchTextFieldChanged, false);
+    searchTextField.addEventListener("keydown", onSearchTextFieldKeyup, true);
     document.addEventListener("keydown", processArrowKey, false);
     document.getElementById("go").addEventListener("mouseup", doGoButton, false);
     closeTabsButton = document.getElementById("closeTabs");
@@ -69,6 +75,10 @@ function init() {
     
     moveToWindowButton = document.getElementById("moveToWindow");
     moveToWindowButton.addEventListener("mouseup", showWindowMover, false);
+    showSearchTextAreaButton = document.getElementById("showSearchTextPanel");
+    showSearchTextAreaButton.addEventListener("mouseup", showSearchTextArea, false);
+    searchTextSearchButton = document.getElementById("searchTextSearchButton");
+    searchTextSearchButton.addEventListener("mouseup", doSearchForTheText, false);
 
     discardTabsButton = document.getElementById("discardSelectedTabs");
     discardTabsButton.addEventListener("mouseup", discardTheTabs, false);
@@ -1172,6 +1182,23 @@ function doCopyURLTitleButton() {
     setClipboard(text);
 }
 
+function showSearchTextArea() {
+    hideWindowMover();
+    showSearchTextAreaButton.removeEventListener("mouseup", showSearchTextArea, false);
+    showSearchTextAreaButton.addEventListener("mouseup", hideSearchTextArea, false);
+    $("div#searchTextArea").removeClass("hide").addClass("show");
+    $("span#showSearchText").removeClass("show").addClass("hide");
+    $("span#hideSearchText").removeClass("hide").addClass("show");
+}
+
+function hideSearchTextArea() {
+    showSearchTextAreaButton.removeEventListener("mouseup", hideSearchTextArea, false);
+    showSearchTextAreaButton.addEventListener("mouseup", showSearchTextArea, false);
+    $("div#searchTextArea").removeClass("show").addClass("hide");
+    $("span#showSearchText").removeClass("hide").addClass("show");
+    $("span#hideSearchText").removeClass("show").addClass("hide");
+}
+
 function showWindowMover() {
     moveToWindowButton.removeEventListener("mouseup", showWindowMover, false);
     moveToWindowButton.addEventListener("mouseup", hideWindowMover, false);
@@ -1431,6 +1458,32 @@ function getModifierMask(event) {
             (event.altKey ? ALT_KEY : 0 ) |
             (event.metaKey ?  CTRL_KEY: 0 ) |
             (event.commandKey ? CTRL_KEY : 0 ));
+}
+
+// Things for dealing with searching tabs
+
+function onSearchTextFieldKeyup(event, calledFromInit) {
+    console.log(`QQQ: onSearchTextFieldKeyup: event.keyCode:${event.keyCode}`);
+    if (typeof(calledFromInit) == undefined) calledFromInit = false;
+    if (event.keyCode == 13 && getModifierMask(event) == 0) {
+	event.preventDefault();
+	event.stopPropagation();
+	if (!searchTextSearchButton.disabled) {
+	    console.log(`QQQ: go do stuff`);
+	} else {
+	    console.log(`QQQ: nothing to search`);
+	}
+	return true;
+    }
+    return false;
+}
+
+function onSearchTextFieldChanged(event, calledFromInit) {
+    console.log(`QQQ: onSearchTextFieldChanged: value:[${event.target.value}]`);
+    searchTextSearchButton.disabled = (event.target.value.length == 0);
+}
+
+function doSearchForTheText(event) {
 }
 
 return {
