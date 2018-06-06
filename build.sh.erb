@@ -8,6 +8,7 @@ target=<%= ENV['TARGET'] or die("tabhunter/build.sh.erb: TARGET not set") %>
 zip -r build/tabhunter-${target}-${version}.zip LICENSE.txt README.md \
    _locales/ icons/ manifest.json \
    popup/{tabhunter,prefs}.{css,html,js} \
+   content/matchText.js \
    popup/jquery-3.2.1.min.js \
    popup/images \
 <% if ENV['TARGET'] == 'chrome' %>

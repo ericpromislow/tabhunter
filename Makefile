@@ -21,6 +21,7 @@ SOURCES=$(TDIR) $(TBDIR) $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TD
 		$(TDIR)/README.md  \
 		$(TDIR)/build.sh  \
 		$(TDIR)/manifest.json  \
+		$(TDIR)/content/matchText.js \
 		$(TDIR)/popup/jquery-3.2.1.min.js \
 		$(TDIR)/popup/prefs.css \
 		$(TDIR)/popup/prefs.html \
@@ -95,6 +96,9 @@ $(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill-0.2.1.min.js
 	cp $< $@
 
 $(TDIR)/popup/jquery-3.2.1.min.js: popup/jquery-3.2.1.min.js
+	cp $< $@
+
+$(TDIR)/content/matchText.js: content/matchText.js
 	cp $< $@
 
 $(TDIR)/popup/prefs.css: popup/prefs.css

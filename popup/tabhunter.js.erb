@@ -1468,10 +1468,8 @@ function onSearchTextFieldKeyup(event, calledFromInit) {
     if (event.keyCode == 13 && getModifierMask(event) == 0) {
 	event.preventDefault();
 	event.stopPropagation();
-	if (!searchTextSearchButton.disabled) {
-	    console.log(`QQQ: go do stuff`);
-	} else {
-	    console.log(`QQQ: nothing to search`);
+	if (!searchTextSearchButton.disabled && searchTextField.value.length > 0) {
+	    doSearchForTheText();
 	}
 	return true;
     }
