@@ -42,7 +42,7 @@ do-firefox: $(TDIRS) $(ZIPPER)
 
 do-chrome: $(TDIRS) $(TDIR)/popup/browser-polyfill.min.js $(ZIPPER) 
 
-$(ZIPPER): $(SOURCES)
+$(ZIPPER): $(SOURCES) Makefile
 	cd $(TDIR) ; ./build.sh
 
 build:
