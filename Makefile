@@ -5,7 +5,7 @@ TDIR=build/${TARGET}
 TBDIR=$(TDIR)/build
 ZIPPER=$(TBDIR)/tabhunter-$(TARGET)-$(VERSION).zip
 TDIRS=$(TDIR) $(TDIR)/build $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons \
-	$(TDIR)/popup $(TDIR)/popup/images
+	$(TDIR)/popup $(TDIR)/popup/images $(TDIR)/content
 
 SOURCES=$(TDIR) $(TBDIR) $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup \
 		$(TDIR)/_locales/en/messages.json \
@@ -49,7 +49,7 @@ $(ZIPPER): $(SOURCES)
 build:
 	mkdir -p $@
 
-$(TDIR) $(TDIR)/build $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup $(TDIR)/popup/images:
+$(TDIR) $(TDIR)/build $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TDIR)/popup $(TDIR)/popup/images $(TDIR)/content:
 	mkdir -p $@
 
 $(TDIR)/_locales/en/messages.json: _locales/en/messages.json
@@ -98,8 +98,9 @@ $(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill-0.2.1.min.js
 $(TDIR)/popup/jquery-3.2.1.min.js: popup/jquery-3.2.1.min.js
 	cp $< $@
 
-$(TDIR)/content/matchText.js: content/matchText.js
-	cp $< $@
+$(TDIR)/content/matchText.js: content/matchText.js.erb
+	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
+	node -c $@
 
 $(TDIR)/popup/prefs.css: popup/prefs.css
 	cp $< $@

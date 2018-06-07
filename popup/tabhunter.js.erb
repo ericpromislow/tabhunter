@@ -1,4 +1,5 @@
 // tabhunter.js -- See LICENSE.txt for copyright and license details. 
+// -*- Mode: javascript; indent-tab-mode: nil; js-indent-level: 4 -*-
 
 var thMainFunc = (function() {  //    })
 
@@ -101,6 +102,7 @@ function init() {
     $("button").mousedown(doMouseDown);
     $("button").mouseup(doMouseUp);
 
+
     var gotPatternOK = function(item) {
         if ('pattern' in item) {
             mainPattern.value = item.pattern;
@@ -113,6 +115,7 @@ function init() {
     var gotPatternErr = function(err) {
         restoreAudioSetting();
     };
+    browser.runtime.onMessage.addListener(handleSearchTextResponse)
     browser.storage.local.get("pattern").then(gotPatternOK, gotPatternErr);
 }
 
@@ -1463,7 +1466,6 @@ function getModifierMask(event) {
 // Things for dealing with searching tabs
 
 function onSearchTextFieldKeyup(event, calledFromInit) {
-    console.log(`QQQ: onSearchTextFieldKeyup: event.keyCode:${event.keyCode}`);
     if (typeof(calledFromInit) == undefined) calledFromInit = false;
     if (event.keyCode == 13 && getModifierMask(event) == 0) {
 	event.preventDefault();
@@ -1477,11 +1479,47 @@ function onSearchTextFieldKeyup(event, calledFromInit) {
 }
 
 function onSearchTextFieldChanged(event, calledFromInit) {
-    console.log(`QQQ: onSearchTextFieldChanged: value:[${event.target.value}]`);
     searchTextSearchButton.disabled = (event.target.value.length == 0);
 }
 
 function doSearchForTheText(event) {
+    if (searchTextField.value.length == 0) {
+	return;
+    }
+    let i = 0;
+    for (i = 0; i < matchedItems.length; i += 1) {
+	if (items[matchedItems[i]].discarded) {
+	    console.log(`QQQ: tab ${i} ${matchedItems[i]} ${items[matchedItems[i]].title} is discarded`);
+	    continue;
+	} else if (items[matchedItems[i]].url.indexOf("about:") == 0) {
+	    console.log(`QQQ: tab ${i} ${matchedItems[i]} ${items[matchedItems[i]].title} is internal`);
+	    continue;
+	}
+	break;
+    }
+    if (i == matchedItems.length) {
+	alert("???? All tabs are discarded");
+	return;
+    }
+    let matchedItemIndex = i;
+    let itemIndex = matchedItems[i];
+    let tabID = items[itemIndex].tabID;
+    console.log(`QQQ: searching in tab ${items[itemIndex].title}`);
+    let payload = { matchedItemIndex: matchedItemIndex, tabID: tabID, pattern: searchTextField.value  };
+    let response = browser.tabs.sendMessage(tabID, payload);
+    console.log(`QQQ: browser.tabs.sendMessage => ${response}`);
+    response.then((message) => {
+	console.log(`QQQ: search result resolved to...`);
+	console.table(message);
+    }).catch((err) => {
+	console.log(`QQQ: search result failed: ${err}`);
+	console.table(err);
+    });
+}
+
+function handleSearchTextResponse(message, sender) {
+    // How do we know whether this is coming from
+    console.table(message);
 }
 
 return {

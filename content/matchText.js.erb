@@ -1,16 +1,50 @@
 // -*- Mode: javascript; indent-tabs-mode: nil; js-indent-level: 4 -*- 
 
-browser.runtime.onMessage.addListener(matchText);
+//console.log(`QQQ: **** >> matchText.js`);
+<% if ENV['TARGET'] == 'firefox' %>
+browser.
+<% else %>
+chrome.
+<% end %>
+runtime.onMessage.addListener(matchText);
+
+//alert("QQQ: hey it's a content script");
 
 function matchText(message, sender, sendResponse) {
-    var textContent = document.innerHTML;
+    try {
+    // alert(`QQQ: **** >> matchText: message: ${message}`);
+    //console.log(`QQQ: **** >> matchText: message:`);
+        //console.table(message);
+        var s = [];
+        var thing = document.documentElement;
+        for (var p in thing) {
+            let v = thing[p];
+            if (!(/^[A-Z_]+$/.test(p))) {
+                s.push(p);
+            }
+        }
+        // alert(`QQQ: things in doc: ${s.sort().join(" ")}`);
+        var textContent = thing.innerHTML;
+        // alert(`QQQ: **** doc len for tab ${message.tabID}: ${textContent.length} chars`);
+        var pattern = message.pattern;
     var result = [matchPlainText, matchRegex, matchXPath].
-            some((fn) => fn(pattern, textContent));
-    sendResponse({result: result});
+        some((fn) => fn(pattern, textContent));
+    message.result = result;
+        // alert(`QQQ: matchText: send back message ${message}`);
+        return new Promise.resolve(message)
+        sendResponse(message);
+    } catch(ex) {
+        alert(`QQQ: matchText: ex: ${ex}`);
+    }
+        return true;
 }
 
 function matchPlainText(pattern, textContent) {
-    return textContent.indexOf(pattern) >= 0;
+    var res = textContent.indexOf(pattern) >= 0;
+    if (res) {
+        return res;
+    }
+    return (textContent.toLowerCase()).indexOf(pattern.toLowerCase()) >= 0;
 }
 
 function matchRegex(pattern, textContent) {
@@ -18,8 +52,16 @@ function matchRegex(pattern, textContent) {
         return false;
     }
     try {
-        let p = new RegExp(pattern);
-        return p.test(textContent);
+        let p = new RegExp(pattern, 'i');
+        let result = p.test(textContent);
+        if (result) {
+            return result;
+        }
+        let m = /^\/(.*)\/$/.exec(pattern);
+        if (m) {
+            p = new RegExp(m[1], 'i');
+            return p.test(textContent);
+        }
     } catch(ex) {}
     return false;
 }
@@ -33,7 +75,7 @@ function matchXPath(pattern) {
     try {
         return matchXPathAux(pattern);
     } catch(ex) {
-        console.log(`tabhunter: xpath search (#1): ${msg}`);
+        //alert(`tabhunter: xpath search (#1): ${msg}`);
         return false;
     }
 }
@@ -47,7 +89,7 @@ function matchXPathAux(pattern) {
     var resultType = XPathResult.ANY_TYPE;
     var nodeSet = null;
     try {
-        nodeSet = document.evaluate(xpathExpression, contextNode, namespaceResolver,
+        nodeSet = document.evaluate(pattern, contextNode, namespaceResolver,
                                     resultType, null);
         switch (nodeSet.resultType) {
         case XPathResult.NUMBER_TYPE:
@@ -70,7 +112,9 @@ function matchXPathAux(pattern) {
         var msg = ex.message;
         if (ex.inner) msg += "; " + ex.inner;
         if (ex.data) msg += "; " + ex.data;
-        console.log(`tabhunter: xpath search: ${msg}`);
+        //alert(`tabhunter: xpath search: ${msg}`);
     }
     return false;
 }
+
+console.log(`QQQ: **** << matchText.js`);
