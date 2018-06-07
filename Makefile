@@ -42,7 +42,7 @@ do-firefox: $(TDIRS) $(ZIPPER)
 
 do-chrome: $(TDIRS) $(TDIR)/popup/browser-polyfill.min.js $(ZIPPER) 
 
-$(ZIPPER): $(SOURCES) Makefile
+$(ZIPPER): $(SOURCES)
 	cd $(TDIR) ; ./build.sh
 
 build:
@@ -100,21 +100,21 @@ $(TDIR)/popup/jquery-3.2.1.min.js: popup/jquery-3.2.1.min.js
 $(TDIR)/popup/prefs.css: popup/prefs.css
 	cp $< $@
 
-$(TDIR)/popup/prefs.js: popup/prefs.js.erb
+$(TDIR)/popup/prefs.js: popup/prefs.js.erb Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 	node -c $@
 
 $(TDIR)/popup/tabhunter.css: popup/tabhunter.css
 	cp $< $@
 
-$(TDIR)/popup/tabhunter.html: popup/tabhunter.html.erb popup/_prefs.html.erb
+$(TDIR)/popup/tabhunter.html: popup/tabhunter.html.erb popup/_prefs.html.erb  Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
-$(TDIR)/popup/tabhunter.js: popup/tabhunter.js.erb
+$(TDIR)/popup/tabhunter.js: popup/tabhunter.js.erb Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 	node -c $@
 
-$(TDIR)/popup/prefs.html: popup/prefs.html.erb popup/_prefs.html.erb
+$(TDIR)/popup/prefs.html: popup/prefs.html.erb popup/_prefs.html.erb Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
 $(TDIR)/popup/images/restore12.png: popup/images/restore12.png
