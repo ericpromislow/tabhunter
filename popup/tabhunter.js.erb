@@ -45,6 +45,13 @@ var g_currentDragTarget = null, g_currentDragTargetClassName = null;
 var g_currentItemHeight = null;
 const DEFAULT_BASE_FONT_SIZE = 12;
 
+// Search stuff
+var tabsWithText; // Keep track of which tabs have scripts in them
+var originalMatchedItems; // Restore the matched tabs if search went bad
+var tabIDsForSearching; // Array of [tabID, item index]
+
+var searchTextProgressBar, searchTextPauseButton, searchTextCancelButton;
+
 function init() {
     var list = document.getElementById("list");
     mainPattern = document.getElementById("pattern");
@@ -95,6 +102,12 @@ function init() {
     finishMoveToBookmarkButton.addEventListener("mouseup", doMoveToBookmarkButton, false);
 <% end %>
 
+    searchTextProgressBar = document.getElementById("searchTextProgressBar");
+    searchTextPauseButton = document.getElementById("searchTextPauseButton");
+    searchTextPauseButton.addEventListener("mouseup", doSearchTextPause, false);
+    searchTextCancelButton = document.getElementById("searchTextCancelButton");
+    searchTextCancelButton.addEventListener("mouseup", doSearchTextCancel, false);
+    
     matchCloseTabs = /^(.*?)(s?)$/;
 
     $("button").mouseover(doMouseOver);
@@ -102,6 +115,8 @@ function init() {
     $("button").mousedown(doMouseDown);
     $("button").mouseup(doMouseUp);
 
+    // Search stuff
+    tabsWithText = new Set(); // set tabID when it's ready
 
     var gotPatternOK = function(item) {
         if ('pattern' in item) {
@@ -115,7 +130,6 @@ function init() {
     var gotPatternErr = function(err) {
         restoreAudioSetting();
     };
-    browser.runtime.onMessage.addListener(handleSearchTextResponse)
     browser.storage.local.get("pattern").then(gotPatternOK, gotPatternErr);
 }
 
@@ -606,11 +620,23 @@ function allowAll() {
 
 function onPatternChanged(event, calledFromInit) {
     if (typeof(calledFromInit) == undefined) calledFromInit = false;
-    matchedItems = [];
     var pattern = mainPattern.value;
+    browser.storage.local.set({"pattern": pattern});
+    buildMatchedItemsArray(pattern);
+    if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
+        // This can only be called once this way
+        showAudioButton.checked = g_showAudio = false;
+        // setTimeout to allow the button to get checked before the code continues.
+        setTimeout(onPatternChanged, 10, null, false);
+        return;
+    }
+    makeListFromMatchedItems();
+}
+
+function buildMatchedItemsArray(pattern) {
+    matchedItems = [];
     var ptn;
     var fn, winFnParts = [];
-    browser.storage.local.set({"pattern": pattern});
     if (pattern.length == 0) {
         fn = allowAll;
     } else {
@@ -624,7 +650,9 @@ function onPatternChanged(event, calledFromInit) {
             });
             if (m[2] !== undefined) {
                 let [startTabNum, endTabNum] = m[2].split('-', 2);
-                if (endTabNum.indexOf('-') >= 0) {
+		if (endTabNum == undefined) {
+		    endTabNum = 1000000;
+		} else if (endTabNum.indexOf('-') >= 0) {
                     console.log('Tabhunter: at most one dash allowed in a tab list');
                     //TODO: Write out an error message
                     winFnParts.push(function(item) {
@@ -667,7 +695,6 @@ function onPatternChanged(event, calledFromInit) {
         }
     }
     for (var i = 0; i < items.length; i++) {
-        // if (!winFnParts.every(function(f) { return f(); })) { }
         let item = items[i];
         if ((!winFnParts.every((f) => f(item)))
             || (g_showAudio && !item.audible)) {
@@ -683,14 +710,6 @@ function onPatternChanged(event, calledFromInit) {
             matchedItems.push(i);
         }
     }
-    if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
-        // This can only be called once this way
-        showAudioButton.checked = g_showAudio = false;
-        // setTimeout to allow the button to get checked before the code continues.
-        setTimeout(onPatternChanged, 10, null, false);
-        return;
-    }
-    makeListFromMatchedItems();
 }
 
 function setStatusBarMessage(msg) {
@@ -1185,13 +1204,44 @@ function doCopyURLTitleButton() {
     setClipboard(text);
 }
 
-function showSearchTextArea() {
+async function showSearchTextArea() {
     hideWindowMover();
     showSearchTextAreaButton.removeEventListener("mouseup", showSearchTextArea, false);
     showSearchTextAreaButton.addEventListener("mouseup", hideSearchTextArea, false);
     $("div#searchTextArea").removeClass("hide").addClass("show");
     $("span#showSearchText").removeClass("show").addClass("hide");
     $("span#hideSearchText").removeClass("hide").addClass("show");
+
+    tabIDsForSearching = [];
+    let t1 = new Date().valueOf();
+    let i = 0;
+    for (i = 0; i < matchedItems.length; i += 1) {
+	let index = matchedItems[i];
+	let item = items[index];
+	let tabID = item.tabID;
+	if (item.discarded) {
+	    console.log(`QQQ: tab ${i} ${index} ${item.title} is discarded`);
+	    continue;
+	} else if (item.url.indexOf("about:") == 0) {
+	    console.log(`QQQ: tab ${i} ${index} ${item.title} is internal`);
+	    continue;
+	} else if (tabsWithText.has(tabID)) {
+	    console.log(`QQQ: tab ${i}  ${item.title} already has a script`);
+	    continue;
+	} else {
+	    console.log(`QQQ: inject script ito tab ${item.title}`);
+	    try {
+		await browser.tabs.executeScript(tabID, { file: "/content/matchText.js",
+							  runAt: "document_end"} );
+		tabIDsForSearching.push([tabID, index]);
+	    } catch(ex) { 
+		console.log(`tabhunter: error trying to inject search script ito tab ${item.title}: ${ex}`);
+	    }
+	}
+    }
+    
+    let t2 = new Date().valueOf();
+    console.log(`QQQ: time to execute the scripts: ${(t2 - t1)/1000} msec`);
 }
 
 function hideSearchTextArea() {
@@ -1471,7 +1521,7 @@ function onSearchTextFieldKeyup(event, calledFromInit) {
 	event.preventDefault();
 	event.stopPropagation();
 	if (!searchTextSearchButton.disabled && searchTextField.value.length > 0) {
-	    doSearchForTheText();
+	    doSearchForTheText(event);
 	}
 	return true;
     }
@@ -1482,44 +1532,61 @@ function onSearchTextFieldChanged(event, calledFromInit) {
     searchTextSearchButton.disabled = (event.target.value.length == 0);
 }
 
-function doSearchForTheText(event) {
+// later: remove all the discarded tabs...
+async function doSearchForTheText(event) {
     if (searchTextField.value.length == 0) {
 	return;
     }
-    let i = 0;
-    for (i = 0; i < matchedItems.length; i += 1) {
-	if (items[matchedItems[i]].discarded) {
-	    console.log(`QQQ: tab ${i} ${matchedItems[i]} ${items[matchedItems[i]].title} is discarded`);
-	    continue;
-	} else if (items[matchedItems[i]].url.indexOf("about:") == 0) {
-	    console.log(`QQQ: tab ${i} ${matchedItems[i]} ${items[matchedItems[i]].title} is internal`);
-	    continue;
-	}
-	break;
-    }
-    if (i == matchedItems.length) {
-	alert("???? All tabs are discarded");
-	return;
-    }
-    let matchedItemIndex = i;
-    let itemIndex = matchedItems[i];
-    let tabID = items[itemIndex].tabID;
-    console.log(`QQQ: searching in tab ${items[itemIndex].title}`);
-    let payload = { matchedItemIndex: matchedItemIndex, tabID: tabID, pattern: searchTextField.value  };
-    let response = browser.tabs.sendMessage(tabID, payload);
-    console.log(`QQQ: browser.tabs.sendMessage => ${response}`);
-    response.then((message) => {
-	console.log(`QQQ: search result resolved to...`);
-	console.table(message);
-    }).catch((err) => {
-	console.log(`QQQ: search result failed: ${err}`);
-	console.table(err);
-    });
+    searchTextProgressBar.max = tabIDsForSearching.length;
+    searchTextProgressBar.value = 0;
+    originalMatchedItems = [].concat(matchedItems);
+    let searcher = new Searcher(tabIDsForSearching, searchTextField.value);
+    searcher.search(0);
 }
 
-function handleSearchTextResponse(message, sender) {
-    // How do we know whether this is coming from
-    console.table(message);
+function Searcher(tabIDsForSearching, pattern) {
+    this.pattern = pattern;
+    this.tabIDsForSearching = tabIDsForSearching;
+    this.successesByTabID = new Set();
+}
+
+Searcher.prototype = {
+    search: function(i) {
+	if (!('tabIDsForSearching' in this)) {
+	    console.log(`Not looking at a searcher: ${this.__proto__}`);
+	    return;
+	}
+	if (i >= this.tabIDsForSearching.length) {
+	    console.log(`Matched ${this.successesByTabID.size} hits`);
+	    return;
+	}
+	let [tabID, actualIndex] = this.tabIDsForSearching[i];
+	let payload = { matchedItemIndex: i, actualIndex: actualIndex, tabID: tabID, pattern: this.pattern };
+	console.log(`QQQ: background: browser.tabs.sendMessage(${i})...`);
+	let response = browser.tabs.sendMessage(tabID, payload);
+	response.then((message) => {
+	    console.log(`QQQ: search result resolved to...`);
+	    console.table(message);
+	    if (message.result) {
+		this.successesByTabID.add(message.tabID);
+	    }
+	    searchTextProgressBar.value += 1;
+	    setTimeout(this.search.bind(this), 10, i + 1);
+	}).catch((err) => {
+	    console.log(`QQQ: search result failed: ${err}`);
+	    console.table(err);
+	    searchTextProgressBar.value += 1;
+	    setTimeout(this.search.bind(this), 10, i + 1);
+	});
+    }
+}
+
+function doSearchTextPause(event) {
+    console.log(`QQQ: doSearchTextPause`);
+}
+
+function doSearchTextCancel(event) {
+    console.log(`QQQ: doSearchTextCancel`);
 }
 
 return {

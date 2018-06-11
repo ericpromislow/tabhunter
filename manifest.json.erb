@@ -24,12 +24,6 @@ target = ENV['TARGET'] or die("build.sh.erb: TARGET not set") %>{
       }
     }
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content/matchText.js"]
-    }
-  ],
   "default_locale": "en",
   "description": "Wade through all your tabs fast",
 <% if target == 'firefox' %>

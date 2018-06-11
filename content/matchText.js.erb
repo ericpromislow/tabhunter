@@ -1,6 +1,5 @@
 // -*- Mode: javascript; indent-tabs-mode: nil; js-indent-level: 4 -*- 
 
-//console.log(`QQQ: **** >> matchText.js`);
 <% if ENV['TARGET'] == 'firefox' %>
 browser.
 <% else %>
@@ -8,11 +7,8 @@ chrome.
 <% end %>
 runtime.onMessage.addListener(matchText);
 
-//alert("QQQ: hey it's a content script");
-
 function matchText(message, sender, sendResponse) {
     try {
-    // alert(`QQQ: **** >> matchText: message: ${message}`);
     //console.log(`QQQ: **** >> matchText: message:`);
         //console.table(message);
         var s = [];
@@ -23,18 +19,16 @@ function matchText(message, sender, sendResponse) {
                 s.push(p);
             }
         }
-        // alert(`QQQ: things in doc: ${s.sort().join(" ")}`);
         var textContent = thing.innerHTML;
-        // alert(`QQQ: **** doc len for tab ${message.tabID}: ${textContent.length} chars`);
         var pattern = message.pattern;
     var result = [matchPlainText, matchRegex, matchXPath].
         some((fn) => fn(pattern, textContent));
-    message.result = result;
-        // alert(`QQQ: matchText: send back message ${message}`);
-        return new Promise.resolve(message)
+        message.result = result;
+        //console.log(`QQQ: matchText: send back message ${message}`);
+        // return new Promise.resolve(message)
         sendResponse(message);
     } catch(ex) {
-        alert(`QQQ: matchText: ex: ${ex}`);
+        console.log(`QQQ: matchText: ex: ${ex}`);
     }
         return true;
 }
@@ -75,7 +69,7 @@ function matchXPath(pattern) {
     try {
         return matchXPathAux(pattern);
     } catch(ex) {
-        //alert(`tabhunter: xpath search (#1): ${msg}`);
+        console.log(`tabhunter: xpath search (#1): ${msg}`);
         return false;
     }
 }
@@ -112,9 +106,7 @@ function matchXPathAux(pattern) {
         var msg = ex.message;
         if (ex.inner) msg += "; " + ex.inner;
         if (ex.data) msg += "; " + ex.data;
-        //alert(`tabhunter: xpath search: ${msg}`);
+        console.log(`tabhunter: xpath search: ${msg}`);
     }
     return false;
 }
-
-console.log(`QQQ: **** << matchText.js`);
