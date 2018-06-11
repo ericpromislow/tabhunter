@@ -371,7 +371,6 @@ function populateTabList() {
     selectedIndex = 0;
     lastClickedIndex = -1;
     g_currentItemHeight = null;
-    matchedItems = [];
     const getAllProperties = {populate: true, windowTypes: ['normal']}
     const endTime = function(cmd) {
         t2 = (new Date()).valueOf();
@@ -1204,55 +1203,73 @@ function doCopyURLTitleButton() {
     setClipboard(text);
 }
 
-async function showSearchTextArea() {
+function disableSearchWidgets() {
+    mainPattern.readOnly = true;
+    showAudioButton.disabled = true;
+}
+
+function enableSearchWidgets() {
+    mainPattern.readOnly = false;
+    showAudioButton.disabled = false;
+}
+
+function showSearchTextArea() {
     hideWindowMover();
     showSearchTextAreaButton.removeEventListener("mouseup", showSearchTextArea, false);
     showSearchTextAreaButton.addEventListener("mouseup", hideSearchTextArea, false);
+    disableSearchWidgets();
     $("div#searchTextArea").removeClass("hide").addClass("show");
     $("span#showSearchText").removeClass("show").addClass("hide");
     $("span#hideSearchText").removeClass("hide").addClass("show");
+    originalMatchedItems = [].concat(matchedItems);
+    prepareForSearching();
+}
 
+async function prepareForSearching() {
     tabIDsForSearching = [];
     let t1 = new Date().valueOf();
-    let i = 0;
-    for (i = 0; i < matchedItems.length; i += 1) {
+    for (let i = matchedItems.length - 1; i >= 0; i -= 1) {
 	let index = matchedItems[i];
 	let item = items[index];
 	let tabID = item.tabID;
 	if (item.discarded) {
-	    console.log(`QQQ: tab ${i} ${index} ${item.title} is discarded`);
-	    continue;
+	    matchedItems.splice(i, 1);
+	    //console.log(`QQQ: tab ${i} ${index} ${item.title} is discarded`);
 	} else if (item.url.indexOf("about:") == 0) {
-	    console.log(`QQQ: tab ${i} ${index} ${item.title} is internal`);
-	    continue;
+	    matchedItems.splice(i, 1);
+	    //console.log(`QQQ: tab ${i} ${index} ${item.title} is internal`);
 	} else if (tabsWithText.has(tabID)) {
-	    console.log(`QQQ: tab ${i}  ${item.title} already has a script`);
-	    continue;
+	    //console.log(`QQQ: tab ${i}  ${item.title} already has a script`);
 	} else {
-	    console.log(`QQQ: inject script ito tab ${item.title}`);
+	    //console.log(`QQQ: inject script ito tab ${item.title}`);
 	    try {
 		await browser.tabs.executeScript(tabID, { file: "/content/matchText.js",
 							  runAt: "document_end"} );
 		tabIDsForSearching.push([tabID, index]);
-	    } catch(ex) { 
+	    } catch(ex) {
+		matchedItems.splice(i, 1);
 		console.log(`tabhunter: error trying to inject search script ito tab ${item.title}: ${ex}`);
 	    }
 	}
     }
-    
     let t2 = new Date().valueOf();
-    console.log(`QQQ: time to execute the scripts: ${(t2 - t1)/1000} msec`);
+    console.log(`QQQ: time to execute the scripts: ${(t2 - t1)} msec`);
+    makeListFromMatchedItems();
 }
 
 function hideSearchTextArea() {
     showSearchTextAreaButton.removeEventListener("mouseup", hideSearchTextArea, false);
     showSearchTextAreaButton.addEventListener("mouseup", showSearchTextArea, false);
+    enableSearchWidgets();
     $("div#searchTextArea").removeClass("show").addClass("hide");
     $("span#showSearchText").removeClass("hide").addClass("show");
     $("span#hideSearchText").removeClass("show").addClass("hide");
+    matchedItems = originalMatchedItems;
+    makeListFromMatchedItems();
 }
 
 function showWindowMover() {
+    //TODO: If we're going form 'pattern' to 'more', do the end-pattern restore stuff
     moveToWindowButton.removeEventListener("mouseup", showWindowMover, false);
     moveToWindowButton.addEventListener("mouseup", hideWindowMover, false);
     $("div#moveToWindowArea").removeClass("hide").addClass("show");
