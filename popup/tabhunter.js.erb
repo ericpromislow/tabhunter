@@ -18,6 +18,7 @@ var showAudioButton;
 var hideDiscardedTabsButton;
 var moveToWindowButton;
 var showSearchTextAreaButton;
+var searchTextArea;
 var searchTextField;
 var searchTextSearchButton;
 var discardTabsButton;
@@ -83,6 +84,7 @@ function init() {
     
     moveToWindowButton = document.getElementById("moveToWindow");
     moveToWindowButton.addEventListener("mouseup", showWindowMover, false);
+    searchTextArea = document.getElementById("searchTextArea");
     showSearchTextAreaButton = document.getElementById("showSearchTextPanel");
     showSearchTextAreaButton.addEventListener("mouseup", showSearchTextArea, false);
     searchTextSearchButton = document.getElementById("searchTextSearchButton");
@@ -117,6 +119,11 @@ function init() {
 
     // Search stuff
     tabsWithText = new Set(); // set tabID when it's ready
+    let observerOptions = {
+	attributes: true
+    };
+    let observer = new MutationObserver(onSearchTextAreaChanged);
+    observer.observe(searchTextArea, observerOptions);
 
     var gotPatternOK = function(item) {
         if ('pattern' in item) {
@@ -1258,14 +1265,25 @@ async function prepareForSearching() {
 }
 
 function hideSearchTextArea() {
+    $("div#searchTextArea").removeClass("show").addClass("hide");
+}
+
+function doHideSearchTextAreaDependencies() {
     showSearchTextAreaButton.removeEventListener("mouseup", hideSearchTextArea, false);
     showSearchTextAreaButton.addEventListener("mouseup", showSearchTextArea, false);
     enableSearchWidgets();
-    $("div#searchTextArea").removeClass("show").addClass("hide");
     $("span#showSearchText").removeClass("hide").addClass("show");
     $("span#hideSearchText").removeClass("show").addClass("hide");
     matchedItems = originalMatchedItems;
     makeListFromMatchedItems();
+}
+
+function onSearchTextAreaChanged(mutationList, observer) {
+    mutationList.forEach((mutation) => {
+	if (mutation.type == 'attributes' && searchTextArea.classList.contains('hide')) {
+	    doHideSearchTextAreaDependencies();
+	}
+    });
 }
 
 function showWindowMover() {
