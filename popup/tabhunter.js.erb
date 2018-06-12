@@ -193,7 +193,12 @@ function px(size) {
 }
 
 function getCloseOnGoPref() {
+    //TODO: fold the two closeOnGo settings and look for other
+    // settings that are in both prefs and outside it.
     let gotPrefOK = function(item) {
+	if ('searchTextField' in item) {
+	    searchTextField.value = item['searchTextField'];
+	}
         let prefs = item["prefs"];
         if (prefs && 'sortBy' in prefs) {
             sortBy = comparisonFunctions[prefs['sortBy']];
@@ -1228,11 +1233,11 @@ function showSearchTextArea() {
     $("div#searchTextArea").removeClass("hide").addClass("show");
     $("span#showSearchText").removeClass("show").addClass("hide");
     $("span#hideSearchText").removeClass("hide").addClass("show");
-    originalMatchedItems = [].concat(matchedItems);
     prepareForSearching();
 }
 
 async function prepareForSearching() {
+    originalMatchedItems = [].concat(matchedItems);
     tabIDsForSearching = [];
     let t1 = new Date().valueOf();
     for (let i = matchedItems.length - 1; i >= 0; i -= 1) {
@@ -1568,13 +1573,15 @@ function onSearchTextFieldChanged(event, calledFromInit) {
 }
 
 // later: remove all the discarded tabs...
-async function doSearchForTheText(event) {
+function doSearchForTheText(event) {
     if (searchTextField.value.length == 0) {
 	return;
     }
+    browser.storage.local.set({searchTextField: searchTextField.value}).then(() => {}, (err) => {
+	console.log(`tabhunter: failed to set item[searchTextField] : ${err}`);
+    });
     searchTextProgressBar.max = tabIDsForSearching.length;
     searchTextProgressBar.value = 0;
-    originalMatchedItems = [].concat(matchedItems);
     let searcher = new Searcher(tabIDsForSearching, searchTextField.value);
     searcher.search(0);
 }
