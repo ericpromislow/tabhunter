@@ -49,6 +49,7 @@ const DEFAULT_BASE_FONT_SIZE = 12;
 // Search stuff
 var tabsWithText; // Keep track of which tabs have scripts in them
 var originalMatchedItems; // Restore the matched tabs if search went bad
+var sessionMatchedItems; // Keep sorting on these in a session
 var tabIDsForSearching; // Array of [tabID, item index]
 
 var searchTextProgressBar, searchTextPauseButton, searchTextCancelButton;
@@ -1268,6 +1269,7 @@ async function prepareForSearching() {
     let t2 = new Date().valueOf();
     console.log(`QQQ: time to execute the scripts: ${(t2 - t1)} msec`);
     makeListFromMatchedItems();
+    sessionMatchedItems = [].concat(matchedItems);
 }
 
 function hideSearchTextArea() {
@@ -1582,13 +1584,22 @@ function doSearchForTheText(event) {
     if (searchTextField.value.length == 0) {
 	return;
     }
-    browser.storage.local.set({searchTextField: searchTextField.value}).then(() => {}, (err) => {
-	console.log(`tabhunter: failed to set item[searchTextField] : ${err}`);
-    });
-    searchTextProgressBar.max = tabIDsForSearching.length;
-    searchTextProgressBar.value = 0;
-    let searcher = new Searcher(tabIDsForSearching, searchTextField.value);
-    searcher.search(0);
+    let continueFunc = function() {
+	browser.storage.local.set({searchTextField: searchTextField.value}).then(() => {}, (err) => {
+	    console.log(`tabhunter: failed to set item[searchTextField] : ${err}`);
+	});
+	searchTextProgressBar.max = tabIDsForSearching.length;
+	searchTextProgressBar.value = 0;
+	let searcher = new Searcher(tabIDsForSearching, searchTextField.value);
+	searcher.search(0);
+    };
+    if (sessionMatchedItems.length > matchedItems.length) {
+	matchedItems = [].concat(sessionMatchedItems);
+	makeListFromMatchedItems();
+	setTimeout(continueFunc, 1);
+    } else {
+	continueFunc();
+    }
 }
 
 function Searcher(tabIDsForSearching, pattern) {
@@ -1612,18 +1623,30 @@ Searcher.prototype = {
 	console.log(`QQQ: background: browser.tabs.sendMessage(${i})...`);
 	let response = browser.tabs.sendMessage(tabID, payload);
 	response.then((message) => {
-	    console.log(`QQQ: search result resolved to...`);
-	    console.table(message);
-	    if (message.result) {
+	    if (!message.result) {
+		let actualIndex = message.actualIndex;
+		let matchedItemsIndex = matchedItems.findIndex((v) => v == actualIndex);
+		if (matchedItemsIndex == -1) {
+		    console.log(`tabhunter: can\'t find actualIndex:${actualIndex} in matchedItems:${matchedItems}`);
+		} else {
+		    matchedItems.splice(matchedItemsIndex, 1);
+		}
+		let childNodes = Array.prototype.slice.call(tablist.childNodes);
+		let node = childNodes.find((node) => node.actualIndex == actualIndex);
+		if (node ==- undefined) {
+		    console.log(`tabhunter: can\'t find actualIndex:${actualIndex} in ${tablist.childNodes} nodes`);
+		} else {
+		    node.parentNode.removeChild(node);
+		}
+	    } else {
 		this.successesByTabID.add(message.tabID);
 	    }
 	    searchTextProgressBar.value += 1;
-	    setTimeout(this.search.bind(this), 10, i + 1);
+	    setTimeout(this.search.bind(this), 1, i + 1);
 	}).catch((err) => {
-	    console.log(`QQQ: search result failed: ${err}`);
-	    console.table(err);
+	    console.log(`tabhunter: search result failed: ${err}`);
 	    searchTextProgressBar.value += 1;
-	    setTimeout(this.search.bind(this), 10, i + 1);
+	    setTimeout(this.search.bind(this), 1, i + 1);
 	});
     }
 }
