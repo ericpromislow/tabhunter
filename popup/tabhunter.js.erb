@@ -198,6 +198,7 @@ function getCloseOnGoPref() {
     let gotPrefOK = function(item) {
 	if ('searchTextField' in item) {
 	    searchTextField.value = item['searchTextField'];
+	    enableSearchTextButton(searchTextField);
 	}
         let prefs = item["prefs"];
         if (prefs && 'sortBy' in prefs) {
@@ -1569,7 +1570,11 @@ function onSearchTextFieldKeyup(event, calledFromInit) {
 }
 
 function onSearchTextFieldChanged(event, calledFromInit) {
-    searchTextSearchButton.disabled = (event.target.value.length == 0);
+    enableSearchTextButton(event.target);
+}
+
+function enableSearchTextButton(field) {
+    searchTextSearchButton.disabled = (field.value.length == 0);
 }
 
 // later: remove all the discarded tabs...
