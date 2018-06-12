@@ -53,6 +53,7 @@ var sessionMatchedItems; // Keep sorting on these in a session
 var tabIDsForSearching; // Array of [tabID, item index]
 
 var searchTextProgressBar, searchTextPauseButton, searchTextCancelButton;
+var searchTextPauseNow, searchTextCancelNow, currentSearcher;
 
 function init() {
     var list = document.getElementById("list");
@@ -108,7 +109,9 @@ function init() {
     searchTextProgressBar = document.getElementById("searchTextProgressBar");
     searchTextPauseButton = document.getElementById("searchTextPauseButton");
     searchTextPauseButton.addEventListener("mouseup", doSearchTextPause, false);
+    searchTextPauseButton.disabled = true;
     searchTextCancelButton = document.getElementById("searchTextCancelButton");
+    searchTextCancelButton.disabled = true;
     searchTextCancelButton.addEventListener("mouseup", doSearchTextCancel, false);
     
     matchCloseTabs = /^(.*?)(s?)$/;
@@ -1019,7 +1022,6 @@ function selectMovedTargetNodes(attempt, actualIndices) {
         matchedItemIndices.forEach((matchedItemIndex) => {
                 tablist.childNodes[matchedItemIndex].classList.add('selected');
             });
-            // console.log(`QQQ: matchedItemIndices:${matchedItemIndices}`);
             if (matchedItemIndices.every((index) => index >= 0)) {
                 matchedItemIndices.forEach((matchedItemIndex) => {
                         tablist.childNodes[matchedItemIndex].classList.add('selected');
@@ -1117,10 +1119,10 @@ function updateURL() {
 function updateActivity() {
     var pattern = mainPattern.value;
     var text;
-    if (pattern.length == 0 && !g_showAudio && !g_hideDiscardTabs) {
-        text = "Hunting through " + items.length + " tabs";
+    if (!pattern && matchedItems.length == items.length) {
+	text = `Hunting through ${items.length} tabs`;
     } else {
-        text = "Matched " + matchedItems.length + "/" + items.length + " tabs";
+	text = `Matched ${matchedItems.length}/${items.length} tabs`;
     }
     document.getElementById("activity").innerText = text;
 }
@@ -1241,21 +1243,17 @@ function showSearchTextArea() {
 async function prepareForSearching() {
     originalMatchedItems = [].concat(matchedItems);
     tabIDsForSearching = [];
-    let t1 = new Date().valueOf();
     for (let i = matchedItems.length - 1; i >= 0; i -= 1) {
 	let index = matchedItems[i];
 	let item = items[index];
 	let tabID = item.tabID;
 	if (item.discarded) {
 	    matchedItems.splice(i, 1);
-	    //console.log(`QQQ: tab ${i} ${index} ${item.title} is discarded`);
 	} else if (item.url.indexOf("about:") == 0) {
 	    matchedItems.splice(i, 1);
-	    //console.log(`QQQ: tab ${i} ${index} ${item.title} is internal`);
 	} else if (tabsWithText.has(tabID)) {
-	    //console.log(`QQQ: tab ${i}  ${item.title} already has a script`);
+	    // nothing to do
 	} else {
-	    //console.log(`QQQ: inject script ito tab ${item.title}`);
 	    try {
 		await browser.tabs.executeScript(tabID, { file: "/content/matchText.js",
 							  runAt: "document_end"} );
@@ -1266,8 +1264,6 @@ async function prepareForSearching() {
 	    }
 	}
     }
-    let t2 = new Date().valueOf();
-    console.log(`QQQ: time to execute the scripts: ${(t2 - t1)} msec`);
     makeListFromMatchedItems();
     sessionMatchedItems = [].concat(matchedItems);
 }
@@ -1579,6 +1575,12 @@ function enableSearchTextButton(field) {
     searchTextSearchButton.disabled = (field.value.length == 0);
 }
 
+function setSearchButtonsStatus(disabledStatus) {
+    searchTextPauseButton.disabled = disabledStatus;
+    searchTextCancelButton.disabled = disabledStatus;
+}
+	
+
 // later: remove all the discarded tabs...
 function doSearchForTheText(event) {
     if (searchTextField.value.length == 0) {
@@ -1590,8 +1592,10 @@ function doSearchForTheText(event) {
 	});
 	searchTextProgressBar.max = tabIDsForSearching.length;
 	searchTextProgressBar.value = 0;
-	let searcher = new Searcher(tabIDsForSearching, searchTextField.value);
-	searcher.search(0);
+	searchTextPauseNow = searchTextCancelNow = false;
+	setSearchButtonsStatus(false);
+	currentSearcher = new Searcher(tabIDsForSearching, searchTextField.value);
+	currentSearcher.search(0);
     };
     if (sessionMatchedItems.length > matchedItems.length) {
 	matchedItems = [].concat(sessionMatchedItems);
@@ -1606,6 +1610,7 @@ function Searcher(tabIDsForSearching, pattern) {
     this.pattern = pattern;
     this.tabIDsForSearching = tabIDsForSearching;
     this.successesByTabID = new Set();
+    this.interruptedIndex = -1;
 }
 
 Searcher.prototype = {
@@ -1613,14 +1618,22 @@ Searcher.prototype = {
 	if (!('tabIDsForSearching' in this)) {
 	    console.log(`Not looking at a searcher: ${this.__proto__}`);
 	    return;
-	}
-	if (i >= this.tabIDsForSearching.length) {
-	    console.log(`Matched ${this.successesByTabID.size} hits`);
+	} else if (i >= this.tabIDsForSearching.length) {
+	    setSearchButtonsStatus(true);
+	    makeListFromMatchedItems();
+	    //XXX: Put this in a status bar
+	    //console.log(`Matched ${this.successesByTabID.size} hits`);
+	    return;
+	} else if (searchTextPauseNow) {
+	    this.interruptedIndex = i;
+	    return;
+	} else if (searchTextCancelNow) {
+	    searchTextProgressBar.value = 0;
+	    setSearchButtonsStatus(true);
 	    return;
 	}
 	let [tabID, actualIndex] = this.tabIDsForSearching[i];
 	let payload = { matchedItemIndex: i, actualIndex: actualIndex, tabID: tabID, pattern: this.pattern };
-	console.log(`QQQ: background: browser.tabs.sendMessage(${i})...`);
 	let response = browser.tabs.sendMessage(tabID, payload);
 	response.then((message) => {
 	    if (!message.result) {
@@ -1630,13 +1643,6 @@ Searcher.prototype = {
 		    console.log(`tabhunter: can\'t find actualIndex:${actualIndex} in matchedItems:${matchedItems}`);
 		} else {
 		    matchedItems.splice(matchedItemsIndex, 1);
-		}
-		let childNodes = Array.prototype.slice.call(tablist.childNodes);
-		let node = childNodes.find((node) => node.actualIndex == actualIndex);
-		if (node ==- undefined) {
-		    console.log(`tabhunter: can\'t find actualIndex:${actualIndex} in ${tablist.childNodes} nodes`);
-		} else {
-		    node.parentNode.removeChild(node);
 		}
 	    } else {
 		this.successesByTabID.add(message.tabID);
@@ -1648,15 +1654,48 @@ Searcher.prototype = {
 	    searchTextProgressBar.value += 1;
 	    setTimeout(this.search.bind(this), 1, i + 1);
 	});
-    }
+    },
+    
+    resume: function() {
+	if (this.interruptedIndex == -1) {
+	    console.log(`tabhunter: No search to resume`);
+	    return;
+	}
+	setSearchButtonsStatus(false);
+	let i = this.interruptedIndex;
+	this.interruptedIndex = -1;
+	this.search(i);
+    },
+
+    inPausedSession: function() {
+	return this.interruptedIndex > -1;
+    },
+	
+    __EOT__: null
 }
 
 function doSearchTextPause(event) {
-    console.log(`QQQ: doSearchTextPause`);
+    let button = event.target;
+    if (button.innerText == "Pause") {
+	searchTextPauseNow = true;
+	button.innerText = "Resume";
+    } else {
+	button.innerText = "Pause";
+	doSearchTextResume();
+    }
+    
 }
 
 function doSearchTextCancel(event) {
-    console.log(`QQQ: doSearchTextCancel`);
+    searchTextCancelNow = true;
+    if (currentSearcher.inPausedSession()) {
+	doSearchTextResume();
+    }
+}
+
+function doSearchTextResume() {
+    searchTextPauseNow = false;
+    currentSearcher.resume();
 }
 
 return {
