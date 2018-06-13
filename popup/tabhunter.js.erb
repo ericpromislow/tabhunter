@@ -1626,9 +1626,11 @@ Searcher.prototype = {
 	    return;
 	} else if (searchTextPauseNow) {
 	    this.interruptedIndex = i;
+	    makeListFromMatchedItems();
 	    return;
 	} else if (searchTextCancelNow) {
 	    searchTextProgressBar.value = 0;
+	    makeListFromMatchedItems();
 	    setSearchButtonsStatus(true);
 	    return;
 	}
@@ -1643,6 +1645,12 @@ Searcher.prototype = {
 		    console.log(`tabhunter: can\'t find actualIndex:${actualIndex} in matchedItems:${matchedItems}`);
 		} else {
 		    matchedItems.splice(matchedItemsIndex, 1);
+		}
+		for (let item of Array.from(tablist.childNodes)) {
+		    if (item.actualIndex == actualIndex) {
+			item.parentNode.removeChild(item);
+			break;
+		    }
 		}
 	    } else {
 		this.successesByTabID.add(message.tabID);
