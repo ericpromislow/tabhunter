@@ -9,28 +9,48 @@ runtime.onMessage.addListener(matchText);
 
 function matchText(message, sender, sendResponse) {
     try {
-    //console.log(`QQQ: **** >> matchText: message:`);
-        //console.table(message);
-        var s = [];
-        var thing = document.documentElement;
-        for (var p in thing) {
-            let v = thing[p];
-            if (!(/^[A-Z_]+$/.test(p))) {
-                s.push(p);
-            }
-        }
-        var textContent = thing.innerHTML;
-        var pattern = message.pattern;
-    var result = [matchPlainText, matchRegex, matchXPath].
-        some((fn) => fn(pattern, textContent));
-        message.result = result;
-        //console.log(`QQQ: matchText: send back message ${message}`);
-        // return new Promise.resolve(message)
-        sendResponse(message);
+        message.result = matchTextAux(message.pattern, document.documentElement.innerHTML);
     } catch(ex) {
-        console.log(`QQQ: matchText: ex: ${ex}`);
+        console.log(`tabhunter: matching text failed: ${ex}`);
+        message.result = false;
     }
-    return true;
+    sendResponse(message);
+}
+
+function matchTextAux(pattern, textContent) {
+    // Try plain text before trying anything else
+    if (matchPlainText(pattern, textContent)) {
+        return true;
+    }
+    /*
+     * ^//?(?:\*|\w) - xpath only
+     * .[?*+] or .{\d+ ... } regex only
+     * /(?:*|\w)\[...\]/ - regex only
+     * otherwise: regex first, then xpath
+     */
+    var thingsToTry = {regex:false, xpath:false};
+    var m = /^xpath:(.*)$/.exec(pattern);
+    if (m) {
+        pattern = m[1];
+        thingsToTry.xpath = true;
+    } else if (!!(m = /^regex:(.*)$/.exec(pattern))) {
+        pattern = m[1];
+        thingsToTry.regex = true;
+    } else if (!/[\.\*\+\?\[\{\(\\\$\^]/.test(pattern)) {
+        // No regex chars, so don't bother
+        thingsToTry.xpath = true;
+    } else {
+        // try everything else, but some failed xpaths might match regexes
+        thingsToTry.xpath = true;
+        thingsToTry.regex = true;
+    }
+    if (thingsToTry.xpath && matchXPath(pattern)) {
+        return true;
+    }
+    if (thingsToTry.regex && matchRegex(pattern, textContent)) {
+        return true;
+    }
+    return false;
 }
 
 function matchPlainText(pattern, textContent) {
