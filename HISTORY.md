@@ -9,3 +9,8 @@ Press the "Search text in tabs" button to get to the secondary pattern field.  S
 The `Pause/Resume` and `Cancel` buttons do what you think.
 
 You can search by plain text, JavaScript regular expressions, or XPath expressions -- no need to specify which you want. And no worries if you don't understand that sentence -- searching should work just fine for you.  XPath expressions don't support arbitrary namespaces (and if you understand that and are miffed by it, you know enough to fork the project and implement namespace support; as usual, pull requests are welcome).
+
+## 3.0.1 - Text searching improvements
+
+* Update the list of matched tabs as we go
+* Support a 'regex:' and 'xpath:' prefix on the text patterns because there are too many false positives with regexes for intended xpath expressions.
