@@ -18,9 +18,11 @@ with a capital T, lower-case h.
 
 ### Usage
 
-Press `Shift-Ctrl-T` on Macs, `Shift-Ctrl-5` on other machines to launch,
+Press `Shift-Ctrl-T` on Macs, `Ctrl-5` on Linux machines, and as of
+this update, `Shift-Ctrl-S` on Windows
 or click on the icon (the '5' was chosen because it's about the closest
-key to the 'T' that wasn't used by standard Firefox and Chrome).
+key to the 'T' that wasn't used by standard Firefox and Chrome, but 
+this doesn't work on Windows).
 
 You can select more than one entry, and do a bulk-close or 
 bulk copy-and-paste -- see the other buttons on the dialog. They used
@@ -29,5 +31,13 @@ to hide in a context menu, but no more.
 Version 2.0 introduces the "Audio Only" checkbox, just what you were
 looking for to find that tab that started playing an ad or a
 video.
+
+Version 3.0 reinstates searching the text in tabs as well, and
+supports JS regexes (put `regex:` at the start of your search
+pattern to force this (not the url/title matcher)), and XPath expressions
+(highly recommended you put `xpath:` at the start of the search
+term, because a specific xpath expression with a long condition
+part in square brackets will happily work as a regex for many more
+documents).
 
 ### See LICENSE.txt for license details.
