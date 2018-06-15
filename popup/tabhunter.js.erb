@@ -1219,14 +1219,30 @@ function doCopyURLTitleButton() {
     setClipboard(text);
 }
 
+function onMainPatternMouseDown(event) {
+    let msg = document.getElementById("activity").innerText;
+    let extra = ". Press the '<up> Search Text in Tabs' button to edit the url/title pattern";
+    if (msg.indexOf(extra) == -1) {
+        msg += extra;
+    }
+    document.getElementById("activity").innerText = msg;
+    setTimeout(updateActivity, 15 * 1000);
+    event.stopPropagation();
+    event.preventDefault();
+    return false;
+}
+    
+
 function disableSearchWidgets() {
     mainPattern.readOnly = true;
+    mainPattern.addEventListener('mouseup', onMainPatternMouseDown, false);
     showAudioButton.disabled = true;
 }
 
 function enableSearchWidgets() {
     mainPattern.readOnly = false;
     showAudioButton.disabled = false;
+    mainPattern.removeEventListener('mouseup', onMainPatternMouseDown, false);
 }
 
 function showSearchTextArea() {
