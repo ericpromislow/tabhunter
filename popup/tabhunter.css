@@ -190,6 +190,20 @@ ul#list li.selected {
     background-color: #ccc;
 }
 
+ul#list li.selectedFade {
+    animation: 2s selectedFade;
+    animation-iteration-count: 1;
+}
+
+@keyframes selectedFade {
+    from {
+	background-color: #75AB58;
+    }
+    to {
+	background-color: #fff;
+    }
+}
+
 span#activity {
     font-size: 10pt;
     margin-left: 0.5em;

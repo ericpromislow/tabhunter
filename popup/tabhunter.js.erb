@@ -1273,10 +1273,12 @@ async function prepareForSearching() {
 	    try {
 		await browser.tabs.executeScript(tabID, { file: "/content/matchText.js",
 							  runAt: "document_end"} );
-		tabIDsForSearching.push([tabID, index]);
+		tabIDsForSearching.unshift([tabID, index]);
 	    } catch(ex) {
 		matchedItems.splice(i, 1);
-		console.log(`tabhunter: error trying to inject search script ito tab ${item.title}: ${ex}`);
+                if (ex.toString().indexOf("Missing host permission for the tab") == -1) {
+                    console.log(`tabhunter: error trying to inject search script into tab ${item.title}: ${ex}`);
+                }
 	    }
 	}
     }
@@ -1635,8 +1637,8 @@ Searcher.prototype = {
 	    console.log(`Not looking at a searcher: ${this.__proto__}`);
 	    return;
 	} else if (i >= this.tabIDsForSearching.length) {
-	    setSearchButtonsStatus(true);
 	    makeListFromMatchedItems();
+	    setSearchButtonsStatus(true);
 	    //XXX: Put this in a status bar
 	    //console.log(`Matched ${this.successesByTabID.size} hits`);
 	    return;
@@ -1670,6 +1672,10 @@ Searcher.prototype = {
 		}
 	    } else {
 		this.successesByTabID.add(message.tabID);
+		let item = Array.from(tablist.childNodes).find((item) => item.actualIndex == actualIndex);
+		if (item) {
+		    item.classList.add('selectedFade');
+		}
 	    }
 	    searchTextProgressBar.value += 1;
 	    setTimeout(this.search.bind(this), 1, i + 1);
