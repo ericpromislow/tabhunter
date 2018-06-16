@@ -14,3 +14,8 @@ You can search by plain text, JavaScript regular expressions, or XPath expressio
 
 * Update the list of matched tabs as we go
 * Support a 'regex:' and 'xpath:' prefix on the text patterns because there are too many false positives with regexes for intended xpath expressions.
+
+## 3.0.3 - UI changes
+
+* Explain that the main pattern field is read-only while searching text
+* Add a green fade for matched search-text hits
