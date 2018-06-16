@@ -197,7 +197,7 @@ ul#list li.selectedFade {
 
 @keyframes selectedFade {
     from {
-	background-color: #75AB58;
+	background-color: #6E9A6E;
     }
     to {
 	background-color: #fff;
