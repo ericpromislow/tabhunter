@@ -596,6 +596,7 @@ function processArrowKey_aux(event) {
     selectedIndex = newSelectedIndex;
     var url = document.getElementById("url");
     url.value = items[matchedItems[selectedIndex]].url;
+    li.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
 function onListItemClick(event) {
