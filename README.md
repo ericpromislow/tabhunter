@@ -41,3 +41,16 @@ part in square brackets will happily work as a regex for many more
 documents).
 
 ### See LICENSE.txt for license details.
+
+## Build Instructions
+
+```
+git clone git@github.com:ericpromislow/tabhunter.git
+cd tabhunter
+make
+```
+
+In firefox, load `.../tabhunter/build/firefox/build/tabhunter-firefox-VERSION.zip`.
+In chrome, load `.../tabhunter/build/firefox/chrome/tabhunter-firefox-VERSION.zip`.
+
+See the build output for `VERSION`.  The `VERSION` value is set on line 2 of `Makefile`.
