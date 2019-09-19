@@ -16,6 +16,9 @@ and early '60s, known by some as 'Tab "Space" Hunter' to avoid any
 ambiguity. Note the proper spelling of this add-on is "Tabhunter"
 with a capital T, lower-case h.
 
+### Download
+* https://addons.mozilla.org/addon/tabhunter/
+
 ### Usage
 
 Press `Shift-Ctrl-T` on Macs, `Ctrl-5` on Linux machines, and as of
