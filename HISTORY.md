@@ -19,3 +19,7 @@ You can search by plain text, JavaScript regular expressions, or XPath expressio
 
 * Explain that the main pattern field is read-only while searching text
 * Add a green fade for matched search-text hits
+
+## 3.1.0 - Select All
+
+* Press the "Select All" button or type "Ctrl-A" (Cmd-A on macos) to select all the matched tabs

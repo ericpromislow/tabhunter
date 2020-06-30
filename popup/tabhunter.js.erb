@@ -18,6 +18,7 @@ var showAudioButton;
 var hideDiscardedTabsButton;
 var moveToWindowButton;
 var showSearchTextAreaButton;
+var selectAllButton;
 var searchTextArea;
 var searchTextField;
 var searchTextSearchButton;
@@ -74,6 +75,8 @@ function init() {
     document.getElementById("copyURL").addEventListener("mouseup", doCopyURLButton, false);
     document.getElementById("copyTitle").addEventListener("mouseup", doCopyTitleButton, false);
     document.getElementById("copyURLTitle").addEventListener("mouseup", doCopyURLTitleButton, false);
+    selectAllButton = document.getElementById("selectAllButton");
+    selectAllButton.addEventListener("mouseup", doSelectAll, false);
     
     showAudioButton = document.getElementById("showAudio");
     showAudioButton.addEventListener("click", doHandleAudioCheckbox, false);
@@ -525,6 +528,10 @@ function processArrowKey(event) {
     }
 }
 
+const SHIFT_KEY = 1;
+const CTRL_KEY = 2;
+const ALT_KEY = 4;
+
 function processKey(event) {
     try {
         var mask = getModifierMask(event);
@@ -532,24 +539,24 @@ function processKey(event) {
         if (keyName == "Control") {
             return;
         }
-        if ((mask & CTRL_KEY) == CTRL_KEY && keyName >= '1' && keyName <= '9') {
-            let keyValue = parseInt(keyName, 10);
-            if (keyValue <= matchedItems.length) {
-                selectedIndex = keyValue - 1;
-                doVisitSelectedURL();
-                event.stopPropagation();
-                event.preventDefault();
-                return;
+        if ((mask & (SHIFT_KEY|CTRL_KEY|ALT_KEY)) == CTRL_KEY) {
+            if (keyName >= '1' && keyName <= '9') {
+                let keyValue = parseInt(keyName, 10);
+                if (keyValue <= matchedItems.length) {
+                    selectedIndex = keyValue - 1;
+                    doVisitSelectedURL();
+                    event.stopPropagation();
+                    event.preventDefault();
+                    return;
+                }
+            } else {
+                console.log("**** keyName: " + keyName);
             }
         }
     } catch(e) {
         console.log("tabhunter: *** processKey: awp: " + e);
     }
 }
-
-const SHIFT_KEY = 1;
-const CTRL_KEY = 2;
-const ALT_KEY = 4;
 
 function processArrowKey_aux(event) {
     var mask = getModifierMask(event);
@@ -566,6 +573,11 @@ function processArrowKey_aux(event) {
             } 
             doVisitSelectedURL();
         }
+        event.stopPropagation();
+        event.preventDefault();
+        return;
+    } else if (keyName == "a" && (mask & (SHIFT_KEY|CTRL_KEY|ALT_KEY)) == CTRL_KEY) {
+        doSelectAll();
         event.stopPropagation();
         event.preventDefault();
         return;
@@ -1073,6 +1085,7 @@ function updateButtons() {
     var otherDisabled = selectedItemLength == 0;
     document.getElementById("go").disabled = selectedItemLength != 1 || matchedItemLength == 0;
     closeTabsButton.disabled = otherDisabled;
+    selectAllButton.disabled = matchedItems.length == 0;
     document.getElementById("copyURL").disabled = otherDisabled;
     document.getElementById("copyTitle").disabled = otherDisabled;
     document.getElementById("copyURLTitle").disabled = otherDisabled;
@@ -1156,7 +1169,7 @@ function doRemoveFromList(selectedItems, cb) {
 }
 
 
-// Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl
+// Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl]
 function doCloseTabsButton() {
     var selectedItems = getSelectedItemsJQ();
     if (selectedItems.length == 0) {
@@ -1180,6 +1193,13 @@ function doCloseTabsButton() {
 	}
 	browser.tabs.remove(tabIds).then(removeTabOK, removeTabError);
     });
+}
+
+function doSelectAll() {
+    selectedIndex = 0;
+    lastClickedIndex = matchedItems.length - 1;
+    selectRange(selectedIndex, lastClickedIndex);
+    updateButtons();
 }
 
 function gatherText(fn) {
