@@ -23,3 +23,11 @@ You can search by plain text, JavaScript regular expressions, or XPath expressio
 ## 3.1.0 - Select All
 
 * Press the "Select All" button or type "Ctrl-A" (Cmd-A on macos) to select all the matched tabs
+
+## 3.1.1 - Reload Tabs
+
+* Added button to reload the selected tabs
+
+## 3.1.2 - Select All: Key binding changed
+
+* On Mac, Shift-Command-A brings up the add-ons page. The keybinding is now Shift-Ctrl-A, and Ctrl-A/Cmd-A goes back to selecting all the text in the pattern field.

@@ -579,7 +579,7 @@ function processArrowKey_aux(event) {
         event.stopPropagation();
         event.preventDefault();
         return;
-    } else if (keyName == "a" && (mask & (SHIFT_KEY|CTRL_KEY|ALT_KEY)) == CTRL_KEY) {
+    } else if (keyName == "A" && (mask & (SHIFT_KEY|CTRL_KEY|ALT_KEY)) == (SHIFT_KEY|CTRL_KEY)) {
         doSelectAll();
         event.stopPropagation();
         event.preventDefault();
