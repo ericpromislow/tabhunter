@@ -24,6 +24,7 @@ var searchTextField;
 var searchTextSearchButton;
 var discardTabsButton;
 var activateTabsButton;
+var reloadTabsButton;
 var hasDiscardedTabs;
 var selectWindowTargetWidget;
 var finishMoveToWindowButton;
@@ -99,6 +100,8 @@ function init() {
     discardTabsButton.addEventListener("mouseup", discardTheTabs, false);
     activateTabsButton = document.getElementById("activateSelectedTabs");
     activateTabsButton.addEventListener("mouseup", activateTheTabs, false);
+    reloadTabsButton = document.getElementById("reloadTabsButton");
+    reloadTabsButton.addEventListener("mouseup", doReloadTabs, false);
 
     selectWindowTargetWidget = document.getElementById("windowList");
     finishMoveToWindowButton = document.getElementById("doMoveToWindow");
@@ -1085,6 +1088,7 @@ function updateButtons() {
     var otherDisabled = selectedItemLength == 0;
     document.getElementById("go").disabled = selectedItemLength != 1 || matchedItemLength == 0;
     closeTabsButton.disabled = otherDisabled;
+    reloadTabsButton.disabled = otherDisabled;
     selectAllButton.disabled = matchedItems.length == 0;
     document.getElementById("copyURL").disabled = otherDisabled;
     document.getElementById("copyTitle").disabled = otherDisabled;
@@ -1401,7 +1405,6 @@ TabChanger.prototype = {
             return;
         }
         this.index += 1;
-        let self = this;
         this.op(this.tabIDs[this.index], this.next.bind(this), this.changeTabError.bind(this));
     }
 };    
@@ -1452,6 +1455,24 @@ function activateTheTabs() {
     } else {
         new TabChanger(tabIDs, "activate", function(tabID, onResolve, onReject) {
               browser.tabs.reload(tabID).
+                then(onResolve).
+                catch(onReject);
+              }, actualItems).next();
+    }
+}
+
+function doReloadTabs() {
+    var selectedItems = getSelectedItemsJQ();
+    var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
+    var actualItems = selectedActualIndices.map((i) => items[i]);
+    var tabIDs = actualItems.map((item) => item.tabID);
+    if (tabIDs.length == 0) {
+        let s = "No selected items to reload";
+        setStatusBarMessage(s)
+        console.log("Tabhunter: " + s);
+    } else {
+        new TabChanger(tabIDs, "reload", function(tabID, onResolve, onReject) {
+                browser.tabs.reload(tabID, { bypassCache: true }).
                 then(onResolve).
                 catch(onReject);
               }, actualItems).next();
