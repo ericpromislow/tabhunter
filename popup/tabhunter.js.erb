@@ -217,7 +217,9 @@ function getCurrentTheme() {
             //console.log("We're probably using the default theme");
         }
         if (useDarkTheme) {
-            updateForDarkTheme();
+            ['body', 'input', 'ul#list', 'button', 'select'].forEach(function(selector) {
+                    $(selector).addClass('dark');
+                });
         }
         restoreHideAudioSetting();
     };
@@ -242,64 +244,6 @@ function restoreHideAudioSetting() {
     };
     browser.storage.local.get("hideDiscardTabs").then(gotSettingOK, gotSettingErr);
 }
-
-function rgb(r, g, b) {
-    return "rgb(" + [r, g, b].join(', ') + ")";
-}
-
-function revrgb(r, g, b) {
-    return rgb(255 - r, 255 - g, 255 - b);
-}
-                
-
-<% if ENV['TARGET'] == 'firefox' %>
-// Color names and values from https://design.firefox.com/photon/visuals/color.html
-function updateForDarkTheme() {
-/*
-    console.log("QQQ: >> updateForDarkTheme()")
-    console.log("# total buttons:" + $('.button').length);
-    console.log("# enabled buttons:" + $('.button:enabled').length);
-    console.log("# disabled buttons:" + $('.button:disabled').length);
-*/
-
-    $('body').css('backgroundColor', rgb(15, 15, 15));
-    $('body').css('color', '#f9f9fa'); // grey 10
-
-    $('input.input-text').css('backgroundColor', '#2a2a2e'); // Grey 80
-    $('input.input-text').css('color', '#f9f9fa'); // Grey 10
-    $('input.input-text:focus').css('borderColor', revrgb(218, 218, 218)); // #26
-    $('input.input-text:focus').css('borderStyle', 'dotted');
-
-    $('input#command_key').css('backgroundColor', '#2a2a2e'); // Grey 80
-    $('input#command_key').css('color', '#f9f9fa'); // Grey 10
-    $('input#command_key:focus').css('borderColor', revrgb(218, 218, 218)); // #26
-    $('input#command_key:focus').css('borderStyle', 'dotted');
-
-    $('ul#list').css('borderColor', '#666');
-    $('ul#list').css('backgroundColor', '#2a2a2e'); // Grey 80
-    $('ul#list').css('scrollbarColor', '#f9f9fa #2a2a2e');
-    $('ul#list li.selected').css('backgroundColor', '#333');
-
-    $('.button.highlighted').css('borderColor', revrgb(109, 109, 109));
-    $('.button.pressed').css('borderColor', '#222');
-    $('.button').css('backgroundColor', '#2a2a2e'); // Grey 80
-    //$('.button[disabled]').css('color', 'red');
-    //$('.button:disabled').css('color', 'orange');
-    //$('.button:not([disabled])').css('color', 'green');
-    $('.button').css('color', '#f9f9fa'); // Grey 10
-
-    $('.xbutton.highlighted').css('borderColor', revrgb(109, 109, 109));
-    $('.xbutton.pressed').css('borderColor', '#222');
-    $('.xbutton').css('backgroundColor', '#2a2a2e'); // Grey 80
-    $('.xbutton').css('color', '#f9f9fa'); // Grey 10
-
-    // These don't inherit from body for some reason
-    $('select#bookmarkList').css('backgroundColor', '#2a2a2e'); // Grey 80
-    $('select#bookmarkList').css('color', '#f9f9fa'); // Grey 10
-    $('select#windowList').css('backgroundColor', '#2a2a2e'); // Grey 80
-    $('select#windowList').css('color', '#f9f9fa'); // Grey 10
-}
-<% end %>
 
 function depx(pref) {
     let p = /^(\d+).*/;
