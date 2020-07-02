@@ -111,7 +111,7 @@ div#discardArea {
 }
 
 input.xbutton {
-    border: 1px solid red;
+    border: 1px solid;
     margin-left: 6px;
     margin-right: 0px;
 }
