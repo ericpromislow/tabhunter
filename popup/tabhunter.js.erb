@@ -713,13 +713,10 @@ function allowAll() {
 }
 
 function onPatternChangedDirectly(event) {
-    console.log("QQQ: >> onPatternChangedDirectly");
     if (mainPatternUpdateTimeoutID) {
-        console.log("QQQ: ... clear timeout");
         clearTimeout(mainPatternUpdateTimeoutID);
     }
     mainPatternUpdateTimeoutID = setTimeout(function() {
-            console.log("QQQ: ... in set timeout handler");
             mainPatternUpdateTimeoutID = 0;
             onPatternChanged(event, false);
         }, mainPatternTimeoutInterval);
@@ -727,45 +724,34 @@ function onPatternChangedDirectly(event) {
 
 function onPatternChanged(event, calledFromInit) {
     if (patternBuilder) {
-        patternBuilder.stopWorking = true;
-    } else if (listBuilder) {
-        listBuilder.stopWorking = true;
+        patternBuilder.stopWorking();
+    }
+    if (listBuilder) {
+        listBuilder.stopWorking();
     }
     var pattern = mainPattern.value;
 
     let postBuildMatchedItemsArray = function() {
-        //console.log("QQQ: >> postBuildMatchedItemsArray");
-        try {
-            // console.log("QQQ: +matched " +  matchedItems.length + " items");
-            patternBuilder = null;
-            listBuilder = null;
-            if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
-                // This can only be called once this way
-                showAudioButton.checked = g_showAudio = false;
-                // setTimeout to allow the button to get checked before the code continues.
-                setTimeout(onPatternChanged, 10, event, false);
-                return;
-            }
-            makeListFromMatchedItems();
-        } catch(e) {
-            console.error(e);
+        patternBuilder = null;
+        listBuilder = null;
+        if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
+            // This can only be called once this way
+            showAudioButton.checked = g_showAudio = false;
+            // setTimeout to allow the button to get checked before the code continues.
+            setTimeout(onPatternChanged, 10, event, false);
+            return;
         }
+        makeListFromMatchedItems();
     };
 
     browser.storage.local.set({"pattern": pattern});
-    // console.log("QQQ: -new PatternBuilder");
     patternBuilder = new PatternBuilder(pattern, postBuildMatchedItemsArray);
-    // console.log("QQQ: -patternBuilder.buildMatchedItemsArray");
-    // console.log("QQQ: # items;" + patternBuilder.numItems);
     patternBuilder.buildMatchedItemsArray();
-    // console.log("QQQ: +patternBuilder.buildMatchedItemsArray");
 }
 
 function makeListFromMatchedItems(doneFunc) {
     listBuilder = new ListBuilder(doneFunc);
-    // console.log("QQQ: -makeListFromMatchedItems");
     listBuilder.makeListFromMatchedItems();
-    // console.log("QQQ: +makeListFromMatchedItems");
 }
 
 function compilePattern(pattern) {
@@ -834,7 +820,7 @@ function compilePattern(pattern) {
 
 function PatternBuilder(pattern, doneFunc) {
     this.pattern = pattern;
-    this.stopWorking = false;
+    this._stopWorking = false;
     this.index = -1;
     this.numItems = items.length;
     matchedItems = [];
@@ -859,27 +845,25 @@ PatternBuilder.prototype = {
     },
         
   buildMatchedItemsArray: function() {
-    try {
-        if (this.stopWorking) {
+        if (this._stopWorking) {
             return;
         }
         this.index += 1;
         if (this.index >= this.numItems) {
-            // console.log("QQQ: done buildMatchedItemsArray");
             setTimeout(this.doneFunc, 0);
             return;
         }
-        // console.log("QQQ: >> test: " + this.testItem(items[this.index]));
         if (this.testItem(items[this.index])) {
             matchedItems.push(this.index);
         }
-    } catch(e) {
-        console.error(e);
-    }
         setTimeout(this.buildMatchedItemsArray.bind(this), 0);
     },
+
+  stopWorking: function() {
+        this._stopWorking = true;
+    },
   
-  __END__: null
+  __EOF__: null
 };
 
 function setStatusBarMessage(msg) {
@@ -892,7 +876,7 @@ function setStatusBarMessage(msg) {
 }
 
 function ListBuilder(doneFunc) {
-    this.stopWorking = false;
+    this._stopWorking = false;
     this.index = -1;
     this.numItems = matchedItems.length;
     this.doneFunc = doneFunc;
@@ -915,13 +899,11 @@ function ListBuilder(doneFunc) {
 
 ListBuilder.prototype = {
   makeListFromMatchedItems: function() {
-        if (this.stopWorking) {
+        if (this._stopWorking) {
             return;
         }
         this.index += 1;
         if (this.index >= this.numItems) {
-            // console.log("QQQ: done makeListFromMatchedItems: function");
-
             if (sortBy == compareByWindowTab) {
                 $(tablist).attr("draggable", true);
                 tablist.addEventListener("dragstart", onTablistDragStartHandler, true);
@@ -988,6 +970,10 @@ ListBuilder.prototype = {
         }
         tablist.appendChild(el);
         setTimeout(this.makeListFromMatchedItems.bind(this), 0);
+    },
+
+  stopWorking: function() {
+        this._stopWorking = true;
     },
   
   __EOF__: null
