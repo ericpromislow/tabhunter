@@ -9,8 +9,6 @@ var lastClickedIndex; // visible
 var matchedItems;
 var tablist;
 var mainPattern;
-var mainPatternUpdateTimeoutID = 0;
-var mainPatternTimeoutInterval;
 var textarea;
 var showElapsedTimes = false; // Need a way to enable this.
 var t1, t2;
@@ -69,7 +67,7 @@ function init() {
 
     tablist = list;
 
-    mainPattern.addEventListener("input", onPatternChangedInPatternField, false);
+    mainPattern.addEventListener("input", onPatternChanged, false);
     searchTextField.addEventListener("input", onSearchTextFieldChanged, false);
     searchTextField.addEventListener("keydown", onSearchTextFieldKeyup, true);
     document.addEventListener("keydown", processArrowKey, false);
@@ -489,7 +487,6 @@ function populateTabList() {
             t1 = (new Date()).valueOf();
         }
         items.sort(sortByWithReverseCheck);
-        setPatternUpdateTimeoutInterval();
         
         if (showElapsedTimes) {
             endTime("sorting tabs");
@@ -709,36 +706,13 @@ function allowAll() {
     return true;
 }
 
-function setPatternUpdateTimeoutInterval() {
-    mainPatternTimeoutInterval = items.length < 1000 ? 0 : 50 + math.log10(items.length) * 17; // msec
-}
-
-function onPatternChangedInPatternField(event) {
-    if (mainPatternTimeoutInterval == 0) {
-        onPatternChanged(event, false);
-    } else {
-        if (mainPatternUpdateTimeoutID) {
-            clearTimeout(mainPatternUpdateTimeoutID);
-        }
-        mainPatternUpdateTimeoutID = setTimeout(doPatternChangedOnTimeout, mainPatternTimeoutInterval, event);
-    }
-}
-
-function doPatternChangedOnTimeout(event) {
-    mainPatternUpdateTimeoutID = 0;
-    onPatternChanged(event, false);
-}
-        
-
 function onPatternChanged(event, calledFromInit) {
     if (typeof(calledFromInit) == undefined) calledFromInit = false;
     var pattern = mainPattern.value;
     browser.storage.local.set({"pattern": pattern});
     buildMatchedItemsArray(pattern);
     if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
-        // Last time we used tabhunter we were listening to something,
-        // but that tab's been closed.  So on init, redo, with the
-        // show-audio button unchecked.
+        // This can only be called once this way
         showAudioButton.checked = g_showAudio = false;
         // setTimeout to allow the button to get checked before the code continues.
         setTimeout(onPatternChanged, 10, null, false);
