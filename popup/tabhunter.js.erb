@@ -9,6 +9,8 @@ var lastClickedIndex; // visible
 var matchedItems;
 var tablist;
 var mainPattern;
+var mainPatternUpdateTimeoutID = 0;
+var mainPatternTimeoutInterval = 80; // msec
 var textarea;
 var showElapsedTimes = false; // Need a way to enable this.
 var t1, t2;
@@ -49,6 +51,10 @@ var g_currentDragTarget = null, g_currentDragTargetClassName = null;
 var g_currentItemHeight = null;
 const DEFAULT_BASE_FONT_SIZE = 12;
 
+// Pattern builder to coroutinzie the pattern field & the matcher/populator
+var patternBuilder = null;
+var listBuilder = null;
+
 // Search stuff
 var tabsWithText; // Keep track of which tabs have scripts in them
 var originalMatchedItems; // Restore the matched tabs if search went bad
@@ -67,7 +73,7 @@ function init() {
 
     tablist = list;
 
-    mainPattern.addEventListener("input", onPatternChanged, false);
+    mainPattern.addEventListener("input", onPatternChangedDirectly, false);
     searchTextField.addEventListener("input", onSearchTextFieldChanged, false);
     searchTextField.addEventListener("keydown", onSearchTextFieldKeyup, true);
     document.addEventListener("keydown", processArrowKey, false);
@@ -706,99 +712,175 @@ function allowAll() {
     return true;
 }
 
-function onPatternChanged(event, calledFromInit) {
-    if (typeof(calledFromInit) == undefined) calledFromInit = false;
-    var pattern = mainPattern.value;
-    browser.storage.local.set({"pattern": pattern});
-    buildMatchedItemsArray(pattern);
-    if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
-        // This can only be called once this way
-        showAudioButton.checked = g_showAudio = false;
-        // setTimeout to allow the button to get checked before the code continues.
-        setTimeout(onPatternChanged, 10, null, false);
-        return;
+function onPatternChangedDirectly(event) {
+    console.log("QQQ: >> onPatternChangedDirectly");
+    if (mainPatternUpdateTimeoutID) {
+        console.log("QQQ: ... clear timeout");
+        clearTimeout(mainPatternUpdateTimeoutID);
     }
-    makeListFromMatchedItems();
+    mainPatternUpdateTimeoutID = setTimeout(function() {
+            console.log("QQQ: ... in set timeout handler");
+            mainPatternUpdateTimeoutID = 0;
+            onPatternChanged(event, false);
+        }, mainPatternTimeoutInterval);
 }
 
-function buildMatchedItemsArray(pattern) {
-    matchedItems = [];
-    var ptn;
-    var fn, winFnParts = [];
+function onPatternChanged(event, calledFromInit) {
+    if (patternBuilder) {
+        patternBuilder.stopWorking = true;
+    } else if (listBuilder) {
+        listBuilder.stopWorking = true;
+    }
+    var pattern = mainPattern.value;
+
+    let postBuildMatchedItemsArray = function() {
+        //console.log("QQQ: >> postBuildMatchedItemsArray");
+        try {
+            // console.log("QQQ: +matched " +  matchedItems.length + " items");
+            patternBuilder = null;
+            listBuilder = null;
+            if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
+                // This can only be called once this way
+                showAudioButton.checked = g_showAudio = false;
+                // setTimeout to allow the button to get checked before the code continues.
+                setTimeout(onPatternChanged, 10, event, false);
+                return;
+            }
+            makeListFromMatchedItems();
+        } catch(e) {
+            console.error(e);
+        }
+    };
+
+    browser.storage.local.set({"pattern": pattern});
+    // console.log("QQQ: -new PatternBuilder");
+    patternBuilder = new PatternBuilder(pattern, postBuildMatchedItemsArray);
+    // console.log("QQQ: -patternBuilder.buildMatchedItemsArray");
+    // console.log("QQQ: # items;" + patternBuilder.numItems);
+    patternBuilder.buildMatchedItemsArray();
+    // console.log("QQQ: +patternBuilder.buildMatchedItemsArray");
+}
+
+function makeListFromMatchedItems(doneFunc) {
+    listBuilder = new ListBuilder(doneFunc);
+    // console.log("QQQ: -makeListFromMatchedItems");
+    listBuilder.makeListFromMatchedItems();
+    // console.log("QQQ: +makeListFromMatchedItems");
+}
+
+function compilePattern(pattern) {
+    let winFnParts = [];
+    let fn;
     if (pattern.length == 0) {
-        fn = allowAll;
-    } else {
-        // If the pattern starts with a window-selector, handle it
-        let p = /^\{w:?(\d+)(?::([-\d]+))?\}(.*)$/;
-        let m = p.exec(pattern);
-        if (m) {
-            let winNum = parseInt(m[1], 10);
-            winFnParts.push(function(item) {
+        this.matcherFunction = allowAll;
+        return [allowAll, winFnParts];
+    }
+    var ptn;
+        
+    // If the pattern starts with a window-selector, handle it
+    let p = /^\{w:?(\d+)(?::([-\d]+))?\}(.*)$/;
+    let m = p.exec(pattern);
+    if (m) {
+        let winNum = parseInt(m[1], 10);
+        winFnParts.push(function(item) {
                 return windowCounter.index(item.windowID) == winNum;
             });
-            if (m[2] !== undefined) {
-                let [startTabNum, endTabNum] = m[2].split('-', 2);
-		if (endTabNum == undefined) {
-		    endTabNum = 1000000;
-		} else if (endTabNum.indexOf('-') >= 0) {
-                    console.log('Tabhunter: at most one dash allowed in a tab list');
-                    //TODO: Write out an error message
-                    winFnParts.push(function(item) {
+        if (m[2] !== undefined) {
+            let [startTabNum, endTabNum] = m[2].split('-', 2);
+            if (endTabNum == undefined) {
+                endTabNum = 1000000;
+            } else if (endTabNum.indexOf('-') >= 0) {
+                console.log('Tabhunter: at most one dash allowed in a tab list');
+                //TODO: Write out an error message
+                winFnParts.push(function(item) {
                         return false;
                     });
-                }
-                if (startTabNum != "") {
-                    startTabNum = parseInt(startTabNum, 10) - 1;
-                    winFnParts.push(function(item) {
+            }
+            if (startTabNum != "") {
+                startTabNum = parseInt(startTabNum, 10) - 1;
+                winFnParts.push(function(item) {
                         return item.tabIndex >= startTabNum
-                    });
-                }
-                if (endTabNum != "") {
-                    endTabNum = parseInt(endTabNum, 10) - 1;
-                    winFnParts.push(function(item) {
+                            });
+            }
+            if (endTabNum != "") {
+                endTabNum = parseInt(endTabNum, 10) - 1;
+                winFnParts.push(function(item) {
                         return item.tabIndex <= endTabNum
-                    });
-                }
-            }
-            pattern = m[3];
-        }
-        try {
-            if (/[A-Z]/.test(pattern) && /[a-z]/.test(pattern)) {
-                // If they specify both cases, don't ignore case.
-                ptn = new RegExp(pattern);
-            } else {
-                ptn = new RegExp(pattern, "i");
-            }
-            fn = function matchPtn(item) {
-                return ptn.test(item.title) || ptn.test(item.url);
-            }
-        } catch(ex) {
-            console.log("tabhunter: not a valid javascript pattern: " + ex);
-            // just do a case-insensitive substring search
-            ptn = pattern.toLowerCase();
-            fn = function matchText(item) {
-                return (item.title.toLowerCase().indexOf(ptn) >= 0
-                        || item.url.toLowerCase().indexOf(ptn) >= 0);
+                            });
             }
         }
+        pattern = m[3];
     }
-    for (var i = 0; i < items.length; i++) {
-        let item = items[i];
-        if ((!winFnParts.every((f) => f(item)))
-            || (g_showAudio && !item.audible)) {
-            continue;
+    try {
+        if (/[A-Z]/.test(pattern) && /[a-z]/.test(pattern)) {
+            // If they specify both cases, don't ignore case.
+            ptn = new RegExp(pattern);
+        } else {
+            ptn = new RegExp(pattern, "i");
         }
-        if (item.discarded) {
+        return [function matchPtn(item) {
+                return ptn.test(item.title) || ptn.test(item.url);
+            }, winFnParts];
+    } catch(ex) {
+        console.log("tabhunter: not a valid javascript pattern: " + ex);
+    }
+    // just do a case-insensitive substring search
+    ptn = pattern.toLowerCase();
+    return [function matchText(item) {
+            return (item.title.toLowerCase().indexOf(ptn) >= 0
+                    || item.url.toLowerCase().indexOf(ptn) >= 0);
+        }, winFnParts];
+}
+
+function PatternBuilder(pattern, doneFunc) {
+    this.pattern = pattern;
+    this.stopWorking = false;
+    this.index = -1;
+    this.numItems = items.length;
+    matchedItems = [];
+    [this.matcherFunction, this.winFnParts] = compilePattern(pattern);
+    this.doneFunc = doneFunc;
+    hasDiscardedTabs = false;
+}
+
+PatternBuilder.prototype = {
+  testItem: function(item) {
+        if (!(this.winFnParts.every((f) => f(item)))) {
+            return false;
+        } else if (g_showAudio && !item.audible) {
+            return false;
+        } else if (item.discarded) {
             hasDiscardedTabs = true;
             if (g_hideDiscardTabs) {
-                continue;
+                return false;
             }
         }
-        if (fn(item)) {
-            matchedItems.push(i);
+        return this.matcherFunction(item);
+    },
+        
+  buildMatchedItemsArray: function() {
+    try {
+        if (this.stopWorking) {
+            return;
         }
+        this.index += 1;
+        if (this.index >= this.numItems) {
+            // console.log("QQQ: done buildMatchedItemsArray");
+            setTimeout(this.doneFunc, 0);
+            return;
+        }
+        // console.log("QQQ: >> test: " + this.testItem(items[this.index]));
+        if (this.testItem(items[this.index])) {
+            matchedItems.push(this.index);
+        }
+    } catch(e) {
+        console.error(e);
     }
-}
+        setTimeout(this.buildMatchedItemsArray.bind(this), 0);
+    },
+  
+  __END__: null
+};
 
 function setStatusBarMessage(msg) {
     $("div#statusbar").removeClass("hide").addClass("show");
@@ -809,11 +891,16 @@ function setStatusBarMessage(msg) {
     }, 30* 1000);
 }
 
-function makeListFromMatchedItems() {
+function ListBuilder(doneFunc) {
+    this.stopWorking = false;
+    this.index = -1;
+    this.numItems = matchedItems.length;
+    this.doneFunc = doneFunc;
+    
     var selectedItems = getSelectedItemsJQ();
-    var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
-    var lastClickedActualIndex = matchedItems[lastClickedIndex];
-    var selectedActualIndex = matchedItems[selectedIndex];
+    this.selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
+    this.lastClickedActualIndex = matchedItems[lastClickedIndex];
+    this.selectedActualIndex = matchedItems[selectedIndex];
     $("#list").empty();
     $("ul li").off("dblclick", onListItemDoubleClick);
     $("ul li").off("click", onListItemClick);
@@ -824,7 +911,34 @@ function makeListFromMatchedItems() {
         g_itemSupportsLastAccessed = (items[0].lastAccessed !== undefined);
     }
 <% end %>
-    for (var i = 0; i < matchedItems.length; i++) {
+}
+
+ListBuilder.prototype = {
+  makeListFromMatchedItems: function() {
+        if (this.stopWorking) {
+            return;
+        }
+        this.index += 1;
+        if (this.index >= this.numItems) {
+            // console.log("QQQ: done makeListFromMatchedItems: function");
+
+            if (sortBy == compareByWindowTab) {
+                $(tablist).attr("draggable", true);
+                tablist.addEventListener("dragstart", onTablistDragStartHandler, true);
+                tablist.addEventListener("dragover", onTablistDragOver, true);
+                tablist.addEventListener("drop", onTablistDropHandler, false);
+            }
+            $("ul li:eq(" + selectedIndex + ")").select();
+            $("ul li").on("click", onListItemClick);
+            $("ul li").on("dblclick", onListItemDoubleClick);
+            updateActivity();
+            updateURL();
+            updateButtons();
+
+            setTimeout(this.doneFunc, 0);
+            return;
+        }
+        let i = this.index;
         var idx = matchedItems[i];
         var item = items[idx];
         var el = document.createElement("li");
@@ -836,9 +950,9 @@ function makeListFromMatchedItems() {
         }
         el.textContent += item.title + " - " + item.url;
         if (sortBy == compareByNeglect
-<% if ENV['TARGET'] == 'chrome' %>
+            <% if ENV['TARGET'] == 'chrome' %>
             && g_itemSupportsLastAccessed
-<% end %>
+            <% end %>
             ) {
             el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
         }
@@ -847,13 +961,13 @@ function makeListFromMatchedItems() {
         if (item.favIconUrl && !isForbiddenFavIconUrl(item.favIconUrl)) {
             el.style.backgroundImage = "url(" + item.favIconUrl + ")";
         }
-        if (selectedActualIndices.indexOf(idx) >= 0) {
+        if (this.selectedActualIndices.indexOf(idx) >= 0) {
             $(el).addClass("selected");
-            if (idx == selectedActualIndex) {
+            if (idx == this.selectedActualIndex) {
                 selectedIndex = i;
             }
         }
-        if (lastClickedIndex > -1 && idx == lastClickedActualIndex) {
+        if (lastClickedIndex > -1 && idx == this.lastClickedActualIndex) {
             lastClickedIndex = i;
         }
         if (i > 0) {
@@ -873,19 +987,10 @@ function makeListFromMatchedItems() {
             $(el).attr("draggable", true);
         }
         tablist.appendChild(el);
-    }
-    if (sortBy == compareByWindowTab) {
-        $(tablist).attr("draggable", true);
-        tablist.addEventListener("dragstart", onTablistDragStartHandler, true);
-        tablist.addEventListener("dragover", onTablistDragOver, true);
-        tablist.addEventListener("drop", onTablistDropHandler, false);
-    }
-    $("ul li:eq(" + selectedIndex + ")").select();
-    $("ul li").on("click", onListItemClick);
-    $("ul li").on("dblclick", onListItemDoubleClick);
-    updateActivity();
-    updateURL();
-    updateButtons();
+        setTimeout(this.makeListFromMatchedItems.bind(this), 0);
+    },
+  
+  __EOF__: null
 }
 
 function getSelectedItemsJQ() {
@@ -1363,8 +1468,9 @@ async function prepareForSearching() {
 	    }
 	}
     }
-    makeListFromMatchedItems();
-    sessionMatchedItems = [].concat(matchedItems);
+    makeListFromMatchedItems(function() { 
+            sessionMatchedItems = [].concat(matchedItems);
+        });
 }
 
 function hideSearchTextArea() {
@@ -1703,20 +1809,21 @@ function doSearchForTheText(event) {
 	return;
     }
     let continueFunc = function() {
-	browser.storage.local.set({searchTextField: searchTextField.value}).then(() => {}, (err) => {
-	    console.log(`tabhunter: failed to set item[searchTextField] : ${err}`);
-	});
-	searchTextProgressBar.max = tabIDsForSearching.length;
-	searchTextProgressBar.value = 0;
-	searchTextPauseNow = searchTextCancelNow = false;
-	setSearchButtonsStatus(false);
-	currentSearcher = new Searcher(tabIDsForSearching, searchTextField.value);
-	currentSearcher.search(0);
+        browser.storage.local.set({searchTextField: searchTextField.value}).then(() => {}, (err) => {
+                console.log(`tabhunter: failed to set item[searchTextField] : ${err}`);
+            });
+        searchTextProgressBar.max = tabIDsForSearching.length;
+        searchTextProgressBar.value = 0;
+        searchTextPauseNow = searchTextCancelNow = false;
+        setSearchButtonsStatus(false);
+        currentSearcher = new Searcher(tabIDsForSearching, searchTextField.value);
+        currentSearcher.search(0);
     };
     if (sessionMatchedItems.length > matchedItems.length) {
-	matchedItems = [].concat(sessionMatchedItems);
-	makeListFromMatchedItems();
-	setTimeout(continueFunc, 1);
+        matchedItems = [].concat(sessionMatchedItems);
+        makeListFromMatchedItems(function() {
+                setTimeout(continueFunc, 1);
+            });
     } else {
 	continueFunc();
     }
@@ -1735,8 +1842,9 @@ Searcher.prototype = {
 	    console.log(`Not looking at a searcher: ${this.__proto__}`);
 	    return;
 	} else if (i >= this.tabIDsForSearching.length) {
-	    makeListFromMatchedItems();
-	    setSearchButtonsStatus(true);
+	    makeListFromMatchedItems(function () {
+                setSearchButtonsStatus(true);
+            });
 	    //XXX: Put this in a status bar
 	    //console.log(`Matched ${this.successesByTabID.size} hits`);
 	    return;
@@ -1746,8 +1854,9 @@ Searcher.prototype = {
 	    return;
 	} else if (searchTextCancelNow) {
 	    searchTextProgressBar.value = 0;
-	    makeListFromMatchedItems();
-	    setSearchButtonsStatus(true);
+	    makeListFromMatchedItems(function () {
+                setSearchButtonsStatus(true);
+            });
 	    return;
 	}
 	let [tabID, actualIndex] = this.tabIDsForSearching[i];
