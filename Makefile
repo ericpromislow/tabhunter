@@ -125,5 +125,7 @@ $(TDIR)/popup/prefs.html: popup/prefs.html.erb popup/_prefs.html.erb Makefile
 $(TDIR)/popup/images/restore12.png: popup/images/restore12.png
 	cp $< $@
 
+tarSource: tabhunter.tgz
 
-
+tabhunter.tgz: HISTORY.md LICENSE.txt Makefile  README.md _locales/ build.sh.erb content/ defaults/ icons/ m* popup/ screenshots/ updates.md PRIVACY.md
+	tar cfz $@ $^
