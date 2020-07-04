@@ -10,7 +10,8 @@ var matchedItems;
 var tablist;
 var mainPattern;
 var mainPatternUpdateTimeoutID = 0;
-var mainPatternTimeoutInterval = 80; // msec
+var mainPatternTimeoutInterval = 50; // msec
+const listBuilderChunkSize = 100;
 var textarea;
 var showElapsedTimes = false; // Need a way to enable this.
 var t1, t2;
@@ -51,8 +52,7 @@ var g_currentDragTarget = null, g_currentDragTargetClassName = null;
 var g_currentItemHeight = null;
 const DEFAULT_BASE_FONT_SIZE = 12;
 
-// Pattern builder to coroutinzie the pattern field & the matcher/populator
-var patternBuilder = null;
+// List builder to coroutinize the list-populator
 var listBuilder = null;
 
 // Search stuff
@@ -723,148 +723,98 @@ function onPatternChangedDirectly(event) {
 }
 
 function onPatternChanged(event, calledFromInit) {
-    if (patternBuilder) {
-        patternBuilder.stopWorking();
-    }
-    if (listBuilder) {
-        listBuilder.stopWorking();
-    }
     var pattern = mainPattern.value;
-
-    let postBuildMatchedItemsArray = function() {
-        patternBuilder = null;
-        listBuilder = null;
-        if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
-            // This can only be called once this way
-            showAudioButton.checked = g_showAudio = false;
-            // setTimeout to allow the button to get checked before the code continues.
-            setTimeout(onPatternChanged, 10, event, false);
-            return;
-        }
-        makeListFromMatchedItems();
-    };
-
     browser.storage.local.set({"pattern": pattern});
-    patternBuilder = new PatternBuilder(pattern, postBuildMatchedItemsArray);
-    patternBuilder.buildMatchedItemsArray();
-}
-
-function makeListFromMatchedItems(doneFunc) {
-    listBuilder = new ListBuilder(doneFunc);
-    listBuilder.makeListFromMatchedItems();
-}
-
-function compilePattern(pattern) {
-    let winFnParts = [];
-    let fn;
-    if (pattern.length == 0) {
-        this.matcherFunction = allowAll;
-        return [allowAll, winFnParts];
+    buildMatchedItemsArray(pattern);
+    if (calledFromInit && g_showAudio && matchedItems.length == 0 && pattern == "") {
+        // This can only be called once this way
+        showAudioButton.checked = g_showAudio = false;
+        // setTimeout to allow the button to get checked before the code continues.
+        setTimeout(onPatternChanged, 10, null, false);
+        return;
     }
+    makeListFromMatchedItems();
+}
+
+function buildMatchedItemsArray(pattern) {
+    //  Adhoc timing shows testing takes negligible time. Like 100 usec/item. So don't coroutinize this one.
+    matchedItems = [];
     var ptn;
-        
-    // If the pattern starts with a window-selector, handle it
-    let p = /^\{w:?(\d+)(?::([-\d]+))?\}(.*)$/;
-    let m = p.exec(pattern);
-    if (m) {
-        let winNum = parseInt(m[1], 10);
-        winFnParts.push(function(item) {
+    var fn, winFnParts = [];
+    if (pattern.length == 0) {
+        fn = allowAll;
+    } else {
+        // If the pattern starts with a window-selector, handle it
+        let p = /^\{w:?(\d+)(?::([-\d]+))?\}(.*)$/;
+        let m = p.exec(pattern);
+        if (m) {
+            let winNum = parseInt(m[1], 10);
+            winFnParts.push(function(item) {
                 return windowCounter.index(item.windowID) == winNum;
             });
-        if (m[2] !== undefined) {
-            let [startTabNum, endTabNum] = m[2].split('-', 2);
-            if (endTabNum == undefined) {
-                endTabNum = 1000000;
-            } else if (endTabNum.indexOf('-') >= 0) {
-                console.log('Tabhunter: at most one dash allowed in a tab list');
-                //TODO: Write out an error message
-                winFnParts.push(function(item) {
+            if (m[2] !== undefined) {
+                let [startTabNum, endTabNum] = m[2].split('-', 2);
+		if (endTabNum == undefined) {
+		    endTabNum = 1000000;
+		} else if (endTabNum.indexOf('-') >= 0) {
+                    console.log('Tabhunter: at most one dash allowed in a tab list');
+                    //TODO: Write out an error message
+                    winFnParts.push(function(item) {
                         return false;
                     });
-            }
-            if (startTabNum != "") {
-                startTabNum = parseInt(startTabNum, 10) - 1;
-                winFnParts.push(function(item) {
+                }
+                if (startTabNum != "") {
+                    startTabNum = parseInt(startTabNum, 10) - 1;
+                    winFnParts.push(function(item) {
                         return item.tabIndex >= startTabNum
-                            });
-            }
-            if (endTabNum != "") {
-                endTabNum = parseInt(endTabNum, 10) - 1;
-                winFnParts.push(function(item) {
+                    });
+                }
+                if (endTabNum != "") {
+                    endTabNum = parseInt(endTabNum, 10) - 1;
+                    winFnParts.push(function(item) {
                         return item.tabIndex <= endTabNum
-                            });
+                    });
+                }
+            }
+            pattern = m[3];
+        }
+        try {
+            if (/[A-Z]/.test(pattern) && /[a-z]/.test(pattern)) {
+                // If they specify both cases, don't ignore case.
+                ptn = new RegExp(pattern);
+            } else {
+                ptn = new RegExp(pattern, "i");
+            }
+            fn = function matchPtn(item) {
+                return ptn.test(item.title) || ptn.test(item.url);
+            }
+        } catch(ex) {
+            console.log("tabhunter: not a valid javascript pattern: " + ex);
+            // just do a case-insensitive substring search
+            ptn = pattern.toLowerCase();
+            fn = function matchText(item) {
+                return (item.title.toLowerCase().indexOf(ptn) >= 0
+                        || item.url.toLowerCase().indexOf(ptn) >= 0);
             }
         }
-        pattern = m[3];
     }
-    try {
-        if (/[A-Z]/.test(pattern) && /[a-z]/.test(pattern)) {
-            // If they specify both cases, don't ignore case.
-            ptn = new RegExp(pattern);
-        } else {
-            ptn = new RegExp(pattern, "i");
+    for (var i = 0; i < items.length; i++) {
+        let item = items[i];
+        if ((!winFnParts.every((f) => f(item)))
+            || (g_showAudio && !item.audible)) {
+            continue;
         }
-        return [function matchPtn(item) {
-                return ptn.test(item.title) || ptn.test(item.url);
-            }, winFnParts];
-    } catch(ex) {
-        console.log("tabhunter: not a valid javascript pattern: " + ex);
-    }
-    // just do a case-insensitive substring search
-    ptn = pattern.toLowerCase();
-    return [function matchText(item) {
-            return (item.title.toLowerCase().indexOf(ptn) >= 0
-                    || item.url.toLowerCase().indexOf(ptn) >= 0);
-        }, winFnParts];
-}
-
-function PatternBuilder(pattern, doneFunc) {
-    this.pattern = pattern;
-    this._stopWorking = false;
-    this.index = -1;
-    this.numItems = items.length;
-    matchedItems = [];
-    [this.matcherFunction, this.winFnParts] = compilePattern(pattern);
-    this.doneFunc = doneFunc;
-    hasDiscardedTabs = false;
-}
-
-PatternBuilder.prototype = {
-  testItem: function(item) {
-        if (!(this.winFnParts.every((f) => f(item)))) {
-            return false;
-        } else if (g_showAudio && !item.audible) {
-            return false;
-        } else if (item.discarded) {
+        if (item.discarded) {
             hasDiscardedTabs = true;
             if (g_hideDiscardTabs) {
-                return false;
+                continue;
             }
         }
-        return this.matcherFunction(item);
-    },
-        
-  buildMatchedItemsArray: function() {
-        if (this._stopWorking) {
-            return;
+        if (fn(item)) {
+            matchedItems.push(i);
         }
-        this.index += 1;
-        if (this.index >= this.numItems) {
-            setTimeout(this.doneFunc, 0);
-            return;
-        }
-        if (this.testItem(items[this.index])) {
-            matchedItems.push(this.index);
-        }
-        setTimeout(this.buildMatchedItemsArray.bind(this), 0);
-    },
-
-  stopWorking: function() {
-        this._stopWorking = true;
-    },
-  
-  __EOF__: null
-};
+    }
+}
 
 function setStatusBarMessage(msg) {
     $("div#statusbar").removeClass("hide").addClass("show");
@@ -875,9 +825,14 @@ function setStatusBarMessage(msg) {
     }, 30* 1000);
 }
 
+function makeListFromMatchedItems(doneFunc) {
+    listBuilder = new ListBuilder(doneFunc);
+    listBuilder.makeListFromMatchedItems();
+}
+
 function ListBuilder(doneFunc) {
     this._stopWorking = false;
-    this.index = -1;
+    this.index = 0;
     this.numItems = matchedItems.length;
     this.doneFunc = doneFunc;
     
@@ -902,8 +857,70 @@ ListBuilder.prototype = {
         if (this._stopWorking) {
             return;
         }
-        this.index += 1;
-        if (this.index >= this.numItems) {
+        let i = this.index;
+        let lim = i + listBuilderChunkSize;
+        let needTimeout;
+        if (lim >= this.numItems) {
+            lim = this.numItems;
+            needTimeout = false;
+        } else {
+            needTimeout = true;
+        }
+        
+        for (i; i < lim; i++) {
+            var idx = matchedItems[i];
+            var item = items[idx];
+            var el = document.createElement("li");
+            if (sortBy == compareByWindowTab) {
+                // Add 1 because not all tabhunter users are proggers
+                el.textContent = `[${windowCounter.index(item.windowID)}:${item.tabIndex + 1}] `;
+            } else {
+                el.textContent = '';
+            }
+            el.textContent += item.title + " - " + item.url;
+            if (sortBy == compareByNeglect
+                <% if ENV['TARGET'] == 'chrome' %>
+                && g_itemSupportsLastAccessed
+                <% end %>
+                ) {
+                el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
+            }
+            el.visibleIndex = i;
+            el.actualIndex = idx;
+            if (item.favIconUrl && !isForbiddenFavIconUrl(item.favIconUrl)) {
+                el.style.backgroundImage = "url(" + item.favIconUrl + ")";
+            }
+            if (this.selectedActualIndices.indexOf(idx) >= 0) {
+                $(el).addClass("selected");
+                if (idx == this.selectedActualIndex) {
+                    selectedIndex = i;
+                }
+            }
+            if (lastClickedIndex > -1 && idx == this.lastClickedActualIndex) {
+                lastClickedIndex = i;
+            }
+            if (i > 0) {
+                let prevIdx = matchedItems[i - 1];
+                let prevItem = items[prevIdx];
+                // Tabs might have url='about:blank' if they're neglected and
+                // haven't been reloaded after a restart...
+                if (prevItem.url == item.url && prevItem.title == item.title) {
+                    $(el).addClass("duplicate");
+                    el.textContent = el.textContent + " [DUP]";
+                }
+            }
+            if (item.discarded) {
+                $(el).addClass("discarded");
+            }
+            if (sortBy == compareByWindowTab) {
+                $(el).attr("draggable", true);
+            }
+            tablist.appendChild(el);
+        }
+        if (needTimeout) {
+            this.index = lim;
+            setTimeout(this.makeListFromMatchedItems.bind(this), 0);
+        } else {
             if (sortBy == compareByWindowTab) {
                 $(tablist).attr("draggable", true);
                 tablist.addEventListener("dragstart", onTablistDragStartHandler, true);
@@ -916,60 +933,8 @@ ListBuilder.prototype = {
             updateActivity();
             updateURL();
             updateButtons();
-
-            setTimeout(this.doneFunc, 0);
-            return;
+            this.doneFunc();
         }
-        let i = this.index;
-        var idx = matchedItems[i];
-        var item = items[idx];
-        var el = document.createElement("li");
-        if (sortBy == compareByWindowTab) {
-            // Add 1 because not all tabhunter users are proggers
-            el.textContent = `[${windowCounter.index(item.windowID)}:${item.tabIndex + 1}] `;
-        } else {
-            el.textContent = '';
-        }
-        el.textContent += item.title + " - " + item.url;
-        if (sortBy == compareByNeglect
-            <% if ENV['TARGET'] == 'chrome' %>
-            && g_itemSupportsLastAccessed
-            <% end %>
-            ) {
-            el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
-        }
-        el.visibleIndex = i;
-        el.actualIndex = idx;
-        if (item.favIconUrl && !isForbiddenFavIconUrl(item.favIconUrl)) {
-            el.style.backgroundImage = "url(" + item.favIconUrl + ")";
-        }
-        if (this.selectedActualIndices.indexOf(idx) >= 0) {
-            $(el).addClass("selected");
-            if (idx == this.selectedActualIndex) {
-                selectedIndex = i;
-            }
-        }
-        if (lastClickedIndex > -1 && idx == this.lastClickedActualIndex) {
-            lastClickedIndex = i;
-        }
-        if (i > 0) {
-            let prevIdx = matchedItems[i - 1];
-            let prevItem = items[prevIdx];
-            // Tabs might have url='about:blank' if they're neglected and
-            // haven't been reloaded after a restart...
-            if (prevItem.url == item.url && prevItem.title == item.title) {
-                $(el).addClass("duplicate");
-                el.textContent = el.textContent + " [DUP]";
-            }
-        }
-        if (item.discarded) {
-            $(el).addClass("discarded");
-        }
-        if (sortBy == compareByWindowTab) {
-            $(el).attr("draggable", true);
-        }
-        tablist.appendChild(el);
-        setTimeout(this.makeListFromMatchedItems.bind(this), 0);
     },
 
   stopWorking: function() {
