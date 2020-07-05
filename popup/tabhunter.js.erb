@@ -11,7 +11,8 @@ var tablist;
 var mainPattern;
 var mainPatternUpdateTimeoutID = 0;
 var mainPatternTimeoutInterval = 50; // msec
-const listBuilderChunkSize = 100;
+//const listBuilderChunkSize = 100;
+const listBuilderChunkSize = 1;
 var textarea;
 var showElapsedTimes = false; // Need a way to enable this.
 var t1, t2;
@@ -713,6 +714,8 @@ function allowAll() {
 }
 
 function onPatternChangedDirectly(event) {
+    onPatternChanged(event, false);
+    return;
     if (mainPatternUpdateTimeoutID) {
         clearTimeout(mainPatternUpdateTimeoutID);
     }
@@ -723,6 +726,9 @@ function onPatternChangedDirectly(event) {
 }
 
 function onPatternChanged(event, calledFromInit) {
+    if (listBuilder) {
+        listBuilder.stopWorking();
+    }
     var pattern = mainPattern.value;
     browser.storage.local.set({"pattern": pattern});
     buildMatchedItemsArray(pattern);
@@ -919,7 +925,7 @@ ListBuilder.prototype = {
         }
         if (needTimeout) {
             this.index = lim;
-            setTimeout(this.makeListFromMatchedItems.bind(this), 0);
+            setTimeout(this.makeListFromMatchedItems.bind(this), 1000);
         } else {
             if (sortBy == compareByWindowTab) {
                 $(tablist).attr("draggable", true);
@@ -938,6 +944,7 @@ ListBuilder.prototype = {
     },
 
   stopWorking: function() {
+        console.log("QQQ: Stopping working at " + this.index + "/" + this.numItems);
         this._stopWorking = true;
     },
   
