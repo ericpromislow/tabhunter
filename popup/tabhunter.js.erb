@@ -9,10 +9,7 @@ var lastClickedIndex; // visible
 var matchedItems;
 var tablist;
 var mainPattern;
-var mainPatternUpdateTimeoutID = 0;
-var mainPatternTimeoutInterval = 50; // msec
-//const listBuilderChunkSize = 100;
-const listBuilderChunkSize = 1;
+const listBuilderChunkSize = 100;
 var textarea;
 var showElapsedTimes = false; // Need a way to enable this.
 var t1, t2;
@@ -74,7 +71,7 @@ function init() {
 
     tablist = list;
 
-    mainPattern.addEventListener("input", onPatternChangedDirectly, false);
+    mainPattern.addEventListener("input", onPatternChanged, false);
     searchTextField.addEventListener("input", onSearchTextFieldChanged, false);
     searchTextField.addEventListener("keydown", onSearchTextFieldKeyup, true);
     document.addEventListener("keydown", processArrowKey, false);
@@ -713,18 +710,6 @@ function allowAll() {
     return true;
 }
 
-function onPatternChangedDirectly(event) {
-    onPatternChanged(event, false);
-    return;
-    if (mainPatternUpdateTimeoutID) {
-        clearTimeout(mainPatternUpdateTimeoutID);
-    }
-    mainPatternUpdateTimeoutID = setTimeout(function() {
-            mainPatternUpdateTimeoutID = 0;
-            onPatternChanged(event, false);
-        }, mainPatternTimeoutInterval);
-}
-
 function onPatternChanged(event, calledFromInit) {
     if (listBuilder) {
         listBuilder.stopWorking();
@@ -925,7 +910,7 @@ ListBuilder.prototype = {
         }
         if (needTimeout) {
             this.index = lim;
-            setTimeout(this.makeListFromMatchedItems.bind(this), 1000);
+            setTimeout(this.makeListFromMatchedItems.bind(this), 0);
         } else {
             if (sortBy == compareByWindowTab) {
                 $(tablist).attr("draggable", true);
@@ -944,7 +929,6 @@ ListBuilder.prototype = {
     },
 
   stopWorking: function() {
-        console.log("QQQ: Stopping working at " + this.index + "/" + this.numItems);
         this._stopWorking = true;
     },
   
