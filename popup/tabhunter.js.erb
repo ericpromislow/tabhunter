@@ -561,7 +561,10 @@ function doVisitSelectedURL() {
                     close();
                 }
             }
-            const updateInfo = { focused: true, drawAttention: true, state: "normal" };
+            const updateInfo = { focused: true, drawAttention: true };
+            if (windowInfo.state == "minimized") {
+                updateInfo.state = "normal";
+            }
             browser.windows.update(target.windowID, updateInfo).then(showWindowCont, showWindowErr);
         } else {
             if (closeOnGo) {
@@ -924,7 +927,9 @@ ListBuilder.prototype = {
             updateActivity();
             updateURL();
             updateButtons();
-            this.doneFunc();
+            if (this.doneFunc) {
+                this.doneFunc();
+            }
         }
     },
 
