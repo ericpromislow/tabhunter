@@ -1404,8 +1404,15 @@ async function prepareForSearching() {
             // nothing to do
         } else {
             try {
+<% if ENV['TARGET'] == 'firefox' %>
                 await browser.tabs.executeScript(tabID, { file: "/content/matchText.js",
                             runAt: "document_end"} );
+<% else %>
+                    await chrome.scripting.executeScript({
+			target: { tabId: tabID},
+			files: ["/content/matchText.js"]
+		    });
+<% end %>
                 tabIDsForSearching.unshift([tabID, index]);
             } catch(ex) {
                 matchedItems.splice(i, 1);

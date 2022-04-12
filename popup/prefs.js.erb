@@ -140,7 +140,11 @@ function checkSortByGroup(event) {
 }
 
 function getURLForLocalFile(fname) {
+<% if ENV['TARGET'] == 'firefox' %>
     return browser.extension.getURL("popup/images/restore12.png");
+<% else %>
+    return chrome.runtime.getURL("popup/images/restore12.png");
+<% end %>
 }
 
 function initFields() {
@@ -154,7 +158,7 @@ function initFields() {
     ["restoreCloseOnGoImg", "restoreSortByReverseImg", "restoreControlVisitNImg",
      "restoreStartupKeyImg", "restoreFontSizeImg"].forEach(function(id) {
 	document.getElementById(id).setAttribute("src", imageURL);
-    });    
+    });
 
     let restoreCloseAndGoButton = document.getElementById("restoreCloseOnGoButton");
     restoreCloseAndGoButton.addEventListener('click', handleRestoreCloseOnGoButton, false);
