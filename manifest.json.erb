@@ -3,7 +3,11 @@
 version = ENV['VERSION'] or die("tabhunter/manifest.json.erb: VERSION not set")
 target = ENV['TARGET'] or die("build.sh.erb: TARGET not set") %>{
   "author": "Eric Promislow",
+<% if target == 'firefox' %>
   "browser_action": {
+<% else %>
+  "action": {
+<% end %>
 <% if target == 'firefox' %>
       "browser_style": true,
 <% end %>
@@ -38,7 +42,11 @@ target = ENV['TARGET'] or die("build.sh.erb: TARGET not set") %>{
     "96": "icons/th-96x96.png",
     "128": "icons/th-128x128.png"
   },
+<% if target == 'firefox' %>
   "manifest_version": 2,
+<% else %>
+  "manifest_version": 3,
+<% end %>
   "name": "Tabhunter",
   "options_ui": {
 <% if target == 'firefox' %>
@@ -50,10 +58,19 @@ target = ENV['TARGET'] or die("build.sh.erb: TARGET not set") %>{
     "activeTab",
     "clipboardWrite",
     "storage",
-    "tabs",
+<% if target == 'firefox' %>
     "bookmarks",
+    "<all_urls>",
+<% else %>
+    "scripting",
+<% end %>
+    "tabs"
+  ],
+<% if target == 'chrome' %>
+  "host_permissions": [
     "<all_urls>"
   ],
+<% end %>
   "short_name": "Tabhunter",
   "version": "<%= version %>"
 }
