@@ -46,6 +46,7 @@ documents).
 ### See LICENSE.txt for license details.
 
 ## Build Instructions
+Make sure [Ruby's ERB gem](https://github.com/ruby/erb) is installed.
 
 ```
 git clone git@github.com:ericpromislow/tabhunter.git

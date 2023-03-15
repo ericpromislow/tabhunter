@@ -629,6 +629,8 @@ function processArrowKey_aux(event) {
 
     var selectedItems = getSelectedItemsJQ();
     var keyName = event.key;
+    var lcKeyName = keyName.toLowerCase();
+    console.log(`arrow-key: keyName: ${ keyName }, mask: ${ mask }`);
     if (keyName == "Enter") {
         if (mask != 0) {
             console.log("tabhunter: Enter can't be modified with shift, etc.");
@@ -639,6 +641,11 @@ function processArrowKey_aux(event) {
             } 
             doVisitSelectedURL();
         }
+        event.stopPropagation();
+        event.preventDefault();
+        return;
+    } else if (mask === 0 && (lcKeyName == "delete" || lcKeyName == "backspace")) {
+        doCloseTabsButton();
         event.stopPropagation();
         event.preventDefault();
         return;
