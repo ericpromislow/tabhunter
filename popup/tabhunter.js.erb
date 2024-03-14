@@ -1248,13 +1248,24 @@ function updateURL() {
     }
 }
 
-function updateActivity() {
+async function updateActivity() {
     var pattern = mainPattern.value;
     var text;
     if (!pattern && matchedItems.length == items.length) {
         text = `Hunting through ${items.length} tabs`;
     } else {
         text = `Matched ${matchedItems.length}/${items.length} tabs`;
+    }
+    if (sortBy == compareByWindowTab && g_windowInfoArray.length > 1) {
+        try {
+            const cwin = await browser.windows.getCurrent();
+            const num = g_windowInfoArray.findIndex(w => w.id == cwin.id);
+            if (num >= 0) {
+                text += `. Current window #${ num + 1 }`;  // The view is 1-based...
+            }
+        } catch(e) {
+            console.log(`QQQ: Failed to get current tab: ${ e} `);
+        }
     }
     document.getElementById("activity").innerText = text;
 }
@@ -1365,7 +1376,9 @@ function onMainPatternMouseDown(event) {
         msg += extra;
     }
     document.getElementById("activity").innerText = msg;
-    setTimeout(updateActivity, 15 * 1000);
+    setTimeout(async () => {
+        await updateActivity();
+      }, 15 * 1000);
     event.stopPropagation();
     event.preventDefault();
     return false;
@@ -1415,9 +1428,9 @@ async function prepareForSearching() {
                             runAt: "document_end"} );
 <% else %>
                     await chrome.scripting.executeScript({
-			target: { tabId: tabID},
-			files: ["/content/matchText.js"]
-		    });
+                        target: { tabId: tabID},
+                        files: ["/content/matchText.js"]
+                    });
 <% end %>
                 tabIDsForSearching.unshift([tabID, index]);
             } catch(ex) {
