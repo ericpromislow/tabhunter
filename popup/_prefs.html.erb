@@ -1,3 +1,42 @@
+<div id="sort-by-div">
+  <fieldset>
+    <legend>Sort by...</legend>
+    <input type="radio" id="sortByTitle" name="sortBy"
+           value="Title" checked />
+    <label for="sortByTitle">Title</label>
+    <input type="radio" id="sortByURL" name="sortBy"
+           value="URL" />
+    <label for="sortByURL">URL</label>
+    <input type="radio" id="sortByPosition" name="sortBy"
+           value="Position" />
+    <label for="sortByPosition">Window/Tab</label>
+<% if ENV['TARGET'] == 'firefox' %>
+    <input type="radio" id="sortByNeglect" name="sortBy"
+           value="Neglect" />
+    <label for="sortByNeglect">Neglect</label>
+<% end %>
+    <br />
+    <button type="button" class="restoreButton"
+            title="Restore Setting"
+            id="restoreSortByReverseButton">
+      <img alt="Restore SortByReverse setting" id="restoreSortByReverseImg" />
+    </button>
+    <input type="checkbox" class="xbutton" name="sortByReverse" id="sortByReverse"
+           value="false"
+           />
+    <label for="sortByReverse">Reverse Sort</label>
+    <br />
+    <button type="button" class="restoreButton"
+            title="Restore Setting"
+            id="restoreControlVisitNButton">
+      <img alt="Restore Control-N setting" id="restoreControlVisitNImg" />
+    </button>
+    <input type="checkbox" class="xbutton" name="controlVisitN" id="controlVisitN"
+           value="false"
+           />
+    <label for="controlVisitN" id="controlVisitN-label"><span id="controlVisitN-modifier-name">Ctrl-1 for item 1, etc.</label>
+  </fieldset>
+</div>
 <div id="change-shortcut-div" class="hide">
   <fieldset>
     <legend>Keyboard Shortcut</legend>
@@ -46,44 +85,5 @@
     <input type="number" class="xbutton" name="fontSize" id="fontSize"
            value=""
            />
-  </fieldset>
-</div>
-<div id="sort-by-div">
-  <fieldset>
-    <legend>Sort by...</legend>
-    <input type="radio" id="sortByTitle" name="sortBy"
-           value="Title" checked />
-    <label for="sortByTitle">Title</label>
-    <input type="radio" id="sortByURL" name="sortBy"
-           value="URL" />
-    <label for="sortByURL">URL</label>
-    <input type="radio" id="sortByPosition" name="sortBy"
-           value="Position" />
-    <label for="sortByPosition">Window/Tab</label>
-<% if ENV['TARGET'] == 'firefox' %>
-    <input type="radio" id="sortByNeglect" name="sortBy"
-           value="Neglect" />
-    <label for="sortByNeglect">Neglect</label>
-<% end %>
-    <br />
-    <button type="button" class="restoreButton"
-            title="Restore Setting"
-            id="restoreSortByReverseButton">
-      <img alt="Restore SortByReverse setting" id="restoreSortByReverseImg" />
-    </button>
-    <input type="checkbox" class="xbutton" name="sortByReverse" id="sortByReverse"
-           value="false"
-           />
-    <label for="sortByReverse">Reverse Sort</label>
-    <br />
-    <button type="button" class="restoreButton"
-            title="Restore Setting"
-            id="restoreControlVisitNButton">
-      <img alt="Restore Control-N setting" id="restoreControlVisitNImg" />
-    </button>
-    <input type="checkbox" class="xbutton" name="controlVisitN" id="controlVisitN"
-           value="false"
-           />
-    <label for="controlVisitN" id="controlVisitN-label"><span id="controlVisitN-modifier-name">Ctrl-1 for item 1, etc.</label>
   </fieldset>
 </div>
