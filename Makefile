@@ -90,7 +90,7 @@ $(TDIR)/build.sh : build.sh.erb Makefile
 	chmod +x $@
 
 $(TDIR)/manifest.json : manifest.json.erb Makefile
-	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
+	TARGET=${TARGET} VERSION=${VERSION} ruby -rjson -rerb -e 'File.write("$@", JSON.pretty_generate(JSON.parse(ERB.new(File.read("$<"), trim_mode: 2).result)))'
 
 $(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill-0.2.1.min.js
 	cp $< $@
