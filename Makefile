@@ -22,7 +22,7 @@ SOURCES=$(TDIR) $(TBDIR) $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TD
 		$(TDIR)/build.sh  \
 		$(TDIR)/manifest.json  \
 		$(TDIR)/content/matchText.js \
-		$(TDIR)/popup/jquery-3.2.1.min.js \
+		$(TDIR)/popup/jquery-3.5.1.slim.min.js \
 		$(TDIR)/popup/prefs.css \
 		$(TDIR)/popup/prefs.html \
 		$(TDIR)/popup/prefs.js \
@@ -95,7 +95,7 @@ $(TDIR)/manifest.json : manifest.json.erb Makefile
 $(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill-0.2.1.min.js
 	cp $< $@
 
-$(TDIR)/popup/jquery-3.2.1.min.js: popup/jquery-3.2.1.min.js
+$(TDIR)/popup/jquery-3.5.1.slim.min.js: popup/jquery-3.5.1.slim.min.js
 	cp $< $@
 
 $(TDIR)/content/matchText.js: content/matchText.js.erb
