@@ -1191,12 +1191,14 @@ function setDragTargetIndicator(targetNode, actualIndex) {
 }
 
 function updateButtons() {
-    var selectedItemLength = getSelectedItemsJQ().length;
+    const selectedItems = getSelectedItemsJQ();
+    var selectedItemLength = selectedItems.length;
     var matchedItemLength = matchedItems.length;
     var otherDisabled = selectedItemLength == 0;
     document.getElementById("go").disabled = selectedItemLength != 1 || matchedItemLength == 0;
     closeTabsButton.disabled = otherDisabled;
-    reloadTabsButton.disabled = otherDisabled;
+    const selectedActualIndices = selectedItems.map(elt => elt.actualIndex);
+    reloadTabsButton.disabled = selectedActualIndices.some(i => items[i].discarded);
     selectAllButton.disabled = matchedItems.length == 0;
     document.getElementById("copyURL").disabled = otherDisabled;
     document.getElementById("copyTitle").disabled = otherDisabled;
@@ -1592,7 +1594,7 @@ function activateTheTabs() {
 
 function doReloadTabs() {
     var selectedItems = getSelectedItemsJQ();
-    var selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
+    var selectedActualIndices = selectedItems.filter(item => item.discarded).map(function(elt) { return elt.actualIndex });
     var actualItems = selectedActualIndices.map((i) => items[i]);
     var tabIDs = actualItems.map((item) => item.tabID);
     if (tabIDs.length == 0) {
