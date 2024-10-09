@@ -71,6 +71,13 @@ target = ENV['TARGET'] or die("build.sh.erb: TARGET not set") %>{
     "<all_urls>"
   ],
 <% end %>
+<% if target == 'firefox' %>
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "tabhunter@ericpromislow.com"
+    }
+  },
+<% end %>
   "short_name": "Tabhunter",
   "version": "<%= version %>"
 }
