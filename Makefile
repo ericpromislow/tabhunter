@@ -1,5 +1,5 @@
 TARGET=firefox
-VERSION=3.6.0
+VERSION=3.6.3
 
 TDIR=build/${TARGET}
 TBDIR=$(TDIR)/build
