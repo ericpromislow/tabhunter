@@ -27,6 +27,7 @@ SOURCES=$(TDIR) $(TBDIR) $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TD
 		$(TDIR)/popup/prefs.html \
 		$(TDIR)/popup/prefs.js \
 		$(TDIR)/popup/images/restore12.png \
+		$(TDIR)/popup/images/restore24.png \
 		$(TDIR)/popup/tabhunter.css \
 		$(TDIR)/popup/tabhunter.html \
 		$(TDIR)/popup/tabhunter.js
@@ -90,7 +91,7 @@ $(TDIR)/build.sh : build.sh.erb Makefile
 	chmod +x $@
 
 $(TDIR)/manifest.json : manifest.json.erb Makefile
-	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
+	TARGET=${TARGET} VERSION=${VERSION} ruby -rjson -rerb -e 'File.write("$@", JSON.pretty_generate(JSON.parse(ERB.new(File.read("$<"), trim_mode: 2).result)))'
 
 $(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill-0.2.1.min.js
 	cp $< $@
@@ -123,6 +124,9 @@ $(TDIR)/popup/prefs.html: popup/prefs.html.erb popup/_prefs.html.erb Makefile
 	TARGET=${TARGET} VERSION=${VERSION} erb -T 2 $< > $@
 
 $(TDIR)/popup/images/restore12.png: popup/images/restore12.png
+	cp $< $@
+
+$(TDIR)/popup/images/restore24.png: popup/images/restore24.png
 	cp $< $@
 
 tarSource: tabhunter.tgz
