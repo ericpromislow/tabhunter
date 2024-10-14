@@ -1744,7 +1744,7 @@ function getModifierMask(event) {
 // Things for dealing with searching tabs
 
 function onSearchTextFieldKeyup(event, calledFromInit) {
-    if (typeof(calledFromInit) == undefined) calledFromInit = false;
+    if (typeof(calledFromInit) === "undefined") calledFromInit = false;
     if (event.keyCode == 13 && getModifierMask(event) == 0) {
         event.preventDefault();
         event.stopPropagation();
