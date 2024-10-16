@@ -738,40 +738,51 @@ function buildMatchedItemsArray(pattern) {
     if (pattern.length == 0) {
         fn = allowAll;
     } else {
-        // If the pattern starts with a window-selector, handle it
-        let p = /^\{w:?(\d+)(?::([-\d]+))?\}(.*)$/;
+        // If the pattern contains a window-selector, handle it
+        let p = /^(.*)\{w:?(\d+)(?::([-\d]+))?\}(.*)$/;
         let m = p.exec(pattern);
         if (m) {
-            let winNum = parseInt(m[1], 10);
+            let winNum = parseInt(m[2], 10);
             winFnParts.push(function(item) {
-                    return windowCounter.index(item.windowID) == winNum;
-                });
-            if (m[2] !== undefined) {
+                return windowCounter.index(item.windowID) == winNum;
+            });
+            if (m[3] !== undefined) {
                 let [startTabNum, endTabNum] = m[2].split('-', 2);
                 if (endTabNum == undefined) {
                     endTabNum = 1000000;
-                } else if (endTabNum.indexOf('-') >= 0) {
+                } else if (endTabNum.includes('-')) {
                     console.log('Tabhunter: at most one dash allowed in a tab list');
                     //TODO: Write out an error message
                     winFnParts.push(function(item) {
-                            return false;
-                        });
+                        return false;
+                    });
                 }
                 if (startTabNum != "") {
                     startTabNum = parseInt(startTabNum, 10) - 1;
                     winFnParts.push(function(item) {
-                            return item.tabIndex >= startTabNum
-                                });
+                        return item.tabIndex >= startTabNum
+                    });
                 }
                 if (endTabNum != "") {
                     endTabNum = parseInt(endTabNum, 10) - 1;
                     winFnParts.push(function(item) {
-                            return item.tabIndex <= endTabNum
-                                });
+                        return item.tabIndex <= endTabNum
+                    });
                 }
             }
-            pattern = m[3];
+            pattern = m[1] + m[4];
         }
+
+        // If the pattern contains a negate meta-directive, then negate the
+        // filtering behaviour
+        let negate = false;
+        p = /^(.*)\{!:\}(.*)$/;
+        m = p.exec(pattern);
+        if (m) {
+            pattern = m[1] + m[2]
+            negate = true;
+        }
+
         try {
             if (/[A-Z]/.test(pattern) && /[a-z]/.test(pattern)) {
                 // If they specify both cases, don't ignore case.
@@ -780,16 +791,22 @@ function buildMatchedItemsArray(pattern) {
                 ptn = new RegExp(pattern, "i");
             }
             fn = function matchPtn(item) {
-                return ptn.test(item.title) || ptn.test(item.url);
+                const match = ptn.test(item.title) || ptn.test(item.url);
+                if (negate) {
+                    return !match
+                }
+                return match
             }
         } catch(ex) {
             console.log("tabhunter: not a valid javascript pattern: " + ex);
             // just do a case-insensitive substring search
+            // just do a case-insensitive substring search
             ptn = pattern.toLowerCase();
             fn = function matchText(item) {
-                return (item.title.toLowerCase().indexOf(ptn) >= 0
-                        || item.url.toLowerCase().indexOf(ptn) >= 0);
-            }
+              return (
+                item.title.toLowerCase().includes(ptn) || item.url.toLowerCase().includes(ptn)
+              );
+            };
         }
     }
     for (var i = 0; i < items.length; i++) {
