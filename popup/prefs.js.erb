@@ -141,9 +141,9 @@ function checkSortByGroup(event) {
 
 function getURLForLocalFile(fname) {
 <% if ENV['TARGET'] == 'firefox' %>
-    return browser.extension.getURL("popup/images/restore12.png");
+    return browser.extension.getURL(fname);
 <% else %>
-    return chrome.runtime.getURL("popup/images/restore12.png");
+    return chrome.runtime.getURL(fname);
 <% end %>
 }
 
@@ -154,7 +154,7 @@ function initFields() {
     closeOnGoCheckbox.checked = true;
     closeOnGoCheckbox.addEventListener('change', submitChanges, false);
 
-    let imageURL = getURLForLocalFile("popup/images/restore12.png");
+    let imageURL = getURLForLocalFile("popup/images/restore16.svg");
     ["restoreCloseOnGoImg", "restoreSortByReverseImg", "restoreControlVisitNImg",
      "restoreStartupKeyImg", "restoreFontSizeImg"].forEach(function(id) {
 	document.getElementById(id).setAttribute("src", imageURL);

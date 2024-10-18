@@ -313,3 +313,9 @@ select#windowList.dark {
   background: #2a2a2e; /* Grey 80 */
   color: #f9f9fa; /* Grey 10 */
 }
+
+button.restoreButton > img {
+    transform: rotate(-45deg);
+    width: 12px;
+    height: 12px;
+}
