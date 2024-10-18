@@ -3,100 +3,93 @@
 <html lang="en">
   <head>
     <link href="tabhunter.css" rel="stylesheet" type="text/css" />
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <script src="jquery-3.5.1.slim.min.js"></script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <script src="jquery-3.5.1.slim.min.js"></script>
 <% if ENV['TARGET'] == 'chrome' %>
-  <script src="browser-polyfill.min.js"></script>
+    <script src="browser-polyfill.min.js"></script>
 <% end %>
-  <script src="tabhunter.js"></script>
-  <script src="prefs.js"></script>
-<body id="body">
-  <div id="form">
-    <div class="row">
-      <label class="text" for="pattern">Pattern:</label>
-      <input type="text" id="pattern" class="input-text" />
-    </div>
-    <div class="row">
-      <label class="text" for="url">URL:</label>
-      <input type="text" id="url" class="input-text" readonly="true" />
-    </div>
-    <div id="main">
-      <ul id="list">
-      </ul>
-    </div>
-    <span id="activity"></span>
-    <div id="buttons" class="buttondiv">
-      <button type="button" class="button" id="go">Go</button>
-      <button type="button" class="button" id="closeTabs">Close Tab</button>
-      <button type="button" class="button" id="copyURL">Copy URL</button>
-      <button type="button" class="button" id="copyTitle">Copy Title</button>
-      <button type="button" class="button" id="copyURLTitle">Copy URL+Title</button>
-      <span>
-      <input type="checkbox" class="xbutton" name="showAudio" id="showAudio" value="showAudio">
-      <label class="checkbox" for="showAudio">Audio Only</label>
-      </span>
-      <button type="button" class="button" id="moveToWindow"
-              ><span id="showMoreActions" class="show">&darr;</span
-              ><span id="hideMoreActions" class="hide">&uarr;</span
-              >More ...</button>
-      <button type="button" class="button" id="showSearchTextPanel"
-              ><span id="showSearchText" class="show">&darr;</span
-              ><span id="hideSearchText" class="hide">&uarr;</span
-              >Search Text in Tabs ...</button>
-      <button type="button" class="button" id="selectAllButton">Select All</button>
-    </div>
-    </div>
-    
-    <div id="searchTextArea" class="buttondiv hide subarea">
-	<fieldset>
-	  <legend>Search text in tabs</legend>
-      <div>
-      <label class="text" for="searchText">Text:</label>
-      <input type="text" id="searchText" class="input-text" size="60"
-	     />
-      <button type="button" class="button" disabled="true" id="searchTextSearchButton">Search</button>
+    <script src="tabhunter.js"></script>
+    <script src="prefs.js"></script>
+  </head>
+  <body id="body">
+    <div id="form">
+      <div class="row">
+        <label class="text" for="pattern">Pattern:</label>
+        <input type="text" id="pattern" class="input-text" />
       </div>
-      Progress: <progress id="searchTextProgressBar" max="1" value="0"></progress><br>
-      <button type="button" class="button" id="searchTextPauseButton">Pause</button>
-      <button type="button" class="button" id="searchTextCancelButton">Cancel</button><br>
-	</fieldset>
-        <p id="statusbar-text" class="show">
-        </p>
-    </div>
-    
-    <div id="moveToWindowArea" class="buttondiv hide subarea">
-      <div id="moveToWindowContainer" >
-        <select name="windowList" id="windowList">
-        </select>
-        <button type="button" class="button" id="doMoveToWindow">Move the Tabs</button>
+      <div class="row">
+        <label class="text" for="url">URL:</label>
+        <input type="text" id="url" class="input-text" readonly="true" />
       </div>
-<% if ENV['TARGET'] == 'firefox' %>
-      <div id="moveToBookmarkContainer" >
-        <select name="bookmarkList" id="bookmarkList">
-        </select>
-        <button type="button" class="button" id="doMoveToBookmark">Bookmark Tabs</button>
+      <div id="main">
+        <ul id="list"></ul>
       </div>
-<% end %>
-      <div id="discardArea" >
+      <span id="activity"></span>
+      <div id="buttons" class="buttondiv">
+        <button type="button" class="button" id="go">Go</button>
+        <button type="button" class="button" id="closeTabs">Close Tab</button>
+        <button type="button" class="button" id="copyURL">Copy URL</button>
+        <button type="button" class="button" id="copyTitle">Copy Title</button>
+        <button type="button" class="button" id="copyURLTitle">Copy URL+Title</button>
         <span>
-          <input type="checkbox" class="xbutton" name="hideDiscardedTabs" id="hideDiscardedTabs" value="false">
-          <label class="checkbox" for="hideDiscardedTabs">Hide Discarded Tabs</label>
+          <input type="checkbox" class="xbutton" name="showAudio" id="showAudio" value="showAudio" />
+          <label class="checkbox" for="showAudio">Audio Only</label>
         </span>
-        <button type="button" class="button" id="discardSelectedTabs">Discard Tabs</button>
-        <button type="button" class="button" id="activateSelectedTabs">Activate Tabs</button>
-        <button type="button" class="button" id="reloadTabsButton">Reload</button>
+        <button type="button" class="button" id="moveToWindow">
+          <span id="showMoreActions" class="show">&darr;</span><span id="hideMoreActions" class="hide">&uarr;</span>More ...
+        </button>
+        <button type="button" class="button" id="showSearchTextPanel">
+          <span id="showSearchText" class="show">&darr;</span><span id="hideSearchText" class="hide">&uarr;</span>Search Text in Tabs ...
+        </button>
+        <button type="button" class="button" id="selectAllButton">Select All</button>
       </div>
-      <div id="prefsContainer">
-        <%= ERB.new(File.read(File.expand_path("../_prefs.html.erb", __FILE__)),
-	            nil, nil, eoutvar='_sub01').result(binding) %>
+
+      <div id="searchTextArea" class="buttondiv hide subarea">
+        <fieldset>
+          <legend>Search text in tabs</legend>
+          <div>
+            <label class="text" for="searchText">Text:</label>
+            <input type="text" id="searchText" class="input-text" size="60" />
+            <button type="button" class="button" disabled="true" id="searchTextSearchButton">Search</button>
+          </div>
+          Progress:
+          <progress id="searchTextProgressBar" max="1" value="0"></progress><br />
+          <button type="button" class="button" id="searchTextPauseButton">Pause</button>
+          <button type="button" class="button" id="searchTextCancelButton">Cancel</button><br>
+        </fieldset>
+        <p id="statusbar-text" class="show"></p>
       </div>
-      <div id="statusbar" class="hide">
-        <p id="statusbar-p">
-          Tabhunter ...
-        </p>
+
+      <div id="moveToWindowArea" class="buttondiv hide subarea">
+        <div id="moveToWindowContainer" >
+          <select name="windowList" id="windowList"></select>
+          <button type="button" class="button" id="doMoveToWindow">Move the Tabs</button>
+        </div>
+<% if ENV['TARGET'] == 'firefox' %>
+        <div id="moveToBookmarkContainer" >
+          <select name="bookmarkList" id="bookmarkList"></select>
+          <button type="button" class="button" id="doMoveToBookmark">Bookmark Tabs</button>
+        </div>
+<% end %>
+        <div id="discardArea" >
+          <span>
+            <input type="checkbox" class="xbutton" name="hideDiscardedTabs" id="hideDiscardedTabs" value="false">
+            <label class="checkbox" for="hideDiscardedTabs">Hide Discarded Tabs</label>
+          </span>
+          <button type="button" class="button" id="discardSelectedTabs">Discard Tabs</button>
+          <button type="button" class="button" id="activateSelectedTabs">Activate Tabs</button>
+          <button type="button" class="button" id="reloadTabsButton">Reload</button>
+        </div>
+        <div id="prefsContainer">
+          <%= ERB.new(File.read(File.expand_path("../_prefs.html.erb", __FILE__)),
+                nil, nil, eoutvar='_sub01').result(binding) %>
+        </div>
+        <div id="statusbar" class="hide">
+          <p id="statusbar-p">Tabhunter ...</p>
+        </div>
       </div>
     </div>
     <textarea id="textarea"></textarea>
-  </div>
-</body>
+  </body>
+</html>
