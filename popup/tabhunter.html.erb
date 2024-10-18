@@ -82,8 +82,8 @@
           <button type="button" class="button" id="reloadTabsButton">Reload</button>
         </div>
         <div id="prefsContainer">
-          <%= ERB.new(File.read(File.expand_path("../_prefs.html.erb", __FILE__)),
-                nil, nil, eoutvar='_sub01').result(binding) %>
+<% indent = "          " %>
+<%= ERB.new(File.read(File.expand_path("../_prefs.html.erb", __FILE__)), nil, nil, eoutvar='_sub01').result(binding).gsub(/^/, indent) %>
         </div>
         <div id="statusbar" class="hide">
           <p id="statusbar-p">Tabhunter ...</p>
