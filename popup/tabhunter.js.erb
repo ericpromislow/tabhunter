@@ -1376,7 +1376,7 @@ function doCopyTitleButton() {
 }
 
 function doCopyURLTitleButton() {
-    var text = gatherText(function(item) { return item.url + '-' + item.title; });
+    var text = gatherText(function(item) { return item.url + ' | ' + item.title; });
     setClipboard(text);
 }
 
