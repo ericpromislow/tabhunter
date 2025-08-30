@@ -18,6 +18,7 @@ with a capital T, lower-case h.
 
 ### Download
 * https://addons.mozilla.org/addon/tabhunter/
+* https://chromewebstore.google.com/detail/tabhunter/kdbjnnjfgmbhoaggihfgnlfnfhhadmbn
 
 ### Usage
 
