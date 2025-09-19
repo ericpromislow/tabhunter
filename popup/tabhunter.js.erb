@@ -1249,7 +1249,7 @@ function updateURL() {
     var selectedItems = getSelectedItemsJQ();
     if (selectedItems.length >= 1) {
         var index = selectedItems[0].actualIndex;
-        URL.value = items[index].url;
+        url.value = items[index].url;
         return;
     }
     if (matchedItems.length == 1) {
