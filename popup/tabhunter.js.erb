@@ -345,9 +345,21 @@ var windowCounter = new WindowIndexThing();
 // Tabs: save [title, url, window#id, tab#id, tab#index, tab#favIconUrl, tab#audible] 
 function makeTabItem(id, tab) {
     windowCounter.intern(id);
+    let searchableUrl = tab.url;
+    if (tab.url) {
+        try {
+            let urlObject = new URL(tab.url);
+            if (urlObject.hostname.includes('xn--')) {
+                searchableUrl = tab.url.replace(urlObject.hostname, punycode.toUnicode(urlObject.hostname));
+            }
+        } catch (e) {
+            // ignore, probably not a punycode url or invalid url
+        }
+    }
     return {
       title: tab.title,
       url: tab.url,
+      searchableUrl: searchableUrl,
       windowID: id,
       tabID: tab.id,
       tabIndex: tab.index,
@@ -673,7 +685,7 @@ function processArrowKey_aux(event) {
     }
     selectedIndex = newSelectedIndex;
     var url = document.getElementById("url");
-    url.value = items[matchedItems[selectedIndex]].url;
+    url.value = items[matchedItems[selectedIndex]].searchableUrl;
     li.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
@@ -691,7 +703,7 @@ function onListItemClick(event) {
     }
     selectedIndex = i;
     lastClickedIndex = (mask & (SHIFT_KEY|CTRL_KEY)) == 0 ? i : -1;
-    document.getElementById("url").value = items[matchedItems[i]].url;
+    document.getElementById("url").value = items[matchedItems[i]].searchableUrl;
     updateButtons();
 }
 
@@ -791,7 +803,7 @@ function buildMatchedItemsArray(pattern) {
                 ptn = new RegExp(pattern, "i");
             }
             fn = function matchPtn(item) {
-                const match = ptn.test(item.title) || ptn.test(item.url);
+                const match = ptn.test(item.title) || ptn.test(item.searchableUrl);
                 if (negate) {
                     return !match
                 }
@@ -804,7 +816,7 @@ function buildMatchedItemsArray(pattern) {
             ptn = pattern.toLowerCase();
             fn = function matchText(item) {
               return (
-                item.title.toLowerCase().includes(ptn) || item.url.toLowerCase().includes(ptn)
+                item.title.toLowerCase().includes(ptn) || item.searchableUrl.toLowerCase().includes(ptn)
               );
             };
         }
@@ -888,7 +900,7 @@ ListBuilder.prototype = {
             } else {
                 el.textContent = '';
             }
-            el.textContent += item.title + " - " + item.url;
+            el.textContent += item.title + " - " + item.searchableUrl;
             if (sortBy == compareByNeglect
                 <% if ENV['TARGET'] == 'chrome' %>
                 && g_itemSupportsLastAccessed
@@ -915,7 +927,7 @@ ListBuilder.prototype = {
                 let prevItem = items[prevIdx];
                 // Tabs might have url='about:blank' if they're neglected and
                 // haven't been reloaded after a restart...
-                if (prevItem.url == item.url && prevItem.title == item.title) {
+                if (prevItem.searchableUrl == item.searchableUrl && prevItem.title == item.title) {
                     $(el).addClass("duplicate");
                     el.textContent = el.textContent + " [DUP]";
                 }
@@ -984,7 +996,7 @@ function onTablistDragStartHandler(event) {
         selectedItems.forEach(function(selectedItem) {
             let index = selectedItem.actualIndex;
             indices.push(index);
-            urls.push(items[index].url);
+            urls.push(items[index].searchableUrl);
         });
         // Add the drag data
         event.dataTransfer.setData("text/plain", indices.join(","));
@@ -1249,11 +1261,11 @@ function updateURL() {
     var selectedItems = getSelectedItemsJQ();
     if (selectedItems.length >= 1) {
         var index = selectedItems[0].actualIndex;
-        URL.value = items[index].url;
+        url.value = items[index].searchableUrl;
         return;
     }
     if (matchedItems.length == 1) {
-        url.value = items[matchedItems[0]].url;
+        url.value = items[matchedItems[0]].searchableUrl;
     } else {
         url.value = "";
     }
@@ -1366,7 +1378,7 @@ function setClipboard(text) {
 }
 
 function doCopyURLButton() {
-    var text = gatherText(function(item) { return item.url; });
+    var text = gatherText(function(item) { return item.searchableUrl; });
     setClipboard(text);
 }
 
@@ -1376,7 +1388,7 @@ function doCopyTitleButton() {
 }
 
 function doCopyURLTitleButton() {
-    var text = gatherText(function(item) { return item.url + ' | ' + item.title; });
+    var text = gatherText(function(item) { return item.searchableUrl + ' | ' + item.title; });
     setClipboard(text);
 }
 
@@ -1707,7 +1719,7 @@ function doMoveToBookmarkButton() {
     let targetBookmarkID = options.item(0).value;
     let selectedItems = getSelectedItemsJQ();
     let itemsToMove = selectedItems.map(function(selectedItem) { return items[selectedItem.actualIndex]; });
-    let urls = itemsToMove.map(function(item) { return item.url; });
+    let urls = itemsToMove.map(function(item) { return item.searchableUrl; });
         let index = -1;
         var reportErr, moveNextURL;
     reportErr = function(err) {

@@ -1,5 +1,5 @@
 TARGET=firefox
-VERSION=3.6.8
+VERSION=3.6.9
 
 TDIR=build/${TARGET}
 TBDIR=$(TDIR)/build
@@ -23,6 +23,7 @@ SOURCES=$(TDIR) $(TBDIR) $(TDIR)/_locales $(TDIR)/_locales/en $(TDIR)/icons $(TD
 		$(TDIR)/manifest.json  \
 		$(TDIR)/content/matchText.js \
 		$(TDIR)/popup/jquery-3.5.1.slim.min.js \
+		$(TDIR)/popup/punycode.js \
 		$(TDIR)/popup/prefs.css \
 		$(TDIR)/popup/prefs.html \
 		$(TDIR)/popup/prefs.js \
@@ -97,6 +98,9 @@ $(TDIR)/popup/browser-polyfill.min.js: popup/browser-polyfill-0.2.1.min.js
 	cp $< $@
 
 $(TDIR)/popup/jquery-3.5.1.slim.min.js: popup/jquery-3.5.1.slim.min.js
+	cp $< $@
+
+$(TDIR)/popup/punycode.js: popup/punycode.js
 	cp $< $@
 
 $(TDIR)/content/matchText.js: content/matchText.js.erb
