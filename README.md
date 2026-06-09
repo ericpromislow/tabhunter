@@ -1,60 +1,118 @@
 # Tabhunter
 
-## Help wade through all your tabs
+Tabhunter helps you find, switch, and manage tabs across many browser windows.
 
-### Based on the much-loved, classic Firefox extension
+Originally inspired by the classic Firefox extension of the same name, Tabhunter is built for people who regularly work with large numbers of tabs and want faster ways to search, select, and act on them.
 
-This extension lets you easily juggle dozens of tabs at any time. Enter a
-search string (could be a JavaScript regex for you power-users), highlight
-the URL you want to bring up, and press return or double-click it.
-Tabhunter will even bring up minimized windows containing the desired tab.
+## Install
 
-Inspired by Davide Ficano's tab selector extension for ActiveState's
-Komodo IDE, and my own need for some assistance in managing my
-web-based workload. Not to be confused by the actor from the 1950s
-and early '60s, known by some as 'Tab "Space" Hunter' to avoid any
-ambiguity. Note the proper spelling of this add-on is "Tabhunter"
-with a capital T, lower-case h.
+- Firefox Add-ons: https://addons.mozilla.org/en-GB/firefox/addon/tabhunter/
+- Chrome Web Store: https://chromewebstore.google.com/detail/tabhunter/kdbjnnjfgmbhoaggihfgnlfnfhhadmbn
 
-### Download
-* https://addons.mozilla.org/addon/tabhunter/
+## What it does
 
-### Usage
+Tabhunter opens a popup that lets you search your open tabs, inspect the current match, and act on one or many tabs at once.
 
-Press `Shift-Ctrl-T` on Macs, `Ctrl-5` on Linux machines, and as of
-this update, `Shift-Ctrl-S` on Windows
-or click on the icon (the '5' was chosen because it's about the closest
-key to the 'T' that wasn't used by standard Firefox and Chrome, but 
-this doesn't work on Windows).
+Core capabilities include:
 
-You can select more than one entry, and do a bulk-close or 
-bulk copy-and-paste -- see the other buttons on the dialog. They used
-to hide in a context menu, but no more.
+- search tabs by title or URL
+- switch to a matched tab with the keyboard or mouse
+- bring forward tabs from minimized windows
+- select multiple matched tabs for bulk actions
+- close, reload, activate, discard, or move selected tabs
+- copy a tab's URL, title, or `URL | Title`
+- filter to audio-playing tabs with `Audio Only`
+- sort by title, URL, or window/tab order
+- reverse the current sort order
+- search inside loaded tabs by plain text, regular expression, or XPath
+- narrow matches to a specific window or tab range
+- negate a pattern to hide matching tabs
+- stay responsive even with very large numbers of open tabs
 
-Version 2.0 introduces the "Audio Only" checkbox, just what you were
-looking for to find that tab that started playing an ad or a
-video.
+## Opening Tabhunter
 
-Version 3.0 reinstates searching the text in tabs as well, and
-supports JS regexes (put `regex:` at the start of your search
-pattern to force this (not the url/title matcher)), and XPath expressions
-(highly recommended you put `xpath:` at the start of the search
-term, because a specific xpath expression with a long condition
-part in square brackets will happily work as a regex for many more
-documents).
+Use the browser action button or the default keyboard shortcut for your platform:
 
-### See LICENSE.txt for license details.
+- macOS: `Ctrl-Shift-T`
+- Linux: `Ctrl-5`
+- Windows: `Ctrl-Shift-S`
 
-## Build Instructions
-Make sure [Ruby's ERB gem](https://github.com/ruby/erb) is installed.
+These defaults can still depend on browser-level shortcut availability and configuration.
 
-```
-git clone git@github.com:ericpromislow/tabhunter.git
-cd tabhunter
-make
-```
+## How to use it
 
-In firefox, load `.../tabhunter/build/firefox/build/tabhunter-firefox-VERSION.zip`.
-In chrome, load `.../tabhunter/build/firefox/chrome/tabhunter-firefox-VERSION.zip`.
+### Find and switch tabs
 
-See the build output for `VERSION`.  The `VERSION` value is set on line 2 of `Makefile`.
+1. Open Tabhunter
+2. Type a pattern in the main `Pattern` field
+3. Move through the results
+4. Press Return, double-click a result, or use `Go` to switch to the selected tab
+
+### Work with multiple tabs
+
+You can select more than one result and then use the available actions to manage them together.
+
+Common bulk actions include:
+
+- `Close Tab`
+- `Reload`
+- `Activate Tabs`
+- `Discard Tabs`
+- `Move the Tabs`
+- copy URL or title information
+
+### Search inside tabs
+
+Use `Search Text in Tabs ...` to search the contents of loaded tabs.
+
+This supports:
+
+- plain text
+- JavaScript regular expressions
+- XPath expressions
+
+If you want to force a text-search mode, prefix the search with:
+
+- `regex:`
+- `xpath:`
+
+While a text search is running, Tabhunter shows progress and provides `Pause` and `Cancel` controls.
+
+### Filter audio tabs
+
+Enable `Audio Only` to focus on tabs that are currently playing audio.
+
+### Restrict matches to a window or tab range
+
+You can prefix the main pattern with window selectors:
+
+- `{w:N}` limits matches to window `N`
+- `{w:N:T1-T2}` limits matches to tabs `T1` through `T2` in window `N`
+- `{w:N:T}` limits matches to tab `T` through the end of window `N`
+- `{w:N:-T}` limits matches to tabs `1` through `T` in window `N`
+
+### Negate a pattern
+
+Prefix a pattern with `{!:}` to hide tabs that match it.
+
+## Preferences
+
+The popup includes a `More ...` section with additional actions and preferences.
+
+Available preferences include:
+
+- sort mode
+- reverse sort
+- startup key sequence
+- close-on-go behaviour
+- font size
+
+## Project information
+
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Privacy policy: [PRIVACY.md](PRIVACY.md)
+- Development and build notes: [DEVELOPER.md](DEVELOPER.md)
+- License: [LICENSE.txt](LICENSE.txt)
+
+Tabhunter is not related to the actor Tab Hunter.
+
