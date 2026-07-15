@@ -1,4 +1,3 @@
-
 body {
     height: auto; /* 24em; */
     border: solid 1px;
@@ -21,4 +20,10 @@ button.restoreButton {
 button.restoreButton:hover {
     border-color: rgb(109, 109, 109);
     background-color: #ddd;
+}
+
+button.restoreButton > img {
+    transform: rotate(-45deg);
+    width: 12px;
+    height: 12px;
 }
