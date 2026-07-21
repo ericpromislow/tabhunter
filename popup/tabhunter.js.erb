@@ -71,6 +71,10 @@ function init() {
 
     tablist = list;
 
+    // delegate item events so list rebuilds don't rebind a handler per <li>
+    $(tablist).on("click", "li", onListItemClick);
+    $(tablist).on("dblclick", "li", onListItemDoubleClick);
+
     mainPattern.addEventListener("input", onPatternChanged, false);
     searchTextField.addEventListener("input", onSearchTextFieldChanged, false);
     searchTextField.addEventListener("keydown", onSearchTextFieldKeyup, true);
@@ -360,6 +364,11 @@ function makeTabItem(id, tab) {
       title: tab.title,
       url: tab.url,
       searchableUrl: searchableUrl,
+      // precomputed so sorting and substring matching don't call
+      // toLowerCase() on every comparison
+      lowerTitle: (tab.title || "").toLowerCase(),
+      lowerUrl: (tab.url || "").toLowerCase(),
+      lowerSearchableUrl: (searchableUrl || "").toLowerCase(),
       windowID: id,
       tabID: tab.id,
       tabIndex: tab.index,
@@ -376,25 +385,25 @@ function isForbiddenFavIconUrl(url) {
 }
 
 function subCompareByKey(tab1, tab2, key) {
-    let s1 = tab1[key].toLowerCase();
-    let s2 = tab2[key].toLowerCase();
+    let s1 = tab1[key];
+    let s2 = tab2[key];
     if (s1 < s2) return -1;
     if (s1 > s2) return 1;
     return 0;
 }
 
 function compareByTitle(tab1, tab2) {
-    let res = subCompareByKey(tab1, tab2, 'title');
+    let res = subCompareByKey(tab1, tab2, 'lowerTitle');
     if (res != 0) return res;
-    res = subCompareByKey(tab1, tab2, 'url');
+    res = subCompareByKey(tab1, tab2, 'lowerUrl');
     if (res != 0) return res;
     return compareByWindowTab(tab1, tab2);
 }
 
 function compareByURL(tab1, tab2) {
-    let res = subCompareByKey(tab1, tab2, 'url');
+    let res = subCompareByKey(tab1, tab2, 'lowerUrl');
     if (res != 0) return res;
-    res = subCompareByKey(tab1, tab2, 'title');
+    res = subCompareByKey(tab1, tab2, 'lowerTitle');
     if (res != 0) return res;
     return compareByWindowTab(tab1, tab2);
 }
@@ -816,7 +825,7 @@ function buildMatchedItemsArray(pattern) {
             ptn = pattern.toLowerCase();
             fn = function matchText(item) {
               return (
-                item.title.toLowerCase().includes(ptn) || item.searchableUrl.toLowerCase().includes(ptn)
+                item.lowerTitle.includes(ptn) || item.lowerSearchableUrl.includes(ptn)
               );
             };
         }
@@ -860,12 +869,10 @@ function ListBuilder(doneFunc) {
     this.doneFunc = doneFunc;
     
     var selectedItems = getSelectedItemsJQ();
-    this.selectedActualIndices = selectedItems.map(function(elt) { return elt.actualIndex });
+    this.selectedActualIndices = new Set(selectedItems.map(function(elt) { return elt.actualIndex }));
     this.lastClickedActualIndex = matchedItems[lastClickedIndex];
     this.selectedActualIndex = matchedItems[selectedIndex];
     $("#list").empty();
-    $("ul li").off("dblclick", onListItemDoubleClick);
-    $("ul li").off("click", onListItemClick);
     selectedIndex = 0;
     lastClickedIndex = -1;
 <% if ENV['TARGET'] == 'chrome' %>
@@ -890,31 +897,33 @@ ListBuilder.prototype = {
             needTimeout = true;
         }
         
+        var fragment = document.createDocumentFragment();
         for (i; i < lim; i++) {
             var idx = matchedItems[i];
             var item = items[idx];
             var el = document.createElement("li");
+            var text;
             if (sortBy == compareByWindowTab) {
                 // Add 1 because not all tabhunter users are proggers
-                el.textContent = `[${windowCounter.index(item.windowID)}:${item.tabIndex + 1}] `;
+                text = `[${windowCounter.index(item.windowID)}:${item.tabIndex + 1}] `;
             } else {
-                el.textContent = '';
+                text = '';
             }
-            el.textContent += item.title + " - " + item.searchableUrl;
+            text += item.title + " - " + item.searchableUrl;
             if (sortBy == compareByNeglect
                 <% if ENV['TARGET'] == 'chrome' %>
                 && g_itemSupportsLastAccessed
                 <% end %>
                 ) {
-                el.textContent += ` [${getReadableAge(item.lastAccessed)}]`;
+                text += ` [${getReadableAge(item.lastAccessed)}]`;
             }
             el.visibleIndex = i;
             el.actualIndex = idx;
             if (item.favIconUrl && !isForbiddenFavIconUrl(item.favIconUrl)) {
                 el.style.backgroundImage = "url(" + item.favIconUrl + ")";
             }
-            if (this.selectedActualIndices.indexOf(idx) >= 0) {
-                $(el).addClass("selected");
+            if (this.selectedActualIndices.has(idx)) {
+                el.classList.add("selected");
                 if (idx == this.selectedActualIndex) {
                     selectedIndex = i;
                 }
@@ -928,18 +937,20 @@ ListBuilder.prototype = {
                 // Tabs might have url='about:blank' if they're neglected and
                 // haven't been reloaded after a restart...
                 if (prevItem.searchableUrl == item.searchableUrl && prevItem.title == item.title) {
-                    $(el).addClass("duplicate");
-                    el.textContent = el.textContent + " [DUP]";
+                    el.classList.add("duplicate");
+                    text += " [DUP]";
                 }
             }
+            el.textContent = text;
             if (item.discarded) {
-                $(el).addClass("discarded");
+                el.classList.add("discarded");
             }
             if (sortBy == compareByWindowTab) {
-                $(el).attr("draggable", true);
+                el.setAttribute("draggable", true);
             }
-            tablist.appendChild(el);
+            fragment.appendChild(el);
         }
+        tablist.appendChild(fragment);
         if (needTimeout) {
             this.index = lim;
             setTimeout(this.makeListFromMatchedItems.bind(this), 0);
@@ -951,8 +962,6 @@ ListBuilder.prototype = {
                 tablist.addEventListener("drop", onTablistDropHandler, false);
             }
             $("ul li:eq(" + selectedIndex + ")").select();
-            $("ul li").on("click", onListItemClick);
-            $("ul li").on("dblclick", onListItemDoubleClick);
             updateActivity();
             updateURL();
             updateButtons();
