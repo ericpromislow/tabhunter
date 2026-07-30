@@ -6,6 +6,10 @@ All notable changes to Tabhunter are documented in this file.
 
 - Placeholder for upcoming changes
 
+## [3.6.13] - 2026-07-30
+
+- Speed up popup list rebuilds
+
 ## [3.6.12] - 2026-07-15
 
 - Change default Windows command sequence from `Ctrl+Shift+S` to `Alt+Shift+S`
@@ -168,4 +172,3 @@ All notable changes to Tabhunter are documented in this file.
 ## [2.1.6]
 
 - Added support for moving a group of tabs to a selected window
-

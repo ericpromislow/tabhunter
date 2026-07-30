@@ -84,7 +84,7 @@
         </div>
         <div id="prefsContainer">
 <% indent = "          " %>
-<%= ERB.new(File.read(File.expand_path("../_prefs.html.erb", __FILE__)), nil, nil, eoutvar='_sub01').result(binding).gsub(/^/, indent) %>
+<%= ERB.new(File.read(File.expand_path("../_prefs.html.erb", __FILE__)), eoutvar: '_sub01').result(binding).gsub(/^/, indent) %>
         </div>
         <div id="statusbar" class="hide">
           <p id="statusbar-p">Tabhunter ...</p>
